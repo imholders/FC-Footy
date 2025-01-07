@@ -30,6 +30,12 @@ const sportsData = [
         url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
     },
     {
+      name: 'EFL Cup',
+      sportId: 'eng.league_cup',
+      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard',
+
+    },
+    {
       name: 'UEL',
       sportId: 'uefa.europa',
       url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',
