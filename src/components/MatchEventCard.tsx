@@ -75,64 +75,69 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const awayScore = event.competitions[0]?.competitors[1]?.score;
 
   const keyMoments = event.competitions[0]?.details
-    .reduce((acc: { action: string; logo: string; playerName: string; times: string[] }[], detail: Detail) => {
-      const playerName = detail.athletesInvolved && detail.athletesInvolved.length > 0
-        ? detail.athletesInvolved[0]?.displayName || 'Coaching staff'
-        : 'Coaching staff';
+  // Sort the details array by time in ascending order to get chrono
+  .sort((a: Detail, b: Detail) => {
+    const timeA = a.clock.displayValue || "00:00";
+    const timeB = b.clock.displayValue || "00:00";
 
-      const action = detail.type.text;
-      const time = detail.clock.displayValue || '00:00';
-      const teamId = detail.team.id;
+    // Convert "MM:SS" to seconds for proper sorting
+    const secondsA = timeA.split(":").reduce((min, sec) => min * 60 + parseInt(sec), 0);
+    const secondsB = timeB.split(":").reduce((min, sec) => min * 60 + parseInt(sec), 0);
 
-      let teamLogo = '';
-      if (teamId === event.competitions[0]?.competitors[0]?.team.id) {
-        teamLogo = homeTeamLogo;
-      } else {
-        teamLogo = awayTeamLogo;
-      }
+    return secondsA - secondsB; // Sort ascending
+  })
+  .reduce((acc: { action: string; logo: string; playerName: string; times: string[] }[], detail: Detail) => {
+    const playerName = detail.athletesInvolved && detail.athletesInvolved.length > 0
+      ? detail.athletesInvolved[0]?.displayName || "Coaching staff"
+      : "Coaching staff";
 
-      if (action === "Goal" || action === "Goal - Header" || action === "Penalty - Scored" || action === "Goal - Volley" || action === "Goal - Free-kick" || action === "Own Goal") {
-        const existingGoal = acc.find(item => item.playerName === playerName);
-        if (existingGoal) {
-          existingGoal.times.push(time);
-        } else {
-          acc.push({
-            playerName,
-            times: [time],
-            logo: teamLogo,
-            action: action === "Own Goal" ? "🔴" : "⚽️",
-          });
-        }
-      } else {
-        acc.push({
-          playerName,
-          times: [time],
-          action: action === "Yellow Card" ? "🟨" : action === "Red Card" ? "🟥" : action,
-          logo: teamLogo,
-        });
-      }
+    const action = detail.type.text;
+    const time = detail.clock.displayValue || "00:00";
+    const teamId = detail.team.id;
 
-      return acc;
-    }, [])
-    .map((moment, index) => {
-      const formattedAction = moment.action || "⚽️";
-      const playerNameClass = formattedAction === "🔴" ? "text-fontRed" : "text-lightPurple";
-
-      return (
-        <div key={index} className="text-sm text-lightPurple flex items-center">
-          <span className="mr-2 font-bold">{formattedAction}</span>
-          <Image
-            src={moment.logo || '/assets/defifa_spinner.gif'}
-            alt="Team Logo"
-            className="w-6 h-6 mr-2"
-            width={15}
-            height={15}
-          />
-          <span className={playerNameClass}>{moment.playerName}</span>
-          <span className="text-xs ml-1">{moment.times.join(', ')}</span>
-        </div>
-      );
+    let teamLogo = "";
+    if (teamId === event.competitions[0]?.competitors[0]?.team.id) {
+      teamLogo = homeTeamLogo;
+    } else {
+      teamLogo = awayTeamLogo;
+    }
+    acc.push({
+      playerName,
+      times: [time],
+      action:
+        action === "Goal" || action === "Goal - Header" || action === "Penalty - Scored" || action === "Goal - Volley" ||
+        action === "Goal - Free-kick" || action === "Own Goal"
+          ? action === "Own Goal" ? "🔴" : "⚽️"
+          : action === "Yellow Card"
+          ? "🟨"
+          : action === "Red Card"
+          ? "🟥"
+          : action,
+      logo: teamLogo,
     });
+
+    return acc;
+  }, [])
+  .map((moment, index) => {
+    const formattedAction = moment.action || "⚽️";
+    const playerNameClass = formattedAction === "🔴" ? "text-fontRed" : "text-lightPurple";
+
+    return (
+      <div key={index} className="text-sm text-lightPurple flex items-center">
+        <span className="mr-2 font-bold">{formattedAction}</span>
+        <Image
+          src={moment.logo || "/assets/defifa_spinner.gif"}
+          alt="Team Logo"
+          className="w-6 h-6 mr-2"
+          width={15}
+          height={15}
+        />
+        <span className={playerNameClass}>{moment.playerName}</span>
+        <span className="text-xs ml-1">{moment.times.join(", ")}</span>
+      </div>
+    );
+  });
+
 
   const handleSelectMatch = () => {
     setSelectedMatch({
