@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import sdk from '@farcaster/frame-sdk';
+import { BASE_URL } from '~/lib/config';
 
 interface FantasyRowProps {
   entry: FantasyEntry; // Use the FantasyEntry type here
@@ -27,7 +28,7 @@ const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
   const { manager, rank, total, fav_team, team } = entry;
 
   // Frame URL (could be pulled from .env in a real app, but hardcoded here for now)
-  const frameUrl = 'https://d33m-frames-v2.vercel.app/'; // TODO: Update the frame URL .env?
+  const frameUrl = BASE_URL || 'https://fc-footy.vercel.app';
   const encodedFrameUrl = encodeURIComponent(frameUrl);
 
   // Function to create and open the cast URL

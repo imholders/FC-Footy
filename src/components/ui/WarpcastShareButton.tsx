@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 // import html2canvas from 'html2canvas';
 import sdk from "@farcaster/frame-sdk";
+import { BASE_URL } from '~/lib/config';
 
 interface SelectedMatch {
   competitorsLong: string;
@@ -24,7 +25,7 @@ export function WarpcastShareButton({ selectedMatch, targetElement }: WarpcastSh
    const openWarpcastUrl = useCallback(() => {
     if (selectedMatch) {
       const { competitorsLong, homeTeam, awayTeam, homeScore, awayScore, clock, homeLogo, awayLogo, eventStarted } = selectedMatch;
-      const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}`: `Kickoff: ${clock}`}\n\nUsing the FC Footy mini-app https://d33m-frames-v2.vercel.app cc @kmacb.eth @gabedev.eth`;
+      const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}`: `Kickoff: ${clock}`}\n\nUsing the FC Footy mini-app ${BASE_URL} cc @kmacb.eth @gabedev.eth`;
       const encodedSummary = encodeURIComponent(matchSummary);
       const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
       sdk.actions.openUrl(url);  // This is where you replace window.open with sdk.actions.openUrl

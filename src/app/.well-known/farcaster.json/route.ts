@@ -1,5 +1,6 @@
+import {BASE_URL} from '../../../lib/config';
 export async function GET() {
-  const appUrl = process.env.NEXT_PUBLIC_URL;
+  const appUrl = BASE_URL || 'https://fc-footy.vercel.app';
 
   const config = {
     "accountAssociation": {
