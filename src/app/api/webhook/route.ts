@@ -1,70 +1,84 @@
 import {
-  eventHeaderSchema,
-  eventPayloadSchema,
-  eventSchema,
-} from "@farcaster/frame-sdk";
+  ParseWebhookEvent,
+  parseWebhookEvent,
+  verifyAppKeyWithNeynar,
+} from "@farcaster/frame-node";
 import { NextRequest } from "next/server";
+import {
+  deleteUserNotificationDetails,
+  setUserNotificationDetails,
+} from "~/lib/kv";
+import { sendFrameNotification } from "~/lib/notifs";
 
+console.log("Hello from webhook route");
 export async function POST(request: NextRequest) {
   const requestJson = await request.json();
 
-  const requestBody = eventSchema.safeParse(requestJson);
+  console.log("Received webhook event:", requestJson);
 
-  if (requestBody.success === false) {
-    return Response.json(
-      { success: false, errors: requestBody.error.errors },
-      { status: 400 }
-    );
+  let data;
+  try {
+    data = await parseWebhookEvent(requestJson, verifyAppKeyWithNeynar);
+  } catch (e: unknown) {
+    const error = e as ParseWebhookEvent.ErrorType;
+
+    switch (error.name) {
+      case "VerifyJsonFarcasterSignature.InvalidDataError":
+      case "VerifyJsonFarcasterSignature.InvalidEventDataError":
+        // The request data is invalid
+        return Response.json(
+          { success: false, error: error.message },
+          { status: 400 }
+        );
+      case "VerifyJsonFarcasterSignature.InvalidAppKeyError":
+        // The app key is invalid
+        return Response.json(
+          { success: false, error: error.message },
+          { status: 401 }
+        );
+      case "VerifyJsonFarcasterSignature.VerifyAppKeyError":
+        // Internal error verifying the app key (caller may want to try again)
+        console.log("Error verifying app key:", error.message);
+        return Response.json(
+          { success: false, error: error.message },
+          { status: 500 }
+        );
+    }
   }
 
-  // TODO: verify signature
+  const fid = data.fid;
+  const event = data.event;
 
-  const headerData = JSON.parse(
-    Buffer.from(requestBody.data.header, "base64url").toString("utf-8")
-  );
-  const header = eventHeaderSchema.safeParse(headerData);
-  if (header.success === false) {
-    return Response.json(
-      { success: false, errors: header.error.errors },
-      { status: 400 }
-    );
-  }
-  const fid = header.data.fid;
+  switch (event.event) {
+    case "frame_added":
+      if (event.notificationDetails) {
+        await setUserNotificationDetails(fid, event.notificationDetails);
+        await sendFrameNotification({
+          fid,
+          title: "Welcome to Frames v2",
+          body: "Frame is now added to your client",
+        });
+      } else {
+        await deleteUserNotificationDetails(fid);
+      }
 
-  const payloadData = JSON.parse(
-    Buffer.from(requestBody.data.payload, "base64url").toString("utf-8")
-  );
-  const payload = eventPayloadSchema.safeParse(payloadData);
-
-  if (payload.success === false) {
-    return Response.json(
-      { success: false, errors: payload.error.errors },
-      { status: 400 }
-    );
-  }
-
-  switch (payload.data.event) {
-    case "frame-added":
-      console.log(
-        payload.data.notificationDetails
-          ? `Got frame-added event for fid ${fid} with notification token ${payload.data.notificationDetails.token} and url ${payload.data.notificationDetails.url}`
-          : `Got frame-added event for fid ${fid} with no notification details`
-      );
       break;
-    case "frame-removed":
-      console.log(`Got frame-removed event for fid ${fid}`);
+    case "frame_removed":
+      await deleteUserNotificationDetails(fid);
+
       break;
-    case "notifications-enabled":
-      console.log(
-        `Got notifications-enabled event for fid ${fid} with token ${
-          payload.data.notificationDetails.token
-        } and url ${payload.data.notificationDetails.url} ${JSON.stringify(
-          payload.data
-        )}`
-      );
+    case "notifications_enabled":
+      await setUserNotificationDetails(fid, event.notificationDetails);
+      await sendFrameNotification({
+        fid,
+        title: "Ding ding ding",
+        body: "Notifications are now enabled",
+      });
+
       break;
-    case "notifications-disabled":
-      console.log(`Got notifications-disabled event for fid ${fid}`);
+    case "notifications_disabled":
+      await deleteUserNotificationDetails(fid);
+
       break;
   }
 
