@@ -20,23 +20,3 @@ export async function GET() {
 
   return Response.json(config);
 }
-
-
-{
-  "accountAssociation": {
-    "header": "eyJmaWQiOjQxNjMsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg4NWY5ODg2YzQ4QjE3YjUzNGYzQTY0RjI0NjBkRDlDMDRBQjlhMjM2In0",
-    "payload": "eyJkb21haW4iOiJmYy1mb290eS52ZXJjZWwuYXBwIn0",
-    "signature": "MHg5NDYyN2I5ODFlNjRhNTEzNzk2NDUyZjA5NWQwYzE5YTc0YzE5MTExNmMxMDFmMjhmNmY0NDk1MmI0ZjE4ZGExM2M5ZGJmNDVkYzgxODAwYzNiYTkzZjlkN2UxYWZjZmEyNjQyMGU1MmNkNTA2MjQ1MWY1ZjQ1ZGIzNWVkYjc2NzFi"
-  },
-  "frame": {
-    "version": "1",
-    "name": "Example Frame",
-    "iconUrl": "https://fc-footy.vercel.app/icon.png",
-    "homeUrl": "https://fc-footy.vercel.app",
-    "imageUrl": "https://fc-footy.vercel.app/image.png",
-    "buttonTitle": "Check this out",
-    "splashImageUrl": "https://fc-footy.vercel.app/splash.png",
-    "splashBackgroundColor": "#eeccff",
-    "webhookUrl": "https://fc-footy.vercel.app/api/webhook"
-  }
-}
