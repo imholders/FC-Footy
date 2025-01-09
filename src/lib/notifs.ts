@@ -2,7 +2,15 @@ import {
     SendNotificationRequest,
     sendNotificationResponseSchema,
   } from "@farcaster/frame-sdk";
-  import { getUserNotificationDetails } from "~/lib/kv";
+  import { createClient } from 'redis';
+
+  const redisClient = createClient({
+    url: process.env.REDIS_URL
+  });
+
+  redisClient.on('error', (err) => console.error('Redis Client Error', err));
+
+  await redisClient.connect();
   
   const appUrl = process.env.NEXT_PUBLIC_URL || "";
   
@@ -24,7 +32,7 @@ import {
     title: string;
     body: string;
   }): Promise<SendFrameNotificationResult> {
-    const notificationDetails = await getUserNotificationDetails(fid);
+    const notificationDetails = await redisClient.hGetAll(`user:${fid}:notificationDetails`);
     if (!notificationDetails) {
       return { state: "no_token" };
     }
