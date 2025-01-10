@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       }, 
     ],
   },
+  runtime: 'nodejs',
+
 };
 
 export default nextConfig;
