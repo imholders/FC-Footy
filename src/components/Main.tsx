@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
-import sdk, { FrameContext } from "@farcaster/frame-sdk";
+import { use, useCallback, useEffect, useState } from "react";
+import sdk, { Context, FrameNotificationDetails } from "@farcaster/frame-sdk";
 import TabNavigation from './TabNavigation';
 import MatchesTab from './MatchesTab';
 import FantasyTab from './FantasyTab';
@@ -12,9 +13,20 @@ import Scout from "./Scout";
 
 export default function Main() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<FrameContext | undefined>(undefined);
-  const [selectedTab, setSelectedTab] = useState("matches"); 
+  const [context, setContext] = useState<Context.FrameContext | undefined>(undefined);
+  const [selectedTab, setSelectedTab] = useState("matches");
+  
+  useEffect(() => {
+    const callAddFrame = async () => {
+      
+      await sdk.actions.addFrame();
+    };
 
+    if (isSDKLoaded) {
+      callAddFrame();
+    }
+  }
+  , [isSDKLoaded]);
   useEffect(() => {
     const load = async () => {
       const ctx = await sdk.context;
@@ -27,6 +39,7 @@ export default function Main() {
       load();
     }
   }, [isSDKLoaded]);
+
 
   if (!isSDKLoaded) return <div>Waiting for VAR...</div>;
 
@@ -41,7 +54,7 @@ export default function Main() {
   }
 
   return (
-    <div className="w-[400px] mx-auto py-4 px-2">
+    <div className="w-[400px] mx-auto py-4 px-2">    
       <TabNavigation selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
       <div className="bg-darkPurple p-4 rounded-md text-white">
         {selectedTab === 'matches' && <MatchesTab />}
@@ -54,6 +67,7 @@ export default function Main() {
           <div className="text-center text-lg text-fontRed">Coming soon...</div>
         )}
       </div>
+      
     </div>
   );
 };

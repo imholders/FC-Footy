@@ -1,12 +1,15 @@
 import {BASE_URL} from '../../../lib/config';
 export async function GET() {
   const appUrl = BASE_URL || 'https://fc-footy.vercel.app';
+  const header = process.env.NEXT_PUBLIC_HEADER;
+  const payload = process.env.NEXT_PUBLIC_PAYLOAD;
+  const signature = process.env.NEXT_PUBLIC_SIGNATURE;
 
   const config = {
     "accountAssociation": {
-      "header": "eyJmaWQiOjQxNjMsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg4NWY5ODg2YzQ4QjE3YjUzNGYzQTY0RjI0NjBkRDlDMDRBQjlhMjM2In0",
-      "payload": "eyJkb21haW4iOiJmYy1mb290eS52ZXJjZWwuYXBwIn0",
-      "signature": "MHg5NDYyN2I5ODFlNjRhNTEzNzk2NDUyZjA5NWQwYzE5YTc0YzE5MTExNmMxMDFmMjhmNmY0NDk1MmI0ZjE4ZGExM2M5ZGJmNDVkYzgxODAwYzNiYTkzZjlkN2UxYWZjZmEyNjQyMGU1MmNkNTA2MjQ1MWY1ZjQ1ZGIzNWVkYjc2NzFi"
+      "header": header,
+      "payload": payload,
+      "signature": signature
     },
     frame: {
       version: "0.0.1",
@@ -21,3 +24,5 @@ export async function GET() {
 
   return Response.json(config);
 }
+
+export const runtime = 'edge';
