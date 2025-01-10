@@ -2,7 +2,7 @@ import { notificationDetailsSchema } from "@farcaster/frame-sdk";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { setUserNotificationDetails } from "~/lib/kv";
-import { sendFrameNotification } from "~/lib/notifs";
+import { sendFrameNotification } from "~/lib/notifications";
 
 const requestSchema = z.object({
   fid: z.number(),
@@ -10,6 +10,14 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Validate API key from headers
+  const apiKey = request.headers.get("x-api-key");
+  if (apiKey !== process.env.NEXT_PUBLIC_NOTIFICATION_API_KEY) {
+    return Response.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
   const requestJson = await request.json();
   const requestBody = requestSchema.safeParse(requestJson);
 
@@ -45,3 +53,4 @@ export async function POST(request: NextRequest) {
 
   return Response.json({ success: true });
 }
+export const runtime = 'edge';

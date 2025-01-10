@@ -46,3 +46,4 @@ export default async function HelloNameFrame({ params }: Props) {
 
   return <App />;
 }
+export const runtime = 'edge';

@@ -24,3 +24,5 @@ export async function GET() {
 
   return Response.json(config);
 }
+
+export const runtime = 'edge';

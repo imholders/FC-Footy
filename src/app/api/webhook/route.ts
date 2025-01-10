@@ -8,13 +8,13 @@ import {
   deleteUserNotificationDetails,
   setUserNotificationDetails,
 } from "~/lib/kv";
-import { sendFrameNotification } from "~/lib/notifs";
+import { sendFrameNotification } from "~/lib/notifications";
 
 console.log("Hello from webhook route");
 export async function POST(request: NextRequest) {
   const requestJson = await request.json();
 
-  console.log("Received webhook event:", requestJson);
+  console.log("Received webhook event:", requestJson, verifyAppKeyWithNeynar);
 
   let data;
   try {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         await setUserNotificationDetails(fid, event.notificationDetails);
         await sendFrameNotification({
           fid,
-          title: "Welcome to Frames v2",
+          title: "Welcome to Fc Footy",
           body: "Frame is now added to your client",
         });
       } else {
@@ -84,3 +84,4 @@ export async function POST(request: NextRequest) {
 
   return Response.json({ success: true });
 }
+export const runtime = 'edge';

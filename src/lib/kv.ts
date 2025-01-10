@@ -5,7 +5,6 @@ const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
 });
-console.log(process.env.KV_REST_API_URL);
 
 function getUserNotificationDetailsKey(fid: number): string {
   return `fc-footy:user:${fid}`;
