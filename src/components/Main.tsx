@@ -10,6 +10,7 @@ import FantasyTab from './FantasyTab';
 import FalseNineContent from './FalseNineContent';
 import Watchalong from './Watchalong';
 import Scout from "./Scout";
+import { BASE_URL } from "~/lib/config";
 
 export default function Main() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
@@ -48,8 +49,8 @@ export default function Main() {
       <div className="w-[375px] mx-auto py-4 px-2">
         <h2 className="text-2xl font-bold text-center text-notWhite">FC Footy mini-app. Live match summaries, fantasy league, analysis and more.</h2>
         <p className="text-center mt-4 text-fontRed">Open in a Farcaster app</p>
-        <a href="https://warpcast.com/kmacb.eth/0x7c34ec7d" target="_blank" rel="noreferrer" className="block text-center mt-4 text-lightPurple underline">Go to Warpcast</a>
-      </div>
+        <a href={`https://www.warpcast.com/~/frames/launch?domain=${BASE_URL}`} target="_blank" rel="noreferrer" className="block text-center mt-4 text-lightPurple underline">Go to Warpcast</a>
+        </div>
     );
   }
 
