@@ -28,7 +28,7 @@ const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
   const { manager, rank, total, fav_team, team } = entry;
 
   // Frame URL (could be pulled from .env in a real app, but hardcoded here for now)
-  const frameUrl = BASE_URL || 'https://fc-footy.vercel.app';
+  const frameUrl = BASE_URL || 'fc-footy.vercel.app';
   const encodedFrameUrl = encodeURIComponent(frameUrl);
 
   // Function to create and open the cast URL
@@ -41,7 +41,8 @@ const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
     const encodedSummary = encodeURIComponent(summary);
 
     // Create the URL with both the team logo and the frame URL as embeds
-    const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodeURIComponent(team.logo || '')}&embeds[]=${encodedFrameUrl}`;
+    const url = `${frameUrl.replace(/^https?:\/\//, "")}/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodeURIComponent(team.logo || "")}&embeds[]=${encodedFrameUrl}`;
+    // const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodeURIComponent(team.logo || '')}&embeds[]=${encodedFrameUrl}`;
     console.log(url);
     sdk.actions.openUrl(url);  
     

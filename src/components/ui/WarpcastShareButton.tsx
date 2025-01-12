@@ -24,10 +24,12 @@ export function WarpcastShareButton({ selectedMatch, targetElement }: WarpcastSh
    // UseCallback hook for openWarpcastUrl to handle URL opening
    const openWarpcastUrl = useCallback(() => {
     if (selectedMatch) {
+      const frameUrl = BASE_URL || 'fc-footy.vercel.app';
       const { competitorsLong, homeTeam, awayTeam, homeScore, awayScore, clock, homeLogo, awayLogo, eventStarted } = selectedMatch;
       const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}`: `Kickoff: ${clock}`}\n\nUsing the FC Footy mini-app https://www.warpcast.com/~/frames/launch?domain=${BASE_URL} cc @gabedev.eth @kmacb.eth`;
       const encodedSummary = encodeURIComponent(matchSummary);
-      const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
+      const url = `${frameUrl.replace(/^https?:\/\//, "")}/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
+      // const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
       sdk.actions.openUrl(url);  // This is where you replace window.open with sdk.actions.openUrl
     }
   }, [selectedMatch]);
