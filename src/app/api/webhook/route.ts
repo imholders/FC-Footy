@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
         await setUserNotificationDetails(fid, event.notificationDetails);
         await sendFrameNotification({
           fid,
-          title: "Welcome to Fc Footy",
-          body: "Frame is now added to your client",
+          title: "Welcome to FC Footy",
+          body: "FC Footy has now been added",
         });
       } else {
         await deleteUserNotificationDetails(fid);

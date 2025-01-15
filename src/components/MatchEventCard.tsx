@@ -254,11 +254,13 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
             </div>
 
             {/* Key Moments */}
-            <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
-            {keyMoments.length > 0 ? (
-              <div className="space-y-1">{keyMoments}</div>
-            ) : (
-              <span className="text-lightPurple">No key moments yet.</span>
+           
+            {keyMoments.length > 0 && (
+              <>
+               <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
+               <div className="space-y-1">{keyMoments}</div>
+              </>
+             
             )}
 
             {/* AI Summary Button */}
