@@ -1,62 +1,13 @@
+import {
+  Player,
+  Team,
+  SummaryData,
+  Event,
+} from './interfaces';
+import formatSummaryDataToPrompt from './formatDataForAi';
 import sendOpenAi from './sendOpenAi';
 
-interface KeyEvent {
-  text: string;
-  shortText: string;
-  team: { displayName: string };
-  participants: string[]; // Add a more specific type if possible
-  clock: { displayValue: string };
-  period: { number: number };
-  venue: { fullName: string; address: string };
-}
-
-interface SummaryData {
-  keyEvents: KeyEvent[];
-  gameInfo: string; // Replace with specific type if possible
-  standings: string; // Replace with specific type if possible
-}
-
-interface Event {
-  id: string;
-  shortName: string;
-  name: string;
-  date: string;
-  status: {
-    displayClock: string;
-    type: {
-      detail: string;
-    };
-  };
-  competitions: {
-    competitors: {
-      team: {
-        logo: string;
-        id: string;
-      };
-      score: number;
-    }[];
-    details: Detail[];
-  }[];
-}
-
-interface Detail {
-  athletesInvolved: Array<{ displayName: string }>;
-  type: {
-    text: string;
-  };
-  clock: {
-    displayValue: string;
-  };
-  team: {
-    id: string;
-  };
-}
-
-interface AiSummary {
-  text: string;
-  team?: string | null;
-  time?: string | null;
-}
+// Main Functionality
 
 const RAGameContext = async (
   eventId: string,
@@ -65,75 +16,97 @@ const RAGameContext = async (
 ): Promise<string | null> => {
   const openAiApiKey = process.env.NEXT_PUBLIC_OPENAIKEY;
   const prefix = "Clear the context history and start over with the following info:";
+  const bootstrapUrl = "https://tjftzpjqfqnbtvodsigk.supabase.co/storage/v1/object/public/screenshots/bootstrap.json";
 
-  async function fetchEventData(
+  if (!openAiApiKey) {
+    console.error('OpenAI API key is missing');
+    return null;
+  }
+
+  const fetchBootstrapData = async (): Promise<{ teams: Team[]; elements: Player[] } | null> => {
+    try {
+      const response = await fetch(bootstrapUrl);
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching bootstrap data:', error);
+      return null;
+    }
+  };
+
+  const fetchEventData = async (
     eventId: string,
     tournament: string,
     competitors: string
-  ): Promise<string | null> {
+  ): Promise<string | null> => {
     const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${tournament}/scoreboard`;
     const summaryUrl = (eventId: string) => `https://site.api.espn.com/apis/site/v2/sports/soccer/${tournament}/summary?event=${eventId}`;
-    let summarizedEvents: AiSummary[] = [];
 
     try {
-      // Fetch the scoreboard data
       const scoreboardResponse = await fetch(scoreboardUrl);
       const scoreboardData = await scoreboardResponse.json();
       const events: Event[] = scoreboardData.events;
 
-      // Find the matching event using eventId
-      const matchingEvent = events.find((event: Event) => event.id === eventId);
+      const matchingEvent = events.find((event) => event.id === eventId);
 
       if (matchingEvent) {
-        // Fetch event summary if event is found
-        const summaryResponse = await fetch(summaryUrl(matchingEvent.id));
-        const summaryData: SummaryData = await summaryResponse.json();
+        let summaryData: SummaryData;
+        let includeFPL = false;
 
-        if (!openAiApiKey) {
-          console.error('OpenAI API key is missing');
-          return null;
-        }
+        if (tournament === "eng.1") {
+          const bootstrapData = await fetchBootstrapData();
+          if (!bootstrapData) {
+            console.error("Bootstrap data is unavailable.");
+            return null;
+          }
 
-        // If no key events are found, load a default prompt
-        if (!summaryData.keyEvents || summaryData.keyEvents.length === 0) {
-          summarizedEvents = [{
-            text: `Provide a match preview for the upcoming match between ${competitors}. Use future tense to describe what is expected to happen, such as key players to watch, possible match dynamics, and any relevant statistics or history. Do not speculate on a winner or mention any results, and avoid using past tense (e.g., "won", "lost"). Focus solely on the upcoming match and do not include any external links.`
-          }];
+          const { teams, elements } = bootstrapData;
+
+          const teamAbbreviations = matchingEvent.competitions[0].competitors.map(
+            (c) => c.team.abbreviation
+          );
+
+          const matchPlayers = elements.filter((player) => {
+            const playerTeam = teams.find((team) => team.id === player.team);
+            return playerTeam && teamAbbreviations.includes(playerTeam.short_name);
+          });
+
+          const teamInfo = teams
+            .filter((team) => teamAbbreviations.includes(team.short_name))
+            .map((team) => ({
+              ...team,
+              players: matchPlayers.filter((player) => player.team === team.id),
+            }));
+
+          const summaryResponse = await fetch(summaryUrl(matchingEvent.id));
+          summaryData = await summaryResponse.json();
+          summaryData.roster = teamInfo;
+          includeFPL = true;
         } else {
-          summarizedEvents = summaryData.keyEvents.map((event: KeyEvent) => ({
-            text: event.text,
-            team: event.team ? event.team.displayName : null,
-            time: event.clock.displayValue,
-            prompt: `Describe match dynamics using present or past tense only depending on the match time clock. Focus on key players, strategies and tactics, and the match outcome.  Do not include any external links or markdown. Keep the response under 400 chararters long.`
-          }));
+          const summaryResponse = await fetch(summaryUrl(matchingEvent.id));
+          summaryData = await summaryResponse.json();
         }
 
-        const gameInfo = summaryData.gameInfo;
-        const standings = summaryData.standings;
-        const jsonData = JSON.stringify({ summarizedEvents, gameInfo, standings });
-        const aiSummaryText = await sendOpenAi(jsonData, openAiApiKey || "");
-
-        return aiSummaryText;  // Return AI-generated summary
+        const formattedPrompt = formatSummaryDataToPrompt(summaryData, competitors, includeFPL);
+        console.log("Formatted prompt:", formattedPrompt);
+        return await sendOpenAi(formattedPrompt, openAiApiKey);
       }
 
-      return null;  // If no matching event is found, return null
+      console.error("No matching event found for event ID:", eventId);
+      return null;
     } catch (error) {
-      console.log('Error setting AI context:', error);
-      return null;  // Return null on error
+      console.error("Error fetching event data:", error);
+      return null;
     }
-  }
+  };
 
-  // Call the function for the provided eventId and tournament
   const result = await fetchEventData(eventId, tournament, competitors);
 
   if (!result) {
-    console.log('No matching event found for:', eventId);
-    await sendOpenAi(prefix, openAiApiKey || "");
-    await sendOpenAi('No events found', openAiApiKey || "");
-    return null;  // Return null if no matching event is found
+    await sendOpenAi(prefix, openAiApiKey);
+    await sendOpenAi('No events found', openAiApiKey);
   }
 
-  return result;  // Return the result if found
+  return result;
 };
 
 export default RAGameContext;
