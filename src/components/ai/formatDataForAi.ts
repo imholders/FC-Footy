@@ -3,8 +3,8 @@ import { SummaryData, Standings, GameInfo, Odds, Team } from './interfaces';
 /**
  * Constants for keys to include in previews and summaries.
  */
-const PREVIEW_KEEP_KEYS = ['gameInfo', 'standings', 'odds', 'roster'];
-const SUMMARY_KEEP_KEYS = ['keyEvents', 'gameInfo', 'standings'];
+const PREVIEW_KEEP_KEYS: (keyof SummaryData)[] = ['gameInfo', 'standings', 'odds', 'roster'];
+const SUMMARY_KEEP_KEYS: (keyof SummaryData)[] = ['keyEvents', 'gameInfo', 'standings'];
 
 /**
  * Filters an object to keep only specified keys.
@@ -72,9 +72,9 @@ function extractMoneylineOdds(odds: Odds[]): string {
 
   const primaryProvider = odds.find((o) => o.provider.priority === 1) || odds[0];
 
-  const homeMoneyline = parseInt(primaryProvider.homeTeamOdds?.current.moneyLine.alternateDisplayValue, 10);
-  const awayMoneyline = parseInt(primaryProvider.awayTeamOdds?.current.moneyLine.alternateDisplayValue, 10);
-  const drawMoneyline = parseInt(primaryProvider.drawOdds?.moneyLine, 10);
+  const homeMoneyline = parseInt(primaryProvider.homeTeamOdds?.current.moneyLine.alternateDisplayValue ?? "0", 10);
+  const awayMoneyline = parseInt(primaryProvider.awayTeamOdds?.current.moneyLine.alternateDisplayValue ?? "0", 10);
+  const drawMoneyline = parseInt(primaryProvider.drawOdds?.moneyLine ?? "0", 10);
 
   if (isNaN(homeMoneyline) || isNaN(awayMoneyline) || isNaN(drawMoneyline)) {
     return 'Invalid odds data.';
