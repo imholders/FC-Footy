@@ -113,12 +113,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       action:
         action === "Goal" || action === "Goal - Header" || action === "Penalty - Scored" || action === "Goal - Volley" ||
         action === "Goal - Free-kick" || action === "Own Goal"
-          ? action === "Own Goal" ? `🔴 (Own Goal by ${teamName})` : `⚽️ (${teamName})`
+          ? action === "Own Goal" ? `🔴` : `⚽️`
           : action === "Yellow Card"
-          ? `🟨 (${teamName})`
+          ? `🟨`
           : action === "Red Card"
-          ? `🟥 (${teamName})`
-          : `${action} (${teamName})`,
+          ? `🟥 `
+          : `${action} ${teamName}`,
       logo: teamLogo,
     });
 
