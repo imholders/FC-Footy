@@ -13,6 +13,7 @@ interface SelectedMatch {
   homeLogo: string;
   awayLogo: string;
   eventStarted: boolean;
+  keyMoments?: string[]; // Include key moments in the selected match
 }
 
 interface WarpcastShareButtonProps {
@@ -25,12 +26,28 @@ export function WarpcastShareButton({ selectedMatch, targetElement }: WarpcastSh
    const openWarpcastUrl = useCallback(() => {
     if (selectedMatch) {
       const frameUrl = BASE_URL || 'fc-footy.vercel.app';
-      const { competitorsLong, homeTeam, awayTeam, homeScore, awayScore, clock, homeLogo, awayLogo, eventStarted } = selectedMatch;
-      const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}` : `Kickoff: ${clock}`}\n\nUsing the FC Footy mini-app warpcast.com/~/frames/launch?domain=${frameUrl.replace(/^https?:\/\//, "")} cc @gabedev.eth @kmacb.eth`;
-      // const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}`: `Kickoff: ${clock}`}\n\nUsing the FC Footy mini-app https://www.warpcast.com/~/frames/launch?domain=${BASE_URL} cc @gabedev.eth @kmacb.eth`;
+      const {
+        competitorsLong,
+        homeTeam,
+        awayTeam,
+        homeScore,
+        awayScore,
+        clock,
+        homeLogo,
+        awayLogo,
+        eventStarted,
+        keyMoments,
+      } = selectedMatch;
+
+      const keyMomentsText = keyMoments && keyMoments.length > 0
+      ? `\n\nKey Moments:\n${keyMoments.join('\n')}`
+      : "";
+
+      const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}` : `Kickoff: ${clock}`}${keyMomentsText}\n\nUsing the FC Footy mini-app warpcast.com/~/frames/launch?domain=${frameUrl.replace(/^https?:\/\//, "")} cc @gabedev.eth @kmacb.eth`;
+
       const encodedSummary = encodeURIComponent(matchSummary);
       const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
-      sdk.actions.openUrl(url);  // This is where you replace window.open with sdk.actions.openUrl
+      sdk.actions.openUrl(url);
     }
   }, [selectedMatch]);
   console.log('targetElement', targetElement); // TODO: Remove this console.log

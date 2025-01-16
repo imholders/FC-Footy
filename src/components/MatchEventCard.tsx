@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Button } from '~/components/ui/Button'; // Assuming Button component is imported
-import RAGameContext from './ai/RAGameContext';  // Import the function to fetch game context
-import { WarpcastShareButton } from './ui/WarpcastShareButton'; // Import the WarpcastShareButton component
+import { Button } from '~/components/ui/Button';
+import RAGameContext from './ai/RAGameContext';
+import { WarpcastShareButton } from './ui/WarpcastShareButton';
 
 interface Detail {
   athletesInvolved: Array<{ displayName: string }>;
@@ -15,6 +15,14 @@ interface Detail {
   team: {
     id: string;
   };
+}
+
+interface KeyMoment {
+  action: string;
+  teamName?: string;
+  logo: string;
+  playerName: string;
+  times: string[];
 }
 
 interface EventCardProps {
@@ -53,6 +61,7 @@ interface SelectedMatch {
   awayScore: number;
   clock: string;
   eventStarted: boolean;
+  keyMoments: string[];
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
@@ -60,7 +69,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [gameContext, setGameContext] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [isAiSummaryGenerated, setIsAiSummaryGenerated] = useState(false); // Track if AI summary is generated
+  const [isAiSummaryGenerated, setIsAiSummaryGenerated] = useState(false);
   const elementRef = useRef<HTMLDivElement | null>(null);
 
   const competitorsLong = event.name;
@@ -74,84 +83,68 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const homeScore = event.competitions[0]?.competitors[0]?.score;
   const awayScore = event.competitions[0]?.competitors[1]?.score;
 
-  const keyMoments = event.competitions[0]?.details
-  // Sort the details array by time in ascending order to get chrono
-  .sort((a: Detail, b: Detail) => {
+  const keyMoments: KeyMoment[] = event.competitions[0]?.details
+  ?.sort((a: Detail, b: Detail) => {
     const timeA = a.clock.displayValue || "00:00";
     const timeB = b.clock.displayValue || "00:00";
-
-    // Convert "MM:SS" to seconds for proper sorting
-    const secondsA = timeA.split(":").reduce((min, sec) => min * 60 + parseInt(sec), 0);
-    const secondsB = timeB.split(":").reduce((min, sec) => min * 60 + parseInt(sec), 0);
-
-    return secondsA - secondsB; // Sort ascending
+    const secondsA = timeA.split(":").reduce((min, sec) => min * 60 + parseInt(sec, 10), 0);
+    const secondsB = timeB.split(":").reduce((min, sec) => min * 60 + parseInt(sec, 10), 0);
+    return secondsA - secondsB;
   })
-  .reduce((acc: { action: string; logo: string; playerName: string; times: string[] }[], detail: Detail) => {
-    const playerName = detail.athletesInvolved && detail.athletesInvolved.length > 0
-      ? detail.athletesInvolved[0]?.displayName || "Coaching staff"
-      : "Coaching staff";
-
+  ?.reduce((acc: KeyMoment[], detail: Detail) => {
+    const playerName = detail.athletesInvolved?.[0]?.displayName || "Coaching staff";
     const action = detail.type.text;
     const time = detail.clock.displayValue || "00:00";
     const teamId = detail.team.id;
 
     let teamLogo = "";
+    let teamName = ""; // Capture team name for the moment
     if (teamId === event.competitions[0]?.competitors[0]?.team.id) {
       teamLogo = homeTeamLogo;
+      teamName = homeTeam; // Use home team name
     } else {
       teamLogo = awayTeamLogo;
+      teamName = awayTeam; // Use away team name
     }
+
     acc.push({
       playerName,
       times: [time],
       action:
         action === "Goal" || action === "Goal - Header" || action === "Penalty - Scored" || action === "Goal - Volley" ||
         action === "Goal - Free-kick" || action === "Own Goal"
-          ? action === "Own Goal" ? "🔴" : "⚽️"
+          ? action === "Own Goal" ? `🔴 (Own Goal by ${teamName})` : `⚽️ (${teamName})`
           : action === "Yellow Card"
-          ? "🟨"
+          ? `🟨 (${teamName})`
           : action === "Red Card"
-          ? "🟥"
-          : action,
+          ? `🟥 (${teamName})`
+          : `${action} (${teamName})`,
       logo: teamLogo,
     });
 
     return acc;
-  }, [])
-  .map((moment, index) => {
-    const formattedAction = moment.action || "⚽️";
-    const playerNameClass = formattedAction === "🔴" ? "text-fontRed" : "text-lightPurple";
+  }, []) || [];
 
-    return (
-      <div key={index} className="text-sm text-lightPurple flex items-center">
-        <span className="mr-2 font-bold">{formattedAction}</span>
-        <Image
-          src={moment.logo || "/assets/defifa_spinner.gif"}
-          alt="Team Logo"
-          className="w-6 h-6 mr-2"
-          width={15}
-          height={15}
-        />
-        <span className={playerNameClass}>{moment.playerName}</span>
-        <span className="text-xs ml-1">{moment.times.join(", ")}</span>
-      </div>
-    );
+const handleSelectMatch = () => {
+  const keyMomentStrings = keyMoments.map((moment) => {
+    const formattedTime = moment.times?.join(", ") || "No time provided";
+    return `${moment.action} by ${moment.playerName} at ${formattedTime}`;
   });
 
+  setSelectedMatch({
+    homeTeam,
+    awayTeam,
+    competitorsLong,
+    homeLogo: homeTeamLogo,
+    awayLogo: awayTeamLogo,
+    homeScore,
+    awayScore,
+    clock,
+    eventStarted,
+    keyMoments: keyMomentStrings,
+  });
+};
 
-  const handleSelectMatch = () => {
-    setSelectedMatch({
-      homeTeam,
-      awayTeam,
-      competitorsLong,
-      homeLogo: homeTeamLogo,
-      awayLogo: awayTeamLogo,
-      homeScore,
-      awayScore,
-      clock,
-      eventStarted,
-    });
-  };
 
   const fetchAiSummary = async () => {
     if (selectedMatch) {
@@ -160,7 +153,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
         const data = await RAGameContext(event.id, sportId, competitorsLong);
         if (data && typeof data === 'string') {
           setGameContext(data);
-          setIsAiSummaryGenerated(true); // Set flag to true after AI summary is generated
+          setIsAiSummaryGenerated(true);
         } else {
           setGameContext('Failed to fetch AI context.');
         }
@@ -182,8 +175,8 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   };
 
   const toggleDetails = () => {
-    setShowDetails(!showDetails); // Toggle visibility of match details
-    setIsAiSummaryGenerated(false); // Reset the AI summary visibility flag when toggling
+    setShowDetails(!showDetails);
+    setIsAiSummaryGenerated(false);
   };
 
   return (
@@ -223,47 +216,29 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
 
       {showDetails && selectedMatch && (
         <>
-          <div ref={elementRef} className="mt-2 mt-2 bg-purplePanel p-4 rounded-lg">
-            {/* hidden but used to create screenshot during ShareCast */}
-            <div className="flex justify-center space-x-4 ml-2 mr-2"
-              style={{ visibility: 'hidden', display: 'none' }} // Initially hidden
-            >
-              <div className="flex flex-col items-center space-y-1">
-                <Image src={homeTeamLogo || '/assets/defifa_spinner.gif'} alt="Home Team Logo" className="w-8 h-8" width={20} height={20} />
-                <span>{homeTeam}</span>
-              </div>
-              <div className="flex flex-col items-center space-y-1">
-                {eventStarted ? (
-                  <>
-                    <span className="text-white font-bold text-2xl">{homeScore} - {awayScore}</span>
-                    <span className="text-lightPurple text-xs">{clock}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex flex-col items-center">
-                      <span>Kickoff:</span>
-                      <span className="text-sm text-lightPurple">{new Date(event.date).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                    </span>
-                  </>
-                )}
-              </div>
-              <div className="flex flex-col items-center space-y-1">
-                <Image src={awayTeamLogo || '/assets/defifa_spinner.gif'} alt="Away Team Logo" className="w-8 h-8" width={20} height={20} />
-                <span>{awayTeam}</span>
-              </div>
+          <div ref={elementRef} className="mt-2 bg-purplePanel p-4 rounded-lg">
+          {keyMoments.length > 0 && (
+      <>
+        <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
+        <div className="space-y-1">
+          {keyMoments.map((moment, index) => (
+            <div key={index} className="text-sm text-lightPurple flex items-center">
+              <span className="mr-2 font-bold">{moment.action}</span>
+              <Image
+                src={moment.logo || "/assets/defifa_spinner.gif"}
+                alt={`${moment.teamName} Logo`}
+                className="w-6 h-6 mr-2"
+                width={15}
+                height={15}
+              />
+              <span>{moment.playerName}</span>
+              <span className="text-xs ml-1">{moment.times.join(", ")}</span>
             </div>
+          ))}
+        </div>
+      </>
+    )}
 
-            {/* Key Moments */}
-           
-            {keyMoments.length > 0 && (
-              <>
-               <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
-               <div className="space-y-1">{keyMoments}</div>
-              </>
-             
-            )}
-
-            {/* AI Summary Button */}
             {!isAiSummaryGenerated && (
               <Button
                 className="mt-2 w-full max-w-xs mx-auto block bg-deepPink text-white py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
@@ -276,22 +251,19 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               <div className="mt-4 text-lightPurple bg-purplePanel">
                 <h2 className="font-2xl text-notWhite font-bold mb-4">
                   <button onClick={readMatchSummary}>
-                    {eventStarted
-                      ? `[AI] Match Summary 🗣️🎧1.5x`
-                      : `[AI] Match Preview 🗣️🎧1.5x`}
+                    {eventStarted ? `[AI] Match Summary 🗣️🎧1.5x` : `[AI] Match Preview 🗣️🎧1.5x`}
                   </button>
                 </h2>
                 <pre className="text-sm whitespace-pre-wrap break-words mb-4">{gameContext}</pre>
                 <WarpcastShareButton selectedMatch={selectedMatch} targetElement={elementRef.current} />
               </div>
             )}
-          </div>          
+          </div>
         </>
       )}
       {loading && <div className="text-lightPurple">Loading...</div>}
     </div>
   );
 };
-
 
 export default EventCard;

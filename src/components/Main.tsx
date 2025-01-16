@@ -8,7 +8,6 @@ import TabNavigation from './TabNavigation';
 import MatchesTab from './MatchesTab';
 import FantasyTab from './FantasyTab';
 import FalseNineContent from './FalseNineContent';
-import Watchalong from './Watchalong';
 import Scout from "./Scout";
 import { BASE_URL } from "~/lib/config";
 
@@ -61,10 +60,9 @@ export default function Main() {
         {selectedTab === 'matches' && <MatchesTab />}
         {selectedTab === 'FC FEPL' && <FantasyTab />}
         {selectedTab === 'falseNine' && <FalseNineContent />}
-        {selectedTab === 'live Chat' && <Watchalong />}
         {selectedTab === 'scout Players' && <Scout />}
         {/* Show generic "Coming soon" message if tab is unrecognized */}
-        {['matches', 'FC FEPL', 'live Chat', 'scout Players', 'falseNine'].indexOf(selectedTab) === -1 && (
+        {['matches', 'FC FEPL', 'scout Players', 'falseNine'].indexOf(selectedTab) === -1 && (
           <div className="text-center text-lg text-fontRed">Coming soon...</div>
         )}
       </div>
