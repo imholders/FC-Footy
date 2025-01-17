@@ -88,9 +88,9 @@ export function WarpcastShareButton({ selectedMatch, targetElement }: WarpcastSh
   return (
     <button
       onClick={openWarpcastUrl} // Call takeScreenshot on click
-      className={`w-full max-w-xs mx-auto block bg-deepPink text-white py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
+      className={`flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
     >
-      Cast
+      Share
     </button>
   );
 };
