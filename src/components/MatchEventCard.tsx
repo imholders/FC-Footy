@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Button } from '~/components/ui/Button';
 import RAGameContext from './ai/RAGameContext';
 import { WarpcastShareButton } from './ui/WarpcastShareButton';
 
@@ -266,8 +265,8 @@ const handleSelectMatch = () => {
 {!isAiSummaryGenerated && (
   <div className="mt-4 flex flex-row gap-4 justify-center items-center">
     {/* Match Summary Button */}
-    <Button
-      className="flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
+    <button
+      className={`flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
       onClick={fetchAiSummary}
       disabled={loading}
     >
@@ -298,7 +297,7 @@ const handleSelectMatch = () => {
       ) : (
         eventStarted ? "Summary" : "Preview"
       )}
-    </Button>
+    </button>
 
     {/* Warpcast Share Button */}
     {!loading && (
