@@ -6,6 +6,7 @@ import ScoutGoalKeepers from './ScoutGoalKeepers'; // Import goalkeepers compone
 //import FourthComponent from './FourthComponent'; // Import the fourth component (example)
 
 interface Players {
+  photo: string;
   id: number;
   webName: string;
   teamLogo: string;
