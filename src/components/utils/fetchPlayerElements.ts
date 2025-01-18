@@ -15,6 +15,7 @@ interface Player {
   element_type: number;
   team: number | string;
   code: number | string;
+  photo: string;
 }
 
 interface Team {
@@ -75,6 +76,7 @@ export const fetchPlayerElements = async () => {
         expected_assists_per_90: player.expected_assists_per_90,
         minutes: player.minutes,
         position: positionNames[player.element_type],
+        photo: player.photo,
         code: player.code
           ? `https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.code}.png`
           : '/defifa_spinner.gif',

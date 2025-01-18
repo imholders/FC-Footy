@@ -1,7 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
+import sdk from '@farcaster/frame-sdk'; // Import the Farcaster SDK
 
 interface Players {
+  photo: string;
   id: number;
   webName: string;
   teamLogo: string;
@@ -18,18 +20,30 @@ interface ScoutAttackersProps {
   playersIn: Players[]; // Define the expected type for the playersIn prop
 }
 
-const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {  // Destructure playersIn from props
-  console.log('in ScoutAttackers - players', playersIn);
+const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {
+  const BASE_URL = 'fc-footy.vercel.app'; // Example base URL for embedding
+
+  const handleCastClick = (player: Players, rank: number) => {
+    const summary = `FC-FEPL: ${player.webName} from ${player.team} is #${rank} in attacker rank and has an enhanced eXpected Goal Involvement (ExGI) of ${
+      (player.expected_assists_per_90 * 3 + player.expected_goals_per_90 * 5).toFixed(2)
+    }. \n \nThe ExGI for a player per 90 minutes is calculated by weighting assists (x3) and goals (x5). Larger values are better.\n \nCheck out the full list of top attackers in the FC Footy app cc @gabedev.eth @kmacb.eth`;
+
+    const encodedSummary = encodeURIComponent(summary);
+    const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${BASE_URL}&embeds[]=https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.photo.replace(/\.[^/.]+$/, '.png')}`;
+    console.log(url);
+    sdk.actions.openUrl(url); // Use the Farcaster SDK to open the URL
+  };
+
   const filteredPlayers = playersIn.filter(player => player.minutes > 400);
 
   // Sort the players based on expected goals per 90 minutes
   const sortedPlayers = filteredPlayers.sort((a, b) => {
-    const xgiPer90A = (a.expected_assists_per_90 * 3)+(a.expected_goals_per_90 * 5);
-    const xgiPer90B = (b.expected_assists_per_90 * 3)+(b.expected_goals_per_90 * 5);
+    const xgiPer90A = (a.expected_assists_per_90 * 3) + (a.expected_goals_per_90 * 5);
+    const xgiPer90B = (b.expected_assists_per_90 * 3) + (b.expected_goals_per_90 * 5);
     return xgiPer90B - xgiPer90A; // Sort in descending order
   });
 
-  // Only take the top 2 players
+  // Only take the top 20 players
   const topPlayers = sortedPlayers.slice(0, 20);
 
   return (
@@ -40,14 +54,18 @@ const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {  // D
             <th className="py-1 px-1 font-medium">Rank</th>
             <th className="py-1 px-1 font-medium">Player</th>
             <th className="py-1 px-1 font-medium">Team</th>
-            <th className="py-1 px-1 font-medium">Pos</th>
+            <th className="py-1 px-1 font-medium">Position</th>
             <th className="py-1 px-1 font-medium">Enhanced XGI</th>
             <th className="py-1 px-1 font-medium">xGI 90m</th>
           </tr>
         </thead>
         <tbody>
           {topPlayers.map((player, index) => (
-            <tr key={player.id} className="border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm">
+            <tr
+              key={player.id}
+              onClick={() => handleCastClick(player, index + 1)}
+              className="border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer"
+            >
               <td className="py-1 px-1 text-center">
                 <span className="mb-1">{index + 1}</span>
               </td>
@@ -60,7 +78,9 @@ const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {  // D
                 <Image src={player.teamLogo} alt={player.team} width={30} height={30} />
               </td>
               <td className="py-1 px-1 text-center">{player.position}</td>
-              <td className="py-1 px-1 text-center">{((player.expected_assists_per_90 * 3)+(player.expected_goals_per_90 * 5)).toFixed(2)}</td>
+              <td className="py-1 px-1 text-center">
+                {((player.expected_assists_per_90 * 3) + (player.expected_goals_per_90 * 5)).toFixed(2)}
+              </td>
               <td className="py-1 px-1 text-center">{player.xgi90.toFixed(2)}</td>
             </tr>
           ))}

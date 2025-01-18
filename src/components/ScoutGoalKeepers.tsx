@@ -1,7 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
+import sdk from '@farcaster/frame-sdk'; // Import the Farcaster SDK
 
 interface Players {
+  photo: string;
   id: number;
   webName: string;
   teamLogo: string;
@@ -18,20 +20,25 @@ interface ScoutGoalKeepersProps {
   playersIn: Players[]; // Define the expected type for the playersIn prop
 }
 
-const ScoutGoalKeepers: React.FC<ScoutGoalKeepersProps> = ({ playersIn }) => {  // Destructure playersIn from props
-  console.log('in scout defenders - players', playersIn);
+const ScoutGoalKeepers: React.FC<ScoutGoalKeepersProps> = ({ playersIn }) => {
+  const BASE_URL = 'fc-footy.vercel.app'; // Example base URL for embedding
 
-  // Filter players based on minutes and position (Goalkeeper and Defender only)
-  const filteredPlayers = playersIn.filter(
-    player => player.minutes > 500 && (player.position === 'Gk')
-  );
+  const handleCastClick = (player: Players, rank: number) => {
+    const summary = `FC-FEPL: ${player.webName} from ${player.team} is #${rank} in goalkeeper rank with an expected goals conceded per 90 minutes (xGC) of ${
+      player.xgc90.toFixed(2)
+    }. \n\nGoalkeepers are ranked by their xGC per 90 minutes, with lower values indicating better defensive performance.\n\nCheck out the full list of top goalkeepers in the FC Footy app cc @gabedev.eth @kmacb.eth`;
 
-  // Sort the players based on xGC per 90 minutes (descending)
-  const sortedPlayers = filteredPlayers.sort((a, b) => {
-    const xgcPer90A = a.xgc90;
-    const xgcPer90B = b.xgc90;
-    return xgcPer90A - xgcPer90B; // Sort in ascending order
-  });
+    const encodedSummary = encodeURIComponent(summary);
+    const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${BASE_URL}&embeds[]=https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.photo.replace(/\.[^/.]+$/, '.png')}`;
+    console.log(url);
+    sdk.actions.openUrl(url); // Use the Farcaster SDK to open the URL
+  };
+
+  // Filter players based on minutes and position (Goalkeepers only)
+  const filteredPlayers = playersIn.filter(player => player.minutes > 500 && player.position === 'Gk');
+
+  // Sort the players based on xGC per 90 minutes (ascending)
+  const sortedPlayers = filteredPlayers.sort((a, b) => a.xgc90 - b.xgc90);
 
   // Only take the top 20 players
   const topPlayers = sortedPlayers.slice(0, 20);
@@ -50,7 +57,11 @@ const ScoutGoalKeepers: React.FC<ScoutGoalKeepersProps> = ({ playersIn }) => {  
         </thead>
         <tbody>
           {topPlayers.map((player, index) => (
-            <tr key={player.id} className="border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm">
+            <tr
+              key={player.id}
+              onClick={() => handleCastClick(player, index + 1)}
+              className="border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer"
+            >
               <td className="py-1 px-1 text-center">
                 <span className="mb-1">{index + 1}</span>
               </td>
