@@ -182,32 +182,56 @@ const handleSelectMatch = () => {
   return (
     <div key={event.id} className="sidebar">
       <div className="hover:bg-deepPink cursor-pointer border border-darkPurple">
-        <button onClick={() => { handleSelectMatch(); toggleDetails(); }} className="dropdown-button cursor-pointer flex items-center mb-2 w-full">
-          <div className="cursor-pointer text-lightPurple mr-4">
-            {showDetails ? "▼" : "▷"}
-          </div>
+        <button
+          onClick={() => {
+            handleSelectMatch();
+            toggleDetails();
+          }}
+          className="dropdown-button cursor-pointer flex items-center mb-2 w-full"
+        >
+          <div className="cursor-pointer text-lightPurple mr-4">{showDetails ? "▼" : "▷"}</div>
           <span className="flex justify-center space-x-4 ml-2 mr-2">
             <div className="flex flex-col items-center space-y-1">
-              <Image src={homeTeamLogo || '/assets/defifa_spinner.gif'} alt="Home Team Logo" className="w-8 h-8" width={20} height={20} />
+              <Image
+                src={homeTeamLogo || "/assets/defifa_spinner.gif"}
+                alt="Home Team Logo"
+                className="w-8 h-8"
+                width={20}
+                height={20}
+              />
               <span>{homeTeam}</span>
             </div>
             <div className="flex flex-col items-center space-y-1">
               {eventStarted ? (
                 <>
-                  <span className="text-white font-bold text-2xl">{homeScore} - {awayScore}</span>
+                  <span className="text-white font-bold text-2xl">
+                    {homeScore} - {awayScore}
+                  </span>
                   <span className="text-lightPurple text-xs">{clock}</span>
                 </>
               ) : (
                 <>
                   <span className="flex flex-col items-center">
                     <span>Kickoff:</span>
-                    <span className="text-sm text-lightPurple">{new Date(event.date).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-sm text-lightPurple">
+                      {new Date(event.date).toLocaleString("en-GB", {
+                        weekday: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </span>
                 </>
               )}
             </div>
             <div className="flex flex-col items-center space-y-1">
-              <Image src={awayTeamLogo || '/assets/defifa_spinner.gif'} alt="Away Team Logo" className="w-8 h-8" width={20} height={20} />
+              <Image
+                src={awayTeamLogo || "/assets/defifa_spinner.gif"}
+                alt="Away Team Logo"
+                className="w-8 h-8"
+                width={20}
+                height={20}
+              />
               <span>{awayTeam}</span>
             </div>
           </span>
@@ -217,36 +241,76 @@ const handleSelectMatch = () => {
       {showDetails && selectedMatch && (
         <>
           <div ref={elementRef} className="mt-2 bg-purplePanel p-4 rounded-lg">
-          {keyMoments.length > 0 && (
-      <>
-        <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
-        <div className="space-y-1">
-          {keyMoments.map((moment, index) => (
-            <div key={index} className="text-sm text-lightPurple flex items-center">
-              <span className="mr-2 font-bold">{moment.action}</span>
-              <Image
-                src={moment.logo || "/assets/defifa_spinner.gif"}
-                alt={`${moment.teamName} Logo`}
-                className="w-6 h-6 mr-2"
-                width={15}
-                height={15}
-              />
-              <span>{moment.playerName}</span>
-              <span className="text-xs ml-1">{moment.times.join(", ")}</span>
-            </div>
-          ))}
-        </div>
-      </>
-    )}
-
-            {!isAiSummaryGenerated && (
-              <Button
-                className="mt-2 w-full max-w-xs mx-auto block bg-deepPink text-white py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
-                onClick={fetchAiSummary}
-              >
-                {eventStarted ? "Match Summary" : "Match Preview"}
-              </Button>
+            {keyMoments.length > 0 && (
+              <>
+                <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
+                <div className="space-y-1">
+                  {keyMoments.map((moment, index) => (
+                    <div key={index} className="text-sm text-lightPurple flex items-center">
+                      <span className="mr-2 font-bold">{moment.action}</span>
+                      <Image
+                        src={moment.logo || "/assets/defifa_spinner.gif"}
+                        alt={`${moment.teamName} Logo`}
+                        className="w-6 h-6 mr-2"
+                        width={15}
+                        height={15}
+                      />
+                      <span>{moment.playerName}</span>
+                      <span className="text-xs ml-1">{moment.times.join(", ")}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
+
+{!isAiSummaryGenerated && (
+  <div className="mt-4 flex flex-row gap-4 justify-center items-center">
+    {/* Match Summary Button */}
+    <Button
+      className="flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
+      onClick={fetchAiSummary}
+      disabled={loading}
+    >
+      {loading ? (
+        <div className="flex items-center justify-center">
+          <svg
+            className="animate-spin h-5 w-5 mr-2 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 2.577 1.03 4.91 2.709 6.709l1.291-1.418z"
+            ></path>
+          </svg>
+          Waiting for VAR...
+        </div>
+      ) : (
+        eventStarted ? "Summary" : "Preview"
+      )}
+    </Button>
+
+    {/* Warpcast Share Button */}
+    {!loading && (
+      <WarpcastShareButton 
+      selectedMatch={selectedMatch} 
+      targetElement={elementRef.current} 
+    />
+    )}
+  </div>
+)}
+
+
             {gameContext && (
               <div className="mt-4 text-lightPurple bg-purplePanel">
                 <h2 className="font-2xl text-notWhite font-bold mb-4">
@@ -261,9 +325,8 @@ const handleSelectMatch = () => {
           </div>
         </>
       )}
-      {loading && <div className="text-lightPurple">Loading...</div>}
     </div>
-  );
+  );;
 };
 
 export default EventCard;
