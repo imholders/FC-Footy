@@ -119,6 +119,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
           ? `🟥 `
           : `${action} ${teamName}`,
       logo: teamLogo,
+      teamName,
     });
 
     return acc;
@@ -127,7 +128,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
 const handleSelectMatch = () => {
   const keyMomentStrings = keyMoments.map((moment) => {
     const formattedTime = moment.times?.join(", ") || "No time provided";
-    return `${moment.action} by ${moment.playerName} at ${formattedTime}`;
+    return `${moment.action} ${moment.teamName} by ${moment.playerName} at ${formattedTime}`;
   });
 
   setSelectedMatch({
