@@ -13,6 +13,7 @@ interface Detail {
   };
   team: {
     id: string;
+    abbreviation: string;
   };
 }
 
