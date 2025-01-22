@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import EventCard from './MatchEventCard'; // Import the EventCard component
 import useEventsData from './utils/useEventsData'; // Import the custom hook
@@ -14,6 +15,7 @@ interface Detail {
   };
   team: {
     id: string;
+    abbreviation: string;
   };
 }
 
@@ -34,6 +36,7 @@ export interface Event {
       team: {
         logo: string;
         id: string;
+        abbreviation: string;
       };
       score: number;
     }[];
@@ -78,7 +81,7 @@ const MatchesTab = () => {
         ) : error ? (
           <div className="text-red-500">{error}</div>
         ) : events.length > 0 ? (
-          events.map((event: Event) => ( 
+          events.map((event: any) => ( 
             <EventCard 
               key={event.id} 
               event={event} 

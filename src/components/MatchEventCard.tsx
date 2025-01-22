@@ -13,6 +13,7 @@ interface Detail {
   };
   team: {
     id: string;
+    abbreviation: string;
   };
 }
 
@@ -42,6 +43,7 @@ interface EventCardProps {
         team: {
           logo: string;
           id: string;
+          abbreviation: string;
         };
         score: number;
       }[];
@@ -100,10 +102,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
     let teamName = ""; // Capture team name for the moment
     if (teamId === event.competitions[0]?.competitors[0]?.team.id) {
       teamLogo = homeTeamLogo;
-      teamName = homeTeam; // Use home team name
+      teamName = event.competitions[0]?.competitors[0].team.abbreviation; // Use home team name
     } else {
       teamLogo = awayTeamLogo;
-      teamName = awayTeam; // Use away team name
+      teamName =  event.competitions[0]?.competitors[0].team.abbreviation; // Use away team name
     }
 
     acc.push({
