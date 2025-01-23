@@ -105,7 +105,7 @@ export default function Main() {
         <div className="text-center text-lg text-fontRed">
           <p>Please log in to access the app.</p>
           <button
-            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            className={`flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
             onClick={handleLogin}
           >
             Login
