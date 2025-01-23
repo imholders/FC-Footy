@@ -2,8 +2,8 @@ import { FrameNotificationDetails } from "@farcaster/frame-sdk";
 import { Redis } from "@upstash/redis";
 
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL,
-  token: process.env.KV_REST_API_TOKEN,
+  url: process.env.NEXT_PUBLIC_KV_REST_API_URL,
+  token: process.env.NEXT_PUBLIC_KV_REST_API_TOKEN,
 });
 
 function getUserNotificationDetailsKey(fid: number): string {
@@ -32,4 +32,4 @@ export async function deleteUserNotificationDetails(
   fid: number
 ): Promise<void> {
   await redis.del(getUserNotificationDetailsKey(fid));
-}
+} 
