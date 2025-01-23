@@ -24,8 +24,8 @@ export default function Main() {
 
   // UI state
   const [context, setContext] = useState<FrameContext>();
-  const [isFrameContextOpen, setIsFrameContextOpen] = useState(false);
-  const [isPrivyUserObjectOpen, setIsPrivyUserObjectOpen] = useState(false);
+  // const [isFrameContextOpen, setIsFrameContextOpen] = useState(false);
+  // const [isPrivyUserObjectOpen, setIsPrivyUserObjectOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   // Loading states
@@ -37,7 +37,7 @@ export default function Main() {
   );
   useEffect(() => {
     const load = async () => {
-      setContext(await frameSdk.context);
+      setContext((await frameSdk.context) as FrameContext);
       frameSdk.actions.ready({});
     };
     if (frameSdk && !isSDKLoaded) {
