@@ -9,7 +9,7 @@ import MatchesTab from "./MatchesTab";
 import FantasyTab from "./FantasyTab";
 import FalseNineContent from "./FalseNineContent";
 import Scout from "./Scout";
-import MoneyGames from "./MoneyGames";
+// import MoneyGames from "./MoneyGames";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
 import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
