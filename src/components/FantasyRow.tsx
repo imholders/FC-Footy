@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import sdk from '@farcaster/frame-sdk';
+import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
+import { FrameContext } from '@farcaster/frame-node';
 
 interface FantasyRowProps {
   entry: FantasyEntry; // Use the FantasyEntry type here
@@ -26,10 +27,25 @@ interface FantasyEntry {
 
 const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
   const { manager, rank, total, fav_team, team } = entry;
-
-  // Frame URL (could be pulled from .env in a real app, but hardcoded here for now)
+  const [context, setContext] = useState<FrameContext | undefined>(undefined);
+  const [isContextLoaded, setIsContextLoaded] = useState(false);
   const frameUrl = BASE_URL || 'fc-footy.vercel.app';
 
+    useEffect(() => {
+      const loadContext = async () => {
+        try {
+          setContext((await frameSdk.context) as FrameContext);
+          setIsContextLoaded(true);
+        } catch (error) {
+          console.error("Failed to load Farcaster context:", error);
+        }
+      };
+  
+      if (!isContextLoaded) {
+        loadContext();
+      }
+    }, [isContextLoaded]);
+  
   // Function to create and open the cast URL
   const handleCastClick = () => {
     const summary = fav_team
@@ -41,9 +57,11 @@ const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
 
     // Create the URL with both the team logo and the frame URL as embeds
     const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodeURIComponent(team.logo || '')}&embeds[]=${frameUrl}`;
-    console.log(url);
-    sdk.actions.openUrl(url);  
-    
+    if (context === undefined) {
+      window.open(url, '_blank');
+    } else {
+      frameSdk.actions.openUrl(url);
+    }
   };
 
   // Only make the row clickable if there is a team logo. Change this with new skd cast features
