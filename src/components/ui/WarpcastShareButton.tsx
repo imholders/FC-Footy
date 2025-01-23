@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
+import { FrameContext } from '@farcaster/frame-node';
 
 interface SelectedMatch {
   competitorsLong: string;
@@ -21,14 +22,13 @@ interface WarpcastShareButtonProps {
 }
 
 export function WarpcastShareButton({ selectedMatch }: WarpcastShareButtonProps) {
-  const [context, setContext] = useState<any | undefined>(undefined);
+  const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
 
   useEffect(() => {
     const loadContext = async () => {
       try {
-        const sdkContext = await frameSdk.context;
-        setContext(sdkContext);
+        setContext((await frameSdk.context) as FrameContext);
         setIsContextLoaded(true);
       } catch (error) {
         console.error("Failed to load Farcaster context:", error);
