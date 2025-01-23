@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { Redis } from "@upstash/redis";
+import { useEffect, useState } from "react";
+
+const redis = new Redis({
+  url: process.env.NEXT_PUBLIC_KV_REST_API_URL,
+  token: process.env.NEXT_PUBLIC_KV_REST_API_TOKEN,
+});
 
 export default function AdminPage() {
   const [apiKeyInput, setApiKeyInput] = useState("");
@@ -10,8 +16,24 @@ export default function AdminPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [responseMessage, setResponseMessage] = useState("");
+  const [totalNumberOfUsers, setTotalNumberOfUsers] = useState(0);
 
   const [loading, setLoading] = useState(false);
+
+async function getTotalNumberOfUsers(): Promise<number> {
+  const keys = await redis.keys("fc-footy:user:*");
+
+  return keys.length;
+}
+  const fetchTotalNumberOfUsers = async () => {
+    
+    const totalNumber = await getTotalNumberOfUsers();
+    setTotalNumberOfUsers(totalNumber);
+  }
+  
+  useEffect(() => {
+    fetchTotalNumberOfUsers();
+  }, []);
 
   const handleAuthenticate = () => {
     if (apiKeyInput === process.env.NEXT_PUBLIC_NOTIFICATION_API_KEY) {
@@ -80,6 +102,14 @@ export default function AdminPage() {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
       <div className="w-full max-w-lg p-8 bg-white rounded-lg shadow-md">
+
+        <div className="mb-6 p-4 bg-blue-100 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-black">Dashboard Analytics</h3>
+          <div className="mt-2">
+            <p className="text-sm text-black">Total Number of Users: {totalNumberOfUsers}</p>
+          </div>
+        </div>
+
         <h2 className="text-2xl font-semibold text-black text-center mb-6">
           Send Notification to All Users
         </h2>
