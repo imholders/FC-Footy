@@ -183,7 +183,7 @@ const handleSelectMatch = () => {
 
   return (
     <div key={event.id} className="sidebar">
-      <div className="hover:bg-deepPink cursor-pointer border border-darkPurple">
+      <div className="cursor-pointer border border-darkPurple">
         <button
           onClick={() => {
             handleSelectMatch();
@@ -265,52 +265,52 @@ const handleSelectMatch = () => {
               </>
             )}
 
-{!isAiSummaryGenerated && (
-  <div className="mt-4 flex flex-row gap-4 justify-center items-center">
-    {/* Match Summary Button */}
-    <button
-      className={`flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
-      onClick={fetchAiSummary}
-      disabled={loading}
-    >
-      {loading ? (
-        <div className="flex items-center justify-center">
-          <svg
-            className="animate-spin h-5 w-5 mr-2 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 2.577 1.03 4.91 2.709 6.709l1.291-1.418z"
-            ></path>
-          </svg>
-          Waiting for VAR...
-        </div>
-      ) : (
-        eventStarted ? "Summary" : "Preview"
-      )}
-    </button>
+            {!isAiSummaryGenerated && (
+              <div className="mt-4 flex flex-row gap-4 justify-center items-center">
+                {/* Match Summary Button */}
+                <button
+                  className={` w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
+                  onClick={fetchAiSummary}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 2.577 1.03 4.91 2.709 6.709l1.291-1.418z"
+                        ></path>
+                      </svg>
+                      Waiting for VAR...
+                    </div>
+                  ) : (
+                    eventStarted ? "Summary" : "Preview"
+                  )}
+                </button>
 
-    {/* Warpcast Share Button */}
-    {!loading && (
-      <WarpcastShareButton 
-      selectedMatch={selectedMatch} 
-      targetElement={elementRef.current} 
-    />
-    )}
-  </div>
-)}
+                {/* Warpcast Share Button */}
+                {!loading && (
+                  <WarpcastShareButton 
+                  selectedMatch={selectedMatch} 
+                  targetElement={elementRef.current} 
+                />
+                )}
+              </div>
+            )}
 
 
             {gameContext && (

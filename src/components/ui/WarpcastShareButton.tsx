@@ -76,7 +76,7 @@ export function WarpcastShareButton({ selectedMatch }: WarpcastShareButtonProps)
   return (
     <button
       onClick={openWarpcastUrl}
-      className="flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
+      className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
     >
       Share
     </button>
