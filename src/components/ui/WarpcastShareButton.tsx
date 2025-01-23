@@ -1,6 +1,5 @@
-import React, { useCallback } from 'react';
-// import html2canvas from 'html2canvas';
-import sdk from "@farcaster/frame-sdk";
+import React, { useCallback, useEffect, useState } from 'react';
+import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
 
 interface SelectedMatch {
@@ -13,7 +12,7 @@ interface SelectedMatch {
   homeLogo: string;
   awayLogo: string;
   eventStarted: boolean;
-  keyMoments?: string[]; // Include key moments in the selected match
+  keyMoments?: string[];
 }
 
 interface WarpcastShareButtonProps {
@@ -21,9 +20,27 @@ interface WarpcastShareButtonProps {
   targetElement?: HTMLElement | null;
 }
 
-export function WarpcastShareButton({ selectedMatch, targetElement }: WarpcastShareButtonProps) {
-   // UseCallback hook for openWarpcastUrl to handle URL opening
-   const openWarpcastUrl = useCallback(() => {
+export function WarpcastShareButton({ selectedMatch }: WarpcastShareButtonProps) {
+  const [context, setContext] = useState<any | undefined>(undefined);
+  const [isContextLoaded, setIsContextLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadContext = async () => {
+      try {
+        const sdkContext = await frameSdk.context;
+        setContext(sdkContext);
+        setIsContextLoaded(true);
+      } catch (error) {
+        console.error("Failed to load Farcaster context:", error);
+      }
+    };
+
+    if (!isContextLoaded) {
+      loadContext();
+    }
+  }, [isContextLoaded]);
+
+  const openWarpcastUrl = useCallback(() => {
     if (selectedMatch) {
       const frameUrl = BASE_URL || 'fc-footy.vercel.app';
       const {
@@ -40,59 +57,30 @@ export function WarpcastShareButton({ selectedMatch, targetElement }: WarpcastSh
       } = selectedMatch;
 
       const keyMomentsText = keyMoments && keyMoments.length > 0
-      ? `\n\nKey Moments:\n${keyMoments.join('\n')}`
-      : "";
+        ? `\n\nKey Moments:\n${keyMoments.join('\n')}`
+        : "";
 
       const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}` : `Kickoff: ${clock}`}${keyMomentsText}\n\nUsing the FC Footy mini-app warpcast.com/~/frames/launch?domain=${frameUrl.replace(/^https?:\/\//, "")} cc @gabedev.eth @kmacb.eth`;
 
       const encodedSummary = encodeURIComponent(matchSummary);
       const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
-      sdk.actions.openUrl(url);
-    }
-  }, [selectedMatch]);
-  console.log('targetElement', targetElement); // TODO: Remove this console.log
-  // Function to capture screenshot
-/*   const takeScreenshot = async () => {
-    try {
-      if (!targetElement) {
-        alert("No element found to capture.");
-        return;
+      console.log(context);
+      if (context === undefined) {
+        window.open(url, '_blank');
+      } else {
+        frameSdk.actions.openUrl(url);
       }
-
-      // Capture the passed target element
-      const canvas = await html2canvas(targetElement);
-
-      // Convert canvas to blob
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve)
-      );
-      if (!blob) throw new Error("Screenshot failed");
-
-      // Write blob to clipboard
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "image/png": blob,
-        }),
-      ]);
-
-      alert("Screenshot copied to clipboard!");
-
-      // Proceed with the cast after screenshot is taken
-      openWarpcastUrl();
-    } catch (error) {
-      console.error("Failed to take screenshot:", error);
-      alert("Failed to take screenshot. Please try again.");
     }
-  }; */
+  }, [selectedMatch, context]);
 
   return (
     <button
-      onClick={openWarpcastUrl} // Call takeScreenshot on click
-      className={`flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
+      onClick={openWarpcastUrl}
+      className="flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
     >
       Share
     </button>
   );
-};
+}
 
 export default WarpcastShareButton;

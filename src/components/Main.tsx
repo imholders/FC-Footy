@@ -24,8 +24,6 @@ export default function Main() {
 
   // UI state
   const [context, setContext] = useState<FrameContext>();
-  // const [isFrameContextOpen, setIsFrameContextOpen] = useState(false);
-  // const [isPrivyUserObjectOpen, setIsPrivyUserObjectOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   // Loading states
@@ -35,6 +33,7 @@ export default function Main() {
   const smartWallet = user?.linkedAccounts.find(
     (account) => account.type === "smart_wallet",
   );
+
   useEffect(() => {
     const load = async () => {
       setContext((await frameSdk.context) as FrameContext);
@@ -98,12 +97,11 @@ export default function Main() {
     <div className="w-[400px] mx-auto py-4 px-2">
       {context === undefined && (
         <h2 className="text-2xl font-bold text-center text-notWhite">
-          FC Footy mini-app. Live match summaries, fantasy league, analysis and more.
+          The Footy App. Match previews, summaries, fantasy EPL, analysis and money games.
         </h2>
       )}
       {!authenticated ? (
         <div className="text-center text-lg text-fontRed">
-          <p>Please log in to access the app.</p>
           <button
             className={`flex-1 sm:flex-none w-full sm:w-48 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed`}
             onClick={handleLogin}
