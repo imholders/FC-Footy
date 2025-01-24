@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { fetchPlayerElements } from './utils/fetchPlayerElements'; // Import the fetch function
-import ScoutAttackers from './ScoutAttackers'; // Import the XGoals component
+import ScoutAttackersFwds from './ScoutAttackersFwds'; // Import the XGoals component
+import ScoutAttakersMids from './ScoutAttackersMids'; // Import the ScoutAttackersMid component (example)
 import ScoutDefenders from './ScoutDefenders'; // Import the ScoutDefenders component
 import ScoutGoalKeepers from './ScoutGoalKeepers'; // Import goalkeepers component (example)
+
 //import FourthComponent from './FourthComponent'; // Import the fourth component (example)
 
 interface Players {
@@ -17,6 +19,7 @@ interface Players {
   expected_assists_per_90: number;
   minutes: number;
   team: string;
+  element_type: number;
 }
 
 const Scout: React.FC = () => {
@@ -25,7 +28,7 @@ const Scout: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // State to manage the selected tab
-  const [selectedTab, setSelectedTab] = useState<string>('attackers'); // Default tab 
+  const [selectedTab, setSelectedTab] = useState<string>('forwards'); // Default tab 
 
   // Fetch player data from the API
   useEffect(() => {
@@ -66,12 +69,21 @@ const Scout: React.FC = () => {
         <div className="flex overflow-x-auto space-x-4 mb-4">
           {/* Tab Buttons */}
           <button
-            onClick={() => handleTabSelect('attackers')}
+            onClick={() => handleTabSelect('forwards')}
             className={`flex-shrink-0 py-1 px-6 text-sm font-semibold cursor-pointer rounded-full border-2 ${
-              selectedTab === 'attackers' ? 'border-limeGreenOpacity text-lightPurple' : 'border-gray-500 text-gray-500'
+              selectedTab === 'forwards' ? 'border-limeGreenOpacity text-lightPurple' : 'border-gray-500 text-gray-500'
             }`}
           >
-            Attacking
+            Forwards
+          </button>
+          
+          <button
+            onClick={() => handleTabSelect('midfielders')}
+            className={`flex-shrink-0 py-1 px-6 text-sm font-semibold cursor-pointer rounded-full border-2 ${
+              selectedTab === 'midfielders' ? 'border-limeGreenOpacity text-lightPurple' : 'border-gray-500 text-gray-500'
+            }`}
+          >
+            Midfielders
           </button>
 
           <button
@@ -97,7 +109,8 @@ const Scout: React.FC = () => {
 
       {/* Conditional Rendering Based on Selected Tab */}
       <div className="bg-purplePanel text-lightPurple rounded-lg">
-        {selectedTab === 'attackers' && <ScoutAttackers playersIn={players} />}
+        {selectedTab === 'forwards' && <ScoutAttackersFwds playersIn={players} />}
+        {selectedTab === 'midfielders' && <ScoutAttakersMids playersIn={players} />}
         {selectedTab === 'defenders' && <ScoutDefenders playersIn={players} />}
         {selectedTab === 'goalkeepers' && <ScoutGoalKeepers playersIn={players} />} {/* Replace with actual component */}
       </div>

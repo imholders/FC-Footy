@@ -16,11 +16,11 @@ interface Players {
   team: string;
 }
 
-interface ScoutAttackersProps {
+interface ScoutAttackersFwdsProps {
   playersIn: Players[]; // Define the expected type for the playersIn prop
 }
 
-const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {
+const ScoutAttackersFwds: React.FC<ScoutAttackersFwdsProps> = ({ playersIn }) => {
   const BASE_URL = 'fc-footy.vercel.app'; // Example base URL for embedding
 
   const handleCastClick = (player: Players, rank: number) => {
@@ -34,7 +34,7 @@ const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {
     sdk.actions.openUrl(url); // Use the Farcaster SDK to open the URL
   };
 
-  const filteredPlayers = playersIn.filter(player => player.minutes > 400);
+  const filteredPlayers = playersIn.filter(player => player.minutes > 400 && player.position === 'Fwd');
 
   // Sort the players based on expected goals per 90 minutes
   const sortedPlayers = filteredPlayers.sort((a, b) => {
@@ -47,16 +47,15 @@ const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {
   const topPlayers = sortedPlayers.slice(0, 20);
 
   return (
-    <div className="w-full h-full overflow-y-auto p-4 pr-2 pl-2">
+    <div className="w-full h-full overflow-y-auto p-2 pr-2 pl-2">
       <table className="w-full bg-darkPurple border border-limeGreenOpacity rounded-lg shadow-lg overflow-hidden">
         <thead>
           <tr className="bg-darkPurple text-notWhite text-center border-b border-limeGreenOpacity">
             <th className="py-1 px-1 font-medium">Rank</th>
-            <th className="py-1 px-1 font-medium">Player</th>
+            <th className="py-0 px-0 font-medium">Player</th>
             <th className="py-1 px-1 font-medium">Team</th>
-            <th className="py-1 px-1 font-medium">Position</th>
-            <th className="py-1 px-1 font-medium">Enhanced XGI</th>
-            <th className="py-1 px-1 font-medium">xGI 90m</th>
+            <th className="py-1 px-1 font-medium" title="Enhanced expected Goal Involvement uses FEPL points">ExGI</th>
+            <th className="py-1 px-1 font-medium"title="Expected Goal Involvement uses assists and shots on goal.">xGI 90m</th>
           </tr>
         </thead>
         <tbody>
@@ -77,7 +76,6 @@ const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {
               <td className="py-1 px-1 text-center">
                 <Image src={player.teamLogo} alt={player.team} width={30} height={30} />
               </td>
-              <td className="py-1 px-1 text-center">{player.position}</td>
               <td className="py-1 px-1 text-center">
                 {((player.expected_assists_per_90 * 3) + (player.expected_goals_per_90 * 5)).toFixed(2)}
               </td>
@@ -90,4 +88,4 @@ const ScoutAttackers: React.FC<ScoutAttackersProps> = ({ playersIn }) => {
   );
 };
 
-export default ScoutAttackers;
+export default ScoutAttackersFwds;
