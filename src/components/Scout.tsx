@@ -20,6 +20,7 @@ interface Players {
   minutes: number;
   team: string;
   element_type: number;
+  saves_per_90: number;
 }
 
 const Scout: React.FC = () => {
