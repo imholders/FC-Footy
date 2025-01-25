@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           scoringEvent?.athletesInvolved?.[0]?.displayName || "";
 
         // Goal detected
-        const message = `${homeTeam.team.shortDisplayName} ${homeScore} - ${awayScore} ${awayTeam.team.shortDisplayName} | Scorer: ${scoringPlayer}`;
+        const message = `${homeTeam.team.shortDisplayName} ${homeScore} - ${awayScore} ${awayTeam.team.shortDisplayName}`;
         goalNotifications.push(message);
 
        // Send notifications to all subscribed users
