@@ -1,0 +1,9 @@
+{
+   
+    "crons": [
+      {
+        "path": "/api/goal-notifications",
+        "schedule": "*/0.5 * * * *"
+      }
+    ]
+  }
