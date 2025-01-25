@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         const fid = parseInt(key.split(":").pop()!);
 
         try {
-            await sendFrameNotification({ fid, title: "Goal Update!", body: message });
+            await sendFrameNotification({ fid, title: "Goal! Goal! Goal!", body: message });
         } catch (error) {
             console.error(`Failed to send notification to FID: ${fid}`, error);
         }
