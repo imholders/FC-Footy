@@ -76,14 +76,16 @@ export async function POST(request: NextRequest) {
         const userKeys = await redis.keys("fc-footy:user:*");
 
         for (const key of userKeys) {
-        const fid = parseInt(key.split(":").pop()!);
-
-        try {
-            await sendFrameNotification({ fid, title: "Goal! Goal! Goal!", body: message });
-        } catch (error) {
-            console.error(`Failed to send notification to FID: ${fid}`, error);
-        }
-        }
+            const notificationPromises = userKeys.map(async (key) => {
+                const fid = parseInt(key.split(":").pop()!);
+                try {
+                  await sendFrameNotification({ fid, title: "Goal! Goal! Goal!", body: message });
+                } catch (error) {
+                  console.error(`Failed to send notification to FID: ${fid}`, error);
+                }
+              });
+              await Promise.all(notificationPromises);
+            }
 
 
         // Update Redis with the new scores
@@ -102,4 +104,3 @@ export async function POST(request: NextRequest) {
   );
 }
 
-export const runtime = "edge";
