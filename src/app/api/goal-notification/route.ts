@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
   let liveEvents;
   try {
     const response = await axios.get(scoreboardUrl);
-    liveEvents = response.data.events;
+    liveEvents = response.data.events.filter(
+        (event: any) => event.competitions[0].status.type.state === "in"
+      );;
   } catch (error) {
     console.error("Error fetching scoreboard:", error);
     return new Response(
