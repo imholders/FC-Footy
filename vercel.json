@@ -1,4 +1,10 @@
 {
+    "functions": {
+    "api/goal-notification": {
+      "runtime": "edge",
+      "version": 1
+    }
+  },
    
     "crons": [
       {
