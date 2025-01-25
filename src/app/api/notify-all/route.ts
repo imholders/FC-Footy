@@ -25,11 +25,19 @@ export async function POST(request: NextRequest) {
 
   for (const key of userKeys) {
     const fid = parseInt(key.split(":").pop()!); // Extract FID from the key
-    const notificationDetails = await getUserNotificationDetails(fid);
+    try {
+      const notificationDetails = await getUserNotificationDetails(fid);
 
-    if (notificationDetails) {
-      const result = await sendFrameNotification({ fid, title, body });
-      notificationResults.push({ fid, result });
+      if (notificationDetails) {
+        const result = await sendFrameNotification({ fid, title, body });
+        notificationResults.push({ fid, result });
+      } else {
+        console.warn(`No notification details found for FID: ${fid}`);
+        notificationResults.push({ fid, result: "No notification details found" });
+      }
+    } catch (error) {
+      console.error(`Error sending notification to FID: ${fid}`, error);
+      notificationResults.push({ fid, result: "Error sending notification" });
     }
   }
 
