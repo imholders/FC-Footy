@@ -1,10 +1,4 @@
 {
-    "functions": {
-    "api/goal-notification": {
-      "runtime": "nodejs18.x"
-    }
-  },
-   
     "crons": [
       {
         "path": "/api/goal-notification",
