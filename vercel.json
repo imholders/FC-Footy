@@ -2,7 +2,7 @@
    
     "crons": [
       {
-        "path": "/api/goal-notifications",
+        "path": "/api/goal-notification",
         "schedule": "*/0.5 * * * *"
       },
       {
