@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         // Extract player who scored
         const scoringEvent = event.competitions[0].status.detail; // Assuming event details are here
         const scoringPlayer =
-          scoringEvent?.athletesInvolved?.[0]?.displayName || "Unknown Player";
+          scoringEvent?.athletesInvolved?.[0]?.displayName || "";
 
         // Goal detected
         const message = `${homeTeam.team.shortDisplayName} ${homeScore} - ${awayScore} ${awayTeam.team.shortDisplayName} | Scorer: ${scoringPlayer}`;
