@@ -13,7 +13,7 @@ const redis = new Redis({
 export async function POST(request: NextRequest) {
   // Fetch live scoreboard from ESPN API
   const scoreboardUrl =
-    "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard";
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard";
 
   let liveEvents;
   try {
