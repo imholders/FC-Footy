@@ -102,10 +102,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
     let teamName = ""; // Capture team name for the moment
     if (teamId === event.competitions[0]?.competitors[0]?.team.id) {
       teamLogo = homeTeamLogo;
-      teamName = event.competitions[0]?.competitors[0].team.abbreviation; // Use home team name
+      teamName = homeTeam // Use home team name -event.competitions[0]?.competitors[0].team.abbreviation;
     } else {
       teamLogo = awayTeamLogo;
-      teamName =  event.competitions[0]?.competitors[0].team.abbreviation; // Use away team name
+      teamName = awayTeam  // Use away team name  event.competitions[0]?.competitors[0].team.abbreviation;
     }
 
     acc.push({
