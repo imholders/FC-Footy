@@ -9,6 +9,7 @@ import MatchesTab from "./MatchesTab";
 import FantasyTab from "./FantasyTab";
 import FalseNineContent from "./FalseNineContent";
 import Scout from "./Scout";
+import Settings from "./Settings";
 // import MoneyGames from "./MoneyGames";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
@@ -129,9 +130,10 @@ export default function Main() {
             {selectedTab === "FC FEPL" && <FantasyTab />}
             {selectedTab === "falseNine" && <FalseNineContent />}
             {selectedTab === "scout Players" && <Scout />}
+            {selectedTab === "settings" && <Settings />}
            {/* {selectedTab === "money Games" && <MoneyGames />}
             {/* Show generic "Coming soon" message if tab is unrecognized */}
-            {!["matches", "FC FEPL", "scout Players", "falseNine"].includes(selectedTab) && (
+            {!["matches", "FC FEPL", "scout Players", "falseNine", "settings"].includes(selectedTab) && (
               <div className="text-center text-lg text-fontRed">Coming soon...</div>
             )}
           </div>

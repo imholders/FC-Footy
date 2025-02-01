@@ -1,7 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-// testing privy and wagmi but keeping fucntion name wagmi for now
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+
+// Dynamically import PrivyProvider (renamed as WagmiProvider)
 const WagmiProvider = dynamic(
   () => import("~/components/providers/PrivyProvider"),
   {
@@ -10,5 +13,11 @@ const WagmiProvider = dynamic(
 );
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <WagmiProvider>{children}</WagmiProvider>;
+  const [queryClient] = useState(() => new QueryClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider>{children}</WagmiProvider>
+    </QueryClientProvider>
+  );
 }
