@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { PinataClient } from '@pinata/sdk';
+import PinataClient from '@pinata/sdk';
 
 // Initialize Pinata SDK using JWT for authentication
 const pinata = new PinataClient({
