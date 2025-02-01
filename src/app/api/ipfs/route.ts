@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+/* import { NextRequest } from 'next/server';
 import PinataClient from '@pinata/sdk';
 
 // Initialize Pinata SDK using JWT for authentication
@@ -50,3 +50,4 @@ export async function POST(request: NextRequest) {
 
 // Specify that this should run on the Edge runtime
 export const runtime = 'edge';
+ */
