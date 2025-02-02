@@ -57,7 +57,6 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [gameContext, setGameContext] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [setIsAiSummaryGenerated] = useState(false);
   // State for fan avatar rows for team1 and team2
   const [matchFanAvatarsTeam1, setMatchFanAvatarsTeam1] = useState<Array<{ fid: number; pfp: string }>>([]);
   const [matchFanAvatarsTeam2, setMatchFanAvatarsTeam2] = useState<Array<{ fid: number; pfp: string }>>([]);
@@ -143,7 +142,6 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
         const data = await RAGameContext(event.id, sportId, competitorsLong);
         if (data && typeof data === 'string') {
           setGameContext(data);
-          setIsAiSummaryGenerated(true);
         } else {
           setGameContext('Failed to fetch AI context.');
         }
@@ -216,8 +214,12 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
     }
   }, [showDetails, event]);
 
-  // Combine both teams' fan avatars into one array.
-  const combinedFanAvatars = [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2];
+  // Combine both teams' fan avatars into one array and deduplicate by fid.
+  const combinedFanAvatars = Array.from(
+    new Map(
+      [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2].map(fan => [fan.fid, fan])
+    ).values()
+  );
 
   return (
     <div key={event.id} className="sidebar">
@@ -383,7 +385,6 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
           )}
         </div>
       )}
-
     </div>
   );
 };
