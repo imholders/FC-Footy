@@ -142,7 +142,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
         const data = await RAGameContext(event.id, sportId, competitorsLong);
         if (data && typeof data === 'string') {
           setGameContext(data);
-          setIsAiSummaryGenerated(true);
+          // setIsAiSummaryGenerated(true);
         } else {
           setGameContext('Failed to fetch AI context.');
         }
