@@ -112,6 +112,37 @@ const teamsByLeague: { [league: string]: { team: string; abbr: string }[] } = {
     { team: "US Lecce", abbr: "lec" },
     { team: "Udinese Calcio", abbr: "udi" },
     { team: "Venezia FC", abbr: "ven" }
+  ],
+  "usa.1": [
+    { team: "Atlanta United", abbr: "atl" },
+    { team: "Austin FC", abbr: "atx" },
+    { team: "Chicago Fire", abbr: "chi" },
+    { team: "FC Cincinnati", abbr: "cin" },
+    { team: "Columbus Crew", abbr: "clb" },
+    { team: "Charlotte FC", abbr: "clt" },
+    { team: "Colorado Rapids", abbr: "col" },
+    { team: "FC Dallas", abbr: "dal" },
+    { team: "D.C. United", abbr: "dcu" },
+    { team: "Houston Dynamo", abbr: "hou" },
+    { team: "Juarez", abbr: "jua" },
+    { team: "LA Galaxy", abbr: "lag" },
+    { team: "LAFC", abbr: "laf" },
+    { team: "Inter Miami", abbr: "mia" },
+    { team: "Minnesota United", abbr: "min" },
+    { team: "New England Revolution", abbr: "ner" },
+    { team: "Nashville SC", abbr: "nsh" },
+    { team: "New York City FC", abbr: "nyc" },
+    { team: "New York Red Bulls", abbr: "nyr" },
+    { team: "Orlando City SC", abbr: "orl" },
+    { team: "Philadelphia Union", abbr: "phi" },
+    { team: "Portland Timbers", abbr: "por" },
+    { team: "Real Salt Lake", abbr: "rsl" },
+    { team: "San Jose Earthquakes", abbr: "sj" },
+    { team: "Seattle Sounders", abbr: "sea" },
+    { team: "Sporting Kansas City", abbr: "skc" },
+    { team: "St. Louis City SC", abbr: "stl" },
+    { team: "Toronto FC", abbr: "tor" },
+    { team: "Vancouver Whitecaps", abbr: "van" }
   ]
 };
 

@@ -22,6 +22,8 @@ const Settings = () => {
   // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  // loadingTeamIds will store the team IDs currently processing an update.
+  const [loadingTeamIds, setLoadingTeamIds] = useState<string[]>([]);
   const { user } = usePrivy();
   const farcasterAccount = user?.linkedAccounts.find(
     (account) => account.type === "farcaster"
@@ -51,6 +53,13 @@ const Settings = () => {
     }
     const teamId = getTeamId(team);
     const fid = Number(farcasterAccount.fid);
+
+    // Prevent new clicks if any update is already in progress.
+    if (loadingTeamIds.length > 0) return;
+
+    // Mark this team as loading.
+    setLoadingTeamIds((prev) => [...prev, teamId]);
+
     let updatedFavTeams: string[];
 
     if (favTeams.includes(teamId)) {
@@ -60,8 +69,12 @@ const Settings = () => {
       console.log(`Adding ${team.name} (${teamId}) as favorite`);
       updatedFavTeams = [...favTeams, teamId];
     }
+
     await setTeamPreferences(fid, updatedFavTeams);
     setFavTeams(updatedFavTeams);
+
+    // Remove the loading state for this team.
+    setLoadingTeamIds((prev) => prev.filter((id) => id !== teamId));
 
     // Clear the search term if any.
     if (searchTerm.trim() !== "") {
@@ -122,7 +135,6 @@ const Settings = () => {
       {/* Scrollable table container */}
       <div className="w-full h-[500px] overflow-y-auto">
         <table className="w-full bg-darkPurple">
-          {/* Conditionally render header only when no favorite team is selected */}
           {favTeams.length === 0 && (
             <thead className="bg-darkPurple">
               <tr className="text-fontRed text-center border-b border-limeGreenOpacity">
@@ -135,51 +147,61 @@ const Settings = () => {
             </thead>
           )}
           <tbody>
-            {orderedTeams.map((team) => (
-              <tr
-                key={getTeamId(team)}
-                onClick={() => handleRowClick(team)}
-                className={`hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer ${
-                  favTeams.includes(getTeamId(team)) ? "bg-purplePanel" : ""
-                }`}
-              >
-                <td className="py-1 px-4 border-b border-limeGreenOpacity text-left">
-                  <div className="flex items-center space-x-2">
-                    <span>{team.name}</span>
-                    {favTeams.includes(getTeamId(team)) && (
-                      <span role="img" aria-label="notification" className="ml-2">
-                        <Image
-                          src="/banny_goal.png"
-                          alt="goal emoji"
-                          className="inline-block w-6 h-6"
-                          width={30}
-                          height={30}
-                        />
-                        {/* Uncomment the red card if needed:
-                        <Image
-                          src="/banny_redcard.png"
-                          alt="red card emoji"
-                          className="inline-block w-6 h-6"
-                          width={30}
-                          height={30}
-                        /> */}
-                      </span>
+            {orderedTeams.map((team) => {
+              const teamId = getTeamId(team);
+              const isLoading = loadingTeamIds.includes(teamId);
+              return (
+                <tr
+                  key={teamId}
+                  // Only allow row clicks if no row is loading.
+                  onClick={() => {
+                    if (!isLoading && loadingTeamIds.length === 0) {
+                      handleRowClick(team);
+                    }
+                  }}
+                  className={`hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer ${
+                    favTeams.includes(teamId) ? "bg-purplePanel" : ""
+                  }`}
+                >
+                  <td className="py-1 px-4 border-b border-limeGreenOpacity text-left">
+                    <div className="flex items-center space-x-2">
+                      <span>{team.name}</span>
+                      {favTeams.includes(teamId) && (
+                        <span role="img" aria-label="notification" className="ml-2">
+                          <Image
+                            src="/banny_goal.png"
+                            alt="goal emoji"
+                            className="inline-block w-6 h-6"
+                            width={30}
+                            height={30}
+                          />
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-1 px-4 border-b border-limeGreenOpacity text-center">
+                    {isLoading ? (
+                      <Image
+                        src="/defifa_spinner.gif"
+                        alt="loading"
+                        width={30}
+                        height={30}
+                      />
+                    ) : (
+                      <Image
+                        src={team.logoUrl}
+                        alt={team.name}
+                        width={30}
+                        height={30}
+                      />
                     )}
-                  </div>
-                </td>
-                <td className="py-1 px-4 border-b border-limeGreenOpacity text-center">
-                  <Image
-                    src={team.logoUrl}
-                    alt={team.name}
-                    width={30}
-                    height={30}
-                  />
-                </td>
-                <td className="py-1 px-4 border-b border-limeGreenOpacity text-right">
-                  {team.league}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="py-1 px-4 border-b border-limeGreenOpacity text-right">
+                    {team.league}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

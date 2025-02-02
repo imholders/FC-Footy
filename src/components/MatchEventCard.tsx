@@ -329,6 +329,8 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                   </div>
                 ))}
               </div>
+            </>
+          )}
 
               {/* Combined Fan Avatars Section */}
               <div className="mt-4">
@@ -353,9 +355,6 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                   )}
                 </div>
               </div>
-            </>
-          )}
-
           <div className="mt-4 flex flex-row gap-4 justify-center items-center">
             <button
               className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
