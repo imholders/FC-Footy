@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 import axios from "axios";
 import { sendFrameNotification } from "~/lib/notifications";
+import { getFansForTeams } from "~/lib/kvPerferences";
 
 const redis = new Redis({
   url: process.env.NEXT_PUBLIC_KV_REST_API_URL,
@@ -89,13 +90,24 @@ export async function POST(request: NextRequest) {
         const message = `${homeTeam.team.shortDisplayName} ${homeScore} - ${awayScore} ${awayTeam.team.shortDisplayName} | ${scoringPlayer} scored at ${clockTime}`;
         goalNotifications.push(message);
 
-        // Send notifications to all subscribed footies
-        const userKeys = await redis.keys("fc-footy:user:*");
-        const batchSize = 40;
-        for (let i = 0; i < userKeys.length; i += batchSize) {
-          const batch = userKeys.slice(i, i + batchSize);
-          const notificationPromises = batch.map(async (key) => {
-            const fid = parseInt(key.split(":").pop()!);
+          // **Get all fans for both teams**
+      const homeFans = await getFansForTeams([homeTeam.team.abbreviation]);
+      const awayFans = await getFansForTeams([awayTeam.team.abbreviation]);
+
+      // **Combine and remove duplicates using a Set**
+      const uniqueFansToNotify = new Set([...homeFans, ...awayFans]);
+
+      // Send notifications to all subscribed footies
+      const userKeys = await redis.keys("fc-footy:user:*");
+
+      // Filter to ensure we only notify users currently subscribed
+      const fidsToNotify = Array.from(uniqueFansToNotify).filter((fid) =>
+        userKeys.some((key) => key.endsWith(`:${fid}`))
+      );
+         const batchSize = 40;
+        for (let i = 0; i < fidsToNotify.length; i += batchSize) {
+          const batch = fidsToNotify.slice(i, i + batchSize);
+          const notificationPromises = batch.map(async (fid) => {
             try {
               await sendFrameNotification({
                 fid,
