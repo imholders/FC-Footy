@@ -11,23 +11,15 @@ function getTeamPreferencesKey(fid: number): string {
 
 /**
  * Get the team preferences for a user.
- *
- * @param fid - The user's unique identifier.
- * @returns An array of team abbreviations or null if not set.
  */
 export async function getTeamPreferences(fid: number): Promise<string[] | null> {
   const res = await redis.get<string[]>(getTeamPreferencesKey(fid));
   console.log("getTeamPreferences", res);
-  console.log("redis", redis);
-
   return res;
 }
 
 /**
  * Set the team preferences for a user.
- *
- * @param fid - The user's unique identifier.
- * @param teams - An array of team abbreviations to store.
  */
 export async function setTeamPreferences(fid: number, teams: string[]): Promise<void> {
   console.log("setTeamPreferences", teams, fid);
@@ -36,9 +28,33 @@ export async function setTeamPreferences(fid: number, teams: string[]): Promise<
 
 /**
  * Delete the team preferences for a user.
- *
- * @param fid - The user's unique identifier.
  */
 export async function deleteTeamPreferences(fid: number): Promise<void> {
   await redis.del(getTeamPreferencesKey(fid));
+}
+
+/**
+ * Get all fan FIDs for a given team from KV.
+ * This function scans keys with the prefix "fc-footy:preference:" and returns an array
+ * of FIDs for which the stored preferences include the given teamAbbreviation.
+ */
+export async function getFansForTeam(teamAbbreviation: string): Promise<number[]> {
+  console.log("Scanning keys for fans of team:", teamAbbreviation);
+  const keys = await redis.keys("fc-footy:preference:*");
+  console.log("Found keys:", keys);
+  const matchingFids: number[] = [];
+  for (const key of keys) {
+    const preferences = await redis.get<string[]>(key);
+    if (preferences && preferences.includes(teamAbbreviation)) {
+      // key should be in the form "fc-footy:preference:{fid}"
+      const parts = key.split(":");
+      const fidStr = parts[parts.length - 1];
+      const fid = Number(fidStr);
+      if (!isNaN(fid)) {
+        matchingFids.push(fid);
+      }
+    }
+  }
+  console.log("Matching fan FIDs for team", teamAbbreviation, matchingFids);
+  return matchingFids;
 }
