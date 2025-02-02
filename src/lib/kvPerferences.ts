@@ -23,7 +23,22 @@ export async function getTeamPreferences(fid: number): Promise<string[] | null> 
  */
 export async function setTeamPreferences(fid: number, teams: string[]): Promise<void> {
   console.log("setTeamPreferences", teams, fid);
+
+  // Remove the user from existing team-fans index first
+  const oldPreferences = await getTeamPreferences(fid);
+  if (oldPreferences) {
+    for (const team of oldPreferences) {
+      await redis.srem(`fc-footy:team-fans:${team}`, fid);
+    }
+  }
+
+  // Update the preferences
   await redis.set(getTeamPreferencesKey(fid), teams);
+
+  // Add the user to the new team-fans index
+  for (const team of teams) {
+    await redis.sadd(`fc-footy:team-fans:${team}`, fid);
+  }
 }
 
 /**
@@ -57,4 +72,21 @@ export async function getFansForTeam(teamAbbreviation: string): Promise<number[]
   }
   console.log("Matching fan FIDs for team", teamAbbreviation, matchingFids);
   return matchingFids;
+}
+
+/**
+ * Get all fan FIDs for a given list of teams from KV.
+ * This function scans keys with the prefix "fc-footy:preference:" and returns an array
+ * of FIDs for which the stored preferences include any of the given teams.
+ */
+
+export async function getFansForTeams(teams: string[]): Promise<number[]> {
+  const fanFidsSet = new Set<number>();
+
+  for (const team of teams) {
+    const teamFans = await redis.smembers<number[]>(`fc-footy:team-fans:${team}`);
+    teamFans.forEach((fid) => fanFidsSet.add(fid));
+  }
+
+  return Array.from(fanFidsSet);
 }
