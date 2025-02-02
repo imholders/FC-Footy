@@ -5,6 +5,7 @@ import RAGameContext from './ai/RAGameContext';
 import { WarpcastShareButton } from './ui/WarpcastShareButton';
 import { getFansForTeam } from '../lib/kvPerferences';
 import { fetchFanPfp } from './utils/fetchFCProfile';
+import { fetchTeamLogos } from './utils/fetchTeamLogos';
 
 interface Detail {
   athletesInvolved: Array<{ displayName: string }>;
@@ -52,6 +53,17 @@ interface SelectedMatch {
   keyMoments: string[];
 }
 
+// Extended Team interface (from fetchTeamLogos) including league information.
+interface Team {
+  name: string;
+  abbreviation: string;
+  league: string;
+  logoUrl: string;
+}
+
+// Helper to generate unique team ID from a Team object.
+// const getTeamId = (team: Team): string => `${team.league}-${team.abbreviation.toLowerCase()}`;
+
 const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(null);
   const [gameContext, setGameContext] = useState<string | null>(null);
@@ -60,7 +72,13 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   // State for fan avatar rows for team1 and team2
   const [matchFanAvatarsTeam1, setMatchFanAvatarsTeam1] = useState<Array<{ fid: number; pfp: string }>>([]);
   const [matchFanAvatarsTeam2, setMatchFanAvatarsTeam2] = useState<Array<{ fid: number; pfp: string }>>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const elementRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch team logos (which include league information) on mount.
+  useEffect(() => {
+    fetchTeamLogos().then((data) => setTeams(data));
+  }, []);
 
   // Extract match info from event data.
   const competitorsLong = event.name;
@@ -173,8 +191,18 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       const team2 = event.competitions[0]?.competitors[1]?.team;
       if (team1 && team2) {
         try {
-          console.log("Fetching fans for team1:", team1.abbreviation.toLowerCase());
-          const fanFidsTeam1 = await getFansForTeam(team1.abbreviation.toLowerCase());
+          // Determine unique team IDs using our fetched teams.
+          const team1Data = teams.find(
+            (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
+          );
+          const team2Data = teams.find(
+            (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
+          );
+          const team1UniqueId = team1Data ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}` : team1.abbreviation.toLowerCase();
+          const team2UniqueId = team2Data ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}` : team2.abbreviation.toLowerCase();
+
+          console.log("Fetching fans for team1:", team1UniqueId);
+          const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
           console.log("Fan FIDs for team1:", fanFidsTeam1);
           const fanPfpPromises1 = fanFidsTeam1.map(async (fid) => {
             const pfp = await fetchFanPfp(fid);
@@ -186,8 +214,8 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
           console.log("Valid fans for team1:", validFans1);
           setMatchFanAvatarsTeam1(validFans1);
 
-          console.log("Fetching fans for team2:", team2.abbreviation.toLowerCase());
-          const fanFidsTeam2 = await getFansForTeam(team2.abbreviation.toLowerCase());
+          console.log("Fetching fans for team2:", team2UniqueId);
+          const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
           console.log("Fan FIDs for team2:", fanFidsTeam2);
           const fanPfpPromises2 = fanFidsTeam2.map(async (fid) => {
             const pfp = await fetchFanPfp(fid);
@@ -212,12 +240,12 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       setMatchFanAvatarsTeam1([]);
       setMatchFanAvatarsTeam2([]);
     }
-  }, [showDetails, event]);
+  }, [showDetails, event, teams]);
 
   // Combine both teams' fan avatars into one array and deduplicate by fid.
   const combinedFanAvatars = Array.from(
     new Map(
-      [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2].map(fan => [fan.fid, fan])
+      [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2].map((fan) => [fan.fid, fan])
     ).values()
   );
 

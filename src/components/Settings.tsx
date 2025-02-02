@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import Image from "next/image";
-import { fetchTeamLogos } from "./utils/fetchEPLTable";
+import { fetchTeamLogos } from "./utils/fetchTeamLogos";
 import {
   getTeamPreferences,
   setTeamPreferences,
@@ -10,11 +10,16 @@ import {
 interface Team {
   name: string;
   abbreviation: string;
+  league: string;
   logoUrl: string;
 }
 
+// Helper function to generate a unique ID for each team.
+const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
+
 const Settings = () => {
   const [teams, setTeams] = useState<Team[]>([]);
+  // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const { user } = usePrivy();
@@ -25,7 +30,6 @@ const Settings = () => {
   useEffect(() => {
     if (farcasterAccount) {
       const fid = Number(farcasterAccount.fid);
-      // Fetch team preferences from Redis
       getTeamPreferences(fid)
         .then((teamsFromRedis) => {
           console.log("Existing team preferences:", teamsFromRedis);
@@ -37,7 +41,6 @@ const Settings = () => {
           console.error("Error fetching team preferences:", err);
         });
     }
-
     fetchTeamLogos().then((data) => setTeams(data));
   }, [farcasterAccount]);
 
@@ -46,22 +49,21 @@ const Settings = () => {
       console.error("User not authenticated");
       return;
     }
-
+    const teamId = getTeamId(team);
     const fid = Number(farcasterAccount.fid);
     let updatedFavTeams: string[];
 
-    if (favTeams.includes(team.abbreviation)) {
-      console.log(`Removing ${team.name} from notifications`);
-      updatedFavTeams = favTeams.filter((t) => t !== team.abbreviation);
+    if (favTeams.includes(teamId)) {
+      console.log(`Removing ${team.name} (${teamId}) from notifications`);
+      updatedFavTeams = favTeams.filter((id) => id !== teamId);
     } else {
-      console.log(`Adding ${team.name} as favorite`);
-      updatedFavTeams = [...favTeams, team.abbreviation];
+      console.log(`Adding ${team.name} (${teamId}) as favorite`);
+      updatedFavTeams = [...favTeams, teamId];
     }
-    // Update the preferences in Redis
     await setTeamPreferences(fid, updatedFavTeams);
     setFavTeams(updatedFavTeams);
 
-    // Clear the search term if any
+    // Clear the search term if any.
     if (searchTerm.trim() !== "") {
       setSearchTerm("");
     }
@@ -76,17 +78,17 @@ const Settings = () => {
   const orderedTeams =
     searchTerm.trim() === ""
       ? [...filteredTeams].sort((a, b) => {
-          const aFav = favTeams.includes(a.abbreviation);
-          const bFav = favTeams.includes(b.abbreviation);
+          const aFav = favTeams.includes(getTeamId(a));
+          const bFav = favTeams.includes(getTeamId(b));
           if (aFav === bFav) return 0;
           return aFav ? -1 : 1;
         })
       : filteredTeams;
 
-  // Look up the full team object for the favorite team (if any)
+  // Lookup the full team object for the first favorite team (if any).
   const favTeamObj =
     favTeams.length > 0
-      ? teams.find((team) => team.abbreviation === favTeams[0])
+      ? teams.find((team) => getTeamId(team) === favTeams[0])
       : null;
 
   return (
@@ -106,11 +108,11 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Search input aligned with table */}
+      {/* Search input */}
       <div className="mb-4 w-full">
         <input
           type="text"
-          placeholder="Search EPL clubs... "
+          placeholder="Search clubs..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-darkPurple p-2 border rounded-md border-limeGreenOpacity focus:outline-none focus:ring-2 focus:ring-darkPurple"
@@ -127,39 +129,40 @@ const Settings = () => {
                 <th className="py-1 text-left font-medium">
                   Select clubs to get notifications
                 </th>
+                <th className="py-1 text-center font-medium"></th>
+                <th className="py-1 text-right font-medium"></th>
               </tr>
             </thead>
           )}
           <tbody>
             {orderedTeams.map((team) => (
               <tr
-                key={team.abbreviation}
+                key={getTeamId(team)}
                 onClick={() => handleRowClick(team)}
                 className={`hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer ${
-                  favTeams.includes(team.abbreviation) ? "bg-purplePanel" : ""
+                  favTeams.includes(getTeamId(team)) ? "bg-purplePanel" : ""
                 }`}
               >
-                <td className="py-1 px-4 border-b border-limeGreenOpacity">
+                <td className="py-1 px-4 border-b border-limeGreenOpacity text-left">
                   <div className="flex items-center space-x-2">
                     <span>{team.name}</span>
-                    {favTeams.includes(team.abbreviation) && (
-                      <span
-                        role="img"
-                        aria-label="notification"
-                        className="ml-2"
-                      >
+                    {favTeams.includes(getTeamId(team)) && (
+                      <span role="img" aria-label="notification" className="ml-2">
                         <Image
                           src="/banny_goal.png"
                           alt="goal emoji"
                           className="inline-block w-6 h-6"
-                          width={30} height={30}
+                          width={30}
+                          height={30}
                         />
+                        {/* Uncomment the red card if needed:
                         <Image
                           src="/banny_redcard.png"
                           alt="red card emoji"
                           className="inline-block w-6 h-6"
-                          width={30} height={30}
-                        />
+                          width={30}
+                          height={30}
+                        /> */}
                       </span>
                     )}
                   </div>
@@ -171,6 +174,9 @@ const Settings = () => {
                     width={30}
                     height={30}
                   />
+                </td>
+                <td className="py-1 px-4 border-b border-limeGreenOpacity text-right">
+                  {team.league}
                 </td>
               </tr>
             ))}
