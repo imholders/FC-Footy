@@ -49,7 +49,12 @@ const uploadFilesToIPFS = async (jsonData: object): Promise<Record<string, PinRe
     const uploadResults: Record<string, PinResponse> = {};
 
     for (const [fileName, fileContent] of Object.entries(files)) {
-      const upload = await pinata.upload.file(fileContent).addMetadata({
+      // Convert Blob to a File by specifying a file name, type, and lastModified date.
+      const fileObj = new File([fileContent], fileName, { 
+        type: fileContent.type, 
+        lastModified: Date.now() 
+      });
+      const upload = await pinata.upload.file(fileObj).addMetadata({
         name: fileName,
       });
       uploadResults[fileName] = upload;
