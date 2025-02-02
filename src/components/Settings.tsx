@@ -14,7 +14,6 @@ interface Team {
 }
 
 const Settings = () => {
-  const [status, setStatus] = useState<string>("");
   const [teams, setTeams] = useState<Team[]>([]);
   const [favTeams, setFavTeams] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -44,9 +43,7 @@ const Settings = () => {
 
   const handleRowClick = async (team: Team) => {
     if (!farcasterAccount) {
-      setStatus("User not authenticated");
-      // Clear status after 2 seconds
-      setTimeout(() => setStatus(""), 2000);
+      console.error("User not authenticated");
       return;
     }
 
@@ -54,10 +51,10 @@ const Settings = () => {
     let updatedFavTeams: string[];
 
     if (favTeams.includes(team.abbreviation)) {
-      setStatus(`Removing ${team.name} from notifications`);
+      console.log(`Removing ${team.name} from notifications`);
       updatedFavTeams = favTeams.filter((t) => t !== team.abbreviation);
     } else {
-      setStatus(`Adding ${team.name} as favorite`);
+      console.log(`Adding ${team.name} as favorite`);
       updatedFavTeams = [...favTeams, team.abbreviation];
     }
     // Update the preferences in Redis
@@ -68,9 +65,6 @@ const Settings = () => {
     if (searchTerm.trim() !== "") {
       setSearchTerm("");
     }
-
-    // Clear status message after 2 seconds
-    setTimeout(() => setStatus(""), 2000);
   };
 
   // Filter teams based on the search term (case-insensitive)
@@ -89,24 +83,31 @@ const Settings = () => {
         })
       : filteredTeams;
 
-  return (
-    <div className="p-4">
-      {/* Fixed status container */}
-      <div className="min-h-[2rem]">
-        {status && <p className="text-fontRed">{status}</p>}
-      </div>
+  // Look up the full team object for the favorite team (if any)
+  const favTeamObj =
+    favTeams.length > 0
+      ? teams.find((team) => team.abbreviation === favTeams[0])
+      : null;
 
+  return (
+    <div className="p-4 max-w-3xl mx-auto">
       {favTeams.length > 0 && (
-        <div className="mb-4 text-center text-notWhite font-semibold">
-          Favorite Team: {favTeams[0]}{" "}
-          <span role="img" aria-label="notification">
-            🔔
-          </span>
+        <div className="mb-2 text-center text-notWhite font-semibold">
+          Favorite Team: {favTeamObj ? favTeamObj.name : favTeams[0]}{" "}
+          {favTeamObj && (
+            <Image
+              src={favTeamObj.logoUrl}
+              alt={favTeamObj.name}
+              width={30}
+              height={30}
+              className="inline-block ml-2"
+            />
+          )}
         </div>
       )}
 
-      {/* Search input */}
-      <div className="mb-4">
+      {/* Search input aligned with table */}
+      <div className="mb-4 w-full">
         <input
           type="text"
           placeholder="Search clubs..."
@@ -117,25 +118,28 @@ const Settings = () => {
       </div>
 
       {/* Scrollable table container */}
-      <div className="w-full h-[400px] overflow-y-auto p-2">
-        <table className="w-full bg-darkPurple border border-limeGreenOpacity rounded-lg shadow-lg">
-          <thead className="bg-darkPurple">
-            <tr className="text-notWhite text-center border-b border-limeGreenOpacity">
-              <th className="py-1 px-1 font-medium">
-                Select clubs to get notifications
-              </th>
-            </tr>
-          </thead>
+      <div className="w-full h-[500px] overflow-y-auto">
+        <table className="w-full bg-darkPurple">
+          {/* Conditionally render header only when no favorite team is selected */}
+          {favTeams.length === 0 && (
+            <thead className="bg-darkPurple">
+              <tr className="text-fontRed text-center border-b border-limeGreenOpacity">
+                <th className="py-1 text-left font-medium">
+                  Select clubs to get notifications
+                </th>
+              </tr>
+            </thead>
+          )}
           <tbody>
             {orderedTeams.map((team) => (
               <tr
                 key={team.abbreviation}
                 onClick={() => handleRowClick(team)}
-                className={`border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer ${
+                className={`hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer ${
                   favTeams.includes(team.abbreviation) ? "bg-purplePanel" : ""
                 }`}
               >
-                <td className="py-1 px-1">
+                <td className="py-1 px-4 border-b border-limeGreenOpacity">
                   <div className="flex items-center space-x-2">
                     <span>{team.name}</span>
                     {favTeams.includes(team.abbreviation) && (
@@ -144,12 +148,21 @@ const Settings = () => {
                         aria-label="notification"
                         className="ml-2"
                       >
-                        🔔
+                        <img
+                          src="/banny_goal.png"
+                          alt="goal emoji"
+                          className="inline-block w-6 h-6"
+                        />
+                        <img
+                          src="/banny_redcard.png"
+                          alt="red card emoji"
+                          className="inline-block w-6 h-6"
+                        />
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="py-1 px-1 text-center">
+                <td className="py-1 px-4 border-b border-limeGreenOpacity text-center">
                   <Image
                     src={team.logoUrl}
                     alt={team.name}

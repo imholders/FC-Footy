@@ -1,6 +1,11 @@
-/* import { NextRequest } from 'next/server';
-import PinataClient from '@pinata/sdk';
+import { NextRequest } from 'next/server';
+//import PinataClient from '@pinata/sdk';
 
+
+export async function POST(request: NextRequest) {
+  return new Response('Hello, world!',request);
+}
+/*
 // Initialize Pinata SDK using JWT for authentication
 const pinata = new PinataClient({
   jwt: process.env.PINATA_JWT, // Use JWT for authentication
@@ -47,7 +52,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
+*/
 // Specify that this should run on the Edge runtime
 export const runtime = 'edge';
- */
