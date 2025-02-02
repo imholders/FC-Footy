@@ -57,7 +57,8 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [gameContext, setGameContext] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  // State for separate fan avatar rows for team1 and team2
+  const [setIsAiSummaryGenerated] = useState(false);
+  // State for fan avatar rows for team1 and team2
   const [matchFanAvatarsTeam1, setMatchFanAvatarsTeam1] = useState<Array<{ fid: number; pfp: string }>>([]);
   const [matchFanAvatarsTeam2, setMatchFanAvatarsTeam2] = useState<Array<{ fid: number; pfp: string }>>([]);
   const elementRef = useRef<HTMLDivElement | null>(null);
@@ -142,7 +143,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
         const data = await RAGameContext(event.id, sportId, competitorsLong);
         if (data && typeof data === 'string') {
           setGameContext(data);
-          // setIsAiSummaryGenerated(true);
+          setIsAiSummaryGenerated(true);
         } else {
           setGameContext('Failed to fetch AI context.');
         }
@@ -165,13 +166,11 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
 
   const toggleDetails = () => {
     setShowDetails(!showDetails);
-    //setIsAiSummaryGenerated(false);
   };
 
-  // When key moments are toggled on (showDetails true), fetch fan avatars for each team.
+  // When key moments are toggled on, fetch fan avatars for each team separately.
   useEffect(() => {
     const fetchTeamFanAvatars = async () => {
-      // Assume match teams are the two competitors from event competitions.
       const team1 = event.competitions[0]?.competitors[0]?.team;
       const team2 = event.competitions[0]?.competitors[1]?.team;
       if (team1 && team2) {
@@ -216,6 +215,9 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       setMatchFanAvatarsTeam2([]);
     }
   }, [showDetails, event]);
+
+  // Combine both teams' fan avatars into one array.
+  const combinedFanAvatars = [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2];
 
   return (
     <div key={event.id} className="sidebar">
@@ -297,19 +299,15 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                   </div>
                 ))}
               </div>
-          </>
-          )}
 
-          {/* Fan Avatars Section: Always shown when details are visible */}
-          <div className="mt-4">
-            {event.competitions[0]?.competitors[0]?.team && (
-              <>
+              {/* Combined Fan Avatars Section */}
+              <div className="mt-4">
                 <h4 className="text-notWhite font-semibold mb-1">
-                  Follow followers of {event.competitions[0].competitors[0].team.abbreviation} ({matchFanAvatarsTeam1.length})
+                  Fans ({combinedFanAvatars.length})
                 </h4>
-                <div className="flex space-x-1 mt-1 mb-2 overflow-x-auto">
-                  {matchFanAvatarsTeam1.length > 0 ? (
-                    matchFanAvatarsTeam1.map((fan) => (
+                <div className="flex space-x-1 overflow-x-auto">
+                  {combinedFanAvatars.length > 0 ? (
+                    combinedFanAvatars.map((fan) => (
                       <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
                         <Image
                           src={fan.pfp}
@@ -324,33 +322,9 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                     <span className="text-sm text-gray-400">No fans found.</span>
                   )}
                 </div>
-              </>
-            )}
-            {event.competitions[0]?.competitors[1]?.team && (
-              <>
-                <h4 className="text-notWhite font-semibold mb-1">
-                Follow followers of {event.competitions[0].competitors[1].team.abbreviation} ({matchFanAvatarsTeam2.length})
-                </h4>
-                <div className="flex space-x-1 overflow-x-auto">
-                  {matchFanAvatarsTeam2.length > 0 ? (
-                    matchFanAvatarsTeam2.map((fan) => (
-                      <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
-                        <Image
-                          src={fan.pfp}
-                          alt={`Fan ${fan.fid}`}
-                          width={20}
-                          height={20}
-                          className="rounded-full"
-                        />
-                      </Link>
-                    ))
-                  ) : (
-                    <span className="text-sm text-gray-400">No fans found. Invite some!</span>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
 
           <div className="mt-4 flex flex-row gap-4 justify-center items-center">
             <button
@@ -410,7 +384,6 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
         </div>
       )}
 
-      {/* (The search input and scrollable table have been removed per request.) */}
     </div>
   );
 };

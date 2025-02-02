@@ -148,15 +148,17 @@ const Settings = () => {
                         aria-label="notification"
                         className="ml-2"
                       >
-                        <img
+                        <Image
                           src="/banny_goal.png"
                           alt="goal emoji"
                           className="inline-block w-6 h-6"
+                          width={30} height={30}
                         />
-                        <img
+                        <Image
                           src="/banny_redcard.png"
                           alt="red card emoji"
                           className="inline-block w-6 h-6"
+                          width={30} height={30}
                         />
                       </span>
                     )}
