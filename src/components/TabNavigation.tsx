@@ -7,7 +7,7 @@ interface TabNavigationProps {
 }
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ selectedTab, setSelectedTab }) => {
-  const tabs = ["matches", "FC FEPL", "scout Players", "falseNine", "Footy Games"]; //TODO: removed LIVE CHAT - "live chat"
+  const tabs = ["matches", "FC FEPL", "scout Players", "falseNine", "settings"]; //TODO: removed LIVE CHAT - "live chat"
 
   return (
     <div className="flex overflow-x-auto space-x-4 mb-4 sticky top-0 z-10 bg-darkPurple">
