@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import SettingsfollowClubs from "./SettingsFollowClubs";
+import ContentFalseNine from "./ContentFalseNine";
 
-const Settings = () => {
-  const [selectedTab, setSelectedTab] = useState<string>("followClubs");
+const ContentTab = () => {
+  const [selectedTab, setSelectedTab] = useState<string>("falseNine");
 
   const handleTabSelect = (tab: string) => {
     setSelectedTab(tab);
@@ -11,23 +11,23 @@ const Settings = () => {
   return (
     <div className="mb-4">
       {/* Horizontal Scrollable Menu for Tabs */}
-      <h2 className="font-2xl text-notWhite font-bold mb-4">Preferences</h2>        
+      <h2 className="font-2xl text-notWhite font-bold mb-4"> Deep dives & match highlights</h2>        
       <div className="flex overflow-x-auto space-x-4 mb-4">
         <button
-          onClick={() => handleTabSelect("followClubs")}
+          onClick={() => handleTabSelect("falseNine")}
           className={`flex-shrink-0 py-1 px-6 text-sm font-semibold cursor-pointer rounded-full border-2 ${
-            selectedTab === "followClubs" ? "border-limeGreenOpacity text-lightPurple" : "border-gray-500 text-gray-500"
+            selectedTab === "falseNine" ? "border-limeGreenOpacity text-lightPurple" : "border-gray-500 text-gray-500"
           }`}
         >
-          Follow Teams
+          The False Nine
         </button>
       </div>
 
       <div className="bg-purplePanel text-lightPurple rounded-lg p-2">
-        {selectedTab === "followClubs" && <SettingsfollowClubs />}
+        {selectedTab === "falseNine" && <ContentFalseNine />}
       </div>
     </div>
   );
 };
 
-export default Settings;
+export default ContentTab;

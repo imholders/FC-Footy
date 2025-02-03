@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import FantasyRow from './FantasyRow'; // Import the FantasyRow component
-import { fetchFantasyData } from './utils/fetchFantasyData'; // Adjust the import path accordingly
+import FantasyRow from './FantasyRow';
+import { fetchFantasyData } from './utils/fetchFantasyData';
 
-// Define the FantasyEntry type
 interface FantasyEntry {
   pfp: string | null;
   team: {
@@ -17,73 +16,76 @@ interface FantasyEntry {
   total: number | null;
 }
 
-const FantasyTab = () => {
-  const [fantasyData, setFantasyData] = useState<FantasyEntry[]>([]); // Store fantasy data
-  const [loadingFantasy, setLoadingFantasy] = useState<boolean>(false); // Loading state
-  const [errorFantasy, setErrorFantasy] = useState<string | null>(null); // Error state
+const loadingMessages = [
+  "Waiting for VAR is the hardest part...",
+  "It is the hope that kills you.",
+  "Loading... like a VAR check.",
+  "Still faster than a Tottenham rebuild.",
+  "Patience is a virtue, ask a ManU fan.",
+  "Like VAR but with less drama"
+];
 
-  // Fetch fantasy data when the component mounts
+const FantasyTab = () => {
+  const [fantasyData, setFantasyData] = useState<FantasyEntry[]>([]);
+  const [loadingFantasy, setLoadingFantasy] = useState<boolean>(false);
+  const [errorFantasy, setErrorFantasy] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
+
   useEffect(() => {
     const fetchData = async () => {
       setLoadingFantasy(true);
       setErrorFantasy(null);
-
+      setLoadingMessage(loadingMessages[Math.floor(Math.random() * loadingMessages.length)]);
+      
       try {
-        const data = await fetchFantasyData(); // Call the function to fetch data
-        handleFetchedData(data); // Process and set the data
+        const data = await fetchFantasyData();
+        handleFetchedData(data);
       } catch (error) {
         if (error instanceof Error) {
-          setErrorFantasy(error.message); // Set the error message
+          setErrorFantasy(error.message);
         } else {
-          setErrorFantasy('An unknown error occurred'); // Fallback error message
+          setErrorFantasy('An unknown error occurred');
         }
       } finally {
-        setLoadingFantasy(false); // Reset loading state
+        setLoadingFantasy(false);
       }
     };
 
     fetchData();
-  }, []); // Empty dependency array means this will run once when the component mounts
+  }, []);
 
-  // Handle the fetched data and update state
   const handleFetchedData = (data: FantasyEntry[]) => {
     const updatedData = data.map(item => ({
       ...item,
-      rank: item.rank ?? 0, // Replace null rank with a default value (e.g., 0)
+      rank: item.rank ?? 0,
     }));
-    setFantasyData(updatedData); // Set the updated data
+    setFantasyData(updatedData);
   };
 
   return (
     <div>
-      <h2 className="font-2xl text-notWhite font-bold mb-4">Table</h2>
+      <h2 className="font-2xl text-notWhite font-bold mb-4">FC Fantasy League Table</h2>
 
       {loadingFantasy ? (
-        <div className="text-lightPurple">
-          <div>Loading fantasy stats...</div>
-          <div>
-            The longest VAR check in Premier League history was five minutes and 37 seconds long and took place during a March 2024 match between West Ham and Aston Villa.
-          </div>
+        <div className="text-lightPurple text-center animate-pulse">
+          <div>{loadingMessage}</div>
         </div>
       ) : errorFantasy ? (
         <div className="text-red-500">{errorFantasy}</div>
       ) : fantasyData.length > 0 ? (
-        <div className="bg-purplePanel p-4 rounded-md">
-          <table className="w-full">
+        <div className="bg-purplePanel p-2 rounded-md">
+          <table className="w-full bg-darkPurple border border-limeGreenOpacity rounded-lg shadow-lg overflow-hidden">
             <thead>
-              <tr>
-                <th className="text-notWhite text-left px-4">FC</th>
-                <th className="text-notWhite text-left">Manager</th>
-                <th className="text-notWhite text-left px-4">Rank</th>
-                <th className="text-notWhite text-left px-4">Pts</th>
+              <tr className="bg-darkPurple text-notWhite text-center border-b border-limeGreenOpacity">
+                <th className="py-1 px-1 font-medium">Rank</th>
+                <th className="py-1 px-1 font-medium">Profile</th>
+                <th className="py-0 px-0 font-medium">Manager</th>
+                <th className="py-1 px-1 font-medium">Total</th>
               </tr>
             </thead>
-            <tbody className="text-lightPurple text-sm mt-2 border-spacing-2">
+            <tbody>
               {fantasyData.map((entry, index) => (
-                <FantasyRow
-                  key={index}
-                  entry={entry}
-                />
+                <FantasyRow key={index} entry={entry} />
               ))}
             </tbody>
           </table>

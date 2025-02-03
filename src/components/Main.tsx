@@ -7,7 +7,7 @@ import frameSdk from "@farcaster/frame-sdk";
 import TabNavigation from "./TabNavigation";
 import MatchesTab from "./MatchesTab";
 import FantasyTab from "./FantasyTab";
-import FalseNineContent from "./FalseNineContent";
+import ContentTab from "./ContentTab";
 import Scout from "./Scout";
 import Settings from "./Settings";
 // import MoneyGames from "./MoneyGames";
@@ -128,12 +128,12 @@ export default function Main() {
           <div className="bg-darkPurple p-4 rounded-md text-white">
             {selectedTab === "matches" && <MatchesTab />}
             {selectedTab === "FC FEPL" && <FantasyTab />}
-            {selectedTab === "falseNine" && <FalseNineContent />}
             {selectedTab === "scout Players" && <Scout />}
+            {selectedTab === "extra Time" && <ContentTab />}
             {selectedTab === "settings" && <Settings />}
            {/* {selectedTab === "money Games" && <MoneyGames />}
             {/* Show generic "Coming soon" message if tab is unrecognized */}
-            {!["matches", "FC FEPL", "scout Players", "falseNine", "settings"].includes(selectedTab) && (
+            {!["matches", "FC FEPL", "scout Players", "extra Time", "settings"].includes(selectedTab) && (
               <div className="text-center text-lg text-fontRed">Coming soon...</div>
             )}
           </div>

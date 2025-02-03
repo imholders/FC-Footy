@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useReadTFN } from './utils/readTFN'; // Adjust import path if necessary
 
-interface FalseNineContentItem {
+interface ContentFalseNineItem {
   title: string;
   link: string;
   pubDate: string;
@@ -15,8 +15,8 @@ interface FalseNineContentItem {
   image: string;
 }
 
-const FalseNineContent = () => {
-  const [falseNineContent, setFalseNineContent] = useState<FalseNineContentItem[]>([]);
+const ContentFalseNine = () => {
+  const [ContentFalseNine, setContentFalseNine] = useState<ContentFalseNineItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0); // Track current post index
   const [isReading, setIsReading] = useState(false); // Track if speech is reading
   const [pauseAt, setPauseAt] = useState(0); // Track the position when paused
@@ -24,7 +24,7 @@ const FalseNineContent = () => {
 
   // Fetch False Nine content when the component mounts
   useEffect(() => {
-    const fetchFalseNineContent = async () => {
+    const fetchContentFalseNine = async () => {
       try {
         const response = await axios.get('https://api.paragraph.xyz/blogs/rss/@thefalsenine');
         const parser = new DOMParser();
@@ -43,7 +43,7 @@ const FalseNineContent = () => {
         if (content.length === 0 || content.every(c => !c.content.trim())) {
           // setErrorTFN("No content available."); // TODO: Toast solution needed
         } else {
-          setFalseNineContent(content); // Set the fetched and formatted content
+          setContentFalseNine(content); // Set the fetched and formatted content
         }
       } catch (err) {
         // setErrorTFN("Failed to load content."); // TODO: Toast solution needed
@@ -51,13 +51,13 @@ const FalseNineContent = () => {
       } finally {
       }
     };
-
-    fetchFalseNineContent();
+    console.log('fetching content');
+    fetchContentFalseNine();
   }, []);
 
   // Read out the article content when clicked
   const { readTFN, stopReading } = useReadTFN(
-    falseNineContent,     
+    ContentFalseNine,     
     isReading,
     pauseAt,
     setIsReading,
@@ -68,24 +68,24 @@ const FalseNineContent = () => {
 
   // Handle subscription click (for now, it's just a placeholder link)
   const handleSubscribeClick = () => { //TODO: Replace with actual subscription link and FC Footy address
-    const subscriptionLink = `${falseNineContent[currentIndex]?.link}?referrer=0x8b80755C441d355405CA7571443Bb9247B77Ec16`;
+    const subscriptionLink = `${ContentFalseNine[currentIndex]?.link}?referrer=0x8b80755C441d355405CA7571443Bb9247B77Ec16`;
     window.open(subscriptionLink, "_blank", "noopener noreferrer allow-popups");
   };
 
   return (
     <div>
-      {falseNineContent.length > 0 ? (
+      {ContentFalseNine.length > 0 ? (
         <div key={currentIndex} className="mb-4">
           {/* Title, Author, and Date */}
-          <h3 className="font-bold text-xl text-notWhite">{falseNineContent[currentIndex].title}</h3>
+          <h3 className="font-bold text-xl text-notWhite">{ContentFalseNine[currentIndex].title}</h3>
           <p className="text-sm text-gray-500">
-            {new Date(falseNineContent[currentIndex].pubDate).toLocaleDateString('en-GB', {
+            {new Date(ContentFalseNine[currentIndex].pubDate).toLocaleDateString('en-GB', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',
             })}
           </p>
-          <p className="text-sm text-gray-500">Author: {falseNineContent[currentIndex].author}</p>
+          <p className="text-sm text-gray-500">Author: {ContentFalseNine[currentIndex].author}</p>
 
           {/* Read and Stop buttons */}
           <button className="text-gray-500 ml-2" onClick={readTFN}>
@@ -98,7 +98,7 @@ const FalseNineContent = () => {
           )}
 
           {/* Image and title */}
-          {falseNineContent[currentIndex].image && (
+          {ContentFalseNine[currentIndex].image && (
             <button
               onClick={() => {
                 setCurrentIndex(currentIndex);
@@ -108,14 +108,14 @@ const FalseNineContent = () => {
             >
               <div className="flex flex-col items-center space-y-2">
                 <Image
-                  src={falseNineContent[currentIndex].image}
+                  src={ContentFalseNine[currentIndex].image}
                   alt="Post Image"
                   className="rounded-md"
                   layout="responsive"
                   width={500}
                   height={300}
                 />
-                <h3 className="font-bold text-xl text-notWhite">{falseNineContent[currentIndex].title}</h3>
+                <h3 className="font-bold text-xl text-notWhite">{ContentFalseNine[currentIndex].title}</h3>
               </div>
             </button>
           )}
@@ -129,7 +129,7 @@ const FalseNineContent = () => {
           <div
             className="text-lightPurple bg-purplePanel mt-2 space-y-2"
             dangerouslySetInnerHTML={{
-              __html: falseNineContent[currentIndex].content,
+              __html: ContentFalseNine[currentIndex].content,
             }}
           />
 
@@ -137,7 +137,7 @@ const FalseNineContent = () => {
           <div className="mt-8">
             <h4 className="text-xl font-bold text-notWhite">People also read</h4>
             <div className="mt-4 space-y-6">
-              {falseNineContent.slice(1, 5).map((post, index) => (
+              {ContentFalseNine.slice(1, 5).map((post, index) => (
                 <button
                   key={index}
                   onClick={() => {
@@ -184,4 +184,4 @@ const FalseNineContent = () => {
   );
 };
 
-export default FalseNineContent;
+export default ContentFalseNine;

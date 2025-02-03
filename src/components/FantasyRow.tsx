@@ -6,11 +6,6 @@ import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
 import { FrameContext } from '@farcaster/frame-node';
 
-interface FantasyRowProps {
-  entry: FantasyEntry; // Use the FantasyEntry type here
-}
-
-// Define the FantasyEntry type
 interface FantasyEntry {
   pfp: string | null;
   team: {
@@ -25,37 +20,33 @@ interface FantasyEntry {
   total: number | null;
 }
 
-const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
+const FantasyRow: React.FC<{ entry: FantasyEntry }> = ({ entry }) => {
   const { manager, rank, total, fav_team, team } = entry;
   const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
   const frameUrl = BASE_URL || 'fc-footy.vercel.app';
 
-    useEffect(() => {
-      const loadContext = async () => {
-        try {
-          setContext((await frameSdk.context) as FrameContext);
-          setIsContextLoaded(true);
-        } catch (error) {
-          console.error("Failed to load Farcaster context:", error);
-        }
-      };
-  
-      if (!isContextLoaded) {
-        loadContext();
+  useEffect(() => {
+    const loadContext = async () => {
+      try {
+        setContext((await frameSdk.context) as FrameContext);
+        setIsContextLoaded(true);
+      } catch (error) {
+        console.error("Failed to load Farcaster context:", error);
       }
-    }, [isContextLoaded]);
-  
-  // Function to create and open the cast URL
+    };
+
+    if (!isContextLoaded) {
+      loadContext();
+    }
+  }, [isContextLoaded]);
+
   const handleCastClick = () => {
     const summary = fav_team
       ? `FC-FEPL @${manager} supports ${team.name}. They are ranked #${rank} in the FC fantasy league with ${total} points.`
       : `FC-FEPL @${manager} has no favorite team. They are ranked #${rank} in the FC fantasy league with ${total} points.`;
 
-    // Encode the summary and create the cast URL
     const encodedSummary = encodeURIComponent(summary);
-
-    // Create the URL with both the team logo and the frame URL as embeds
     const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodeURIComponent(team.logo || '')}&embeds[]=${frameUrl}`;
     if (context === undefined) {
       window.open(url, '_blank');
@@ -64,38 +55,21 @@ const FantasyRow: React.FC<FantasyRowProps> = ({ entry }) => {
     }
   };
 
-  // Only make the row clickable if there is a team logo. Change this with new skd cast features
   const handleRowClick = team.logo ? () => {
-    handleCastClick(); // Generate and open the cast URL
-  } : undefined; // If no logo, do not attach the click handler
+    handleCastClick();
+  } : undefined;
 
   return (
-    <tr
-      className={`cursor-pointer hover:bg-deepPink ${!team.logo ? 'opacity-50 pointer-events-none' : ''}`} // Disable pointer events and add opacity if no team logo
-      onClick={handleRowClick}
-    >
-      <td className="relative flex items-center space-x-2 px-2 mr-2">
-        <Image
-          src={entry.pfp || '/defifa_spinner.gif'}
-          alt="Home Team Logo"
-          className="rounded-full w-8 h-8 mr-8"
-          width={20}
-          height={20}
-        />
+    <tr className="border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer" onClick={handleRowClick}>
+      <td className="py-2 px-2 text-center text-lightPurple font-bold">{entry.rank ?? 'N/A'}</td>
+      <td className="py-2 px-2 flex items-center space-x-2">
+        <Image src={entry.pfp || '/defifa_spinner.gif'} alt="Home Team Logo" className="rounded-full w-8 h-8" width={30} height={30} />
         {team.logo && team.logo !== '/defifa_spinner.gif' && (
-          <Image
-            src={team.logo || '/default-team-logo.png'}  // Provide fallback if logo is null
-            alt="Team Logo"
-            className="rounded-full w-5 h-5 absolute top-0 left-7"
-            width={15}
-            height={15}
-            loading="lazy"
-          />
+          <Image src={team.logo || '/default-team-logo.png'} alt="Team Logo" className="rounded-full w-6 h-6" width={24} height={24} loading="lazy" />
         )}
       </td>
-      <td>{entry.manager}</td>
-      <td className="text-center">{entry.rank}</td>
-      <td className="text-center">{entry.total}</td>
+      <td className="py-2 px-2 text-lightPurple font-medium text-left">{entry.manager}</td>
+      <td className="py-2 px-2 text-center text-lightPurple">{entry.total ?? 'N/A'}</td>
     </tr>
   );
 };
