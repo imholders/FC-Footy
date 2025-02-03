@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import frameSdk from "@farcaster/frame-sdk";
 import TabNavigation from "./TabNavigation";
 import MatchesTab from "./MatchesTab";
-import FantasyTab from "./FantasyTab";
+import Contests from "./Contests";
+//import FantasyTab from "./FantasyTab";
 import ContentTab from "./ContentTab";
 import Scout from "./Scout";
 import Settings from "./Settings";
@@ -127,13 +128,13 @@ export default function Main() {
           <TabNavigation selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
           <div className="bg-darkPurple p-4 rounded-md text-white">
             {selectedTab === "matches" && <MatchesTab />}
-            {selectedTab === "FC FEPL" && <FantasyTab />}
+            {selectedTab === "contests" && <Contests />}
             {selectedTab === "scout Players" && <Scout />}
             {selectedTab === "extra Time" && <ContentTab />}
             {selectedTab === "settings" && <Settings />}
            {/* {selectedTab === "money Games" && <MoneyGames />}
             {/* Show generic "Coming soon" message if tab is unrecognized */}
-            {!["matches", "FC FEPL", "scout Players", "extra Time", "settings"].includes(selectedTab) && (
+            {!["matches", "contests", "scout Players", "extra Time", "settings"].includes(selectedTab) && (
               <div className="text-center text-lg text-fontRed">Coming soon...</div>
             )}
           </div>
