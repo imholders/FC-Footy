@@ -56,7 +56,7 @@ const MatchesTab = () => {
 
   return (
     <div>
-      <h2 className="font-2xl text-notWhite font-bold mb-4">Select league</h2>
+      <h2 className="ml-1 font-2xl text-notWhite font-bold mb-4">Select league</h2>
 
       {/* Horizontal Scrollable Menu for Sports */}
       <div className="flex overflow-x-auto space-x-4 mb-4">
