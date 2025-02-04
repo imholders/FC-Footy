@@ -73,114 +73,128 @@ const ContentFalseNine = () => {
   };
 
   return (
-    <div>
-      {ContentFalseNine.length > 0 ? (
-        <div key={currentIndex} className="mb-4">
-          {/* Title, Author, and Date */}
-          <h3 className="font-bold text-xl text-notWhite">{ContentFalseNine[currentIndex].title}</h3>
-          <p className="text-sm text-gray-500">
-            {new Date(ContentFalseNine[currentIndex].pubDate).toLocaleDateString('en-GB', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-          <p className="text-sm text-gray-500">Author: {ContentFalseNine[currentIndex].author}</p>
+<div className="w-full h-[500px] overflow-y-auto">
+  {ContentFalseNine.length > 0 ? (
+    <div key={currentIndex} className="mb-4">
+      {/* Title, Author, and Date */}
+      <h3 className="font-bold text-xl text-notWhite border-b-2 border-limeGreenOpacity pb-2 mb-2">
+        {ContentFalseNine[currentIndex].title}
+      </h3>
+      <div className="flex flex-col space-y-1">
+        <p className="text-sm text-gray-500">
+          {new Date(ContentFalseNine[currentIndex].pubDate).toLocaleDateString('en-GB', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </p>
+        <p className="text-sm text-gray-500">Author: {ContentFalseNine[currentIndex].author}</p>
+      </div>
 
-          {/* Read and Stop buttons */}
-          <button className="text-gray-500 ml-2" onClick={readTFN}>
-            {isReading ? '⏸️ Pause' : '🗣️🎧1.5x'}
+      {/* Read and Stop buttons */}
+      <div className="mt-4 flex space-x-2">
+        <button className="text-gray-500" onClick={readTFN}>
+          {isReading ? '⏸️ Pause' : '🗣️🎧1.5x'}
+        </button>
+        {isReading && (
+          <button className="text-notWhite" onClick={stopReading}>
+            🛑 Stop
           </button>
-          {isReading && (
-            <button className="text-notWhite ml-2" onClick={stopReading}>
-              🛑 Stop
-            </button>
-          )}
+        )}
+      </div>
 
-          {/* Image and title */}
-          {ContentFalseNine[currentIndex].image && (
+      {/* Image and title */}
+      {ContentFalseNine[currentIndex].image && (
+        <button
+          onClick={() => {
+            setCurrentIndex(currentIndex);
+            window.scrollTo(0, 0); // Scroll to the top of the article
+          }}
+          className="mt-2 w-full"
+        >
+          <div className="flex flex-col items-center space-y-2">
+            <Image
+              src={ContentFalseNine[currentIndex].image}
+              alt="Post Image"
+              className="rounded-md"
+              layout="responsive"
+              width={500}
+              height={300}
+            />
+            <h3 className="font-bold text-xl text-notWhite">{ContentFalseNine[currentIndex].title}</h3>
+          </div>
+        </button>
+      )}
+
+      {/* Subscribe Button */}
+      <div className="mt-4">
+        <Button onClick={handleSubscribeClick}>Subscribe</Button>
+      </div>
+
+      {/* Article Content */}
+      <div
+        className="text-lightPurple bg-purplePanel mt-2 space-y-2 p-4 rounded-md shadow-lg"
+        dangerouslySetInnerHTML={{
+          __html: ContentFalseNine[currentIndex].content.replace(
+            /<strong>/g, 
+            '<strong class="text-notWhite">'
+          ),
+        }}
+      />
+
+      {/* Full width preview cards for other articles */}
+      <div className="mt-8">
+        <h4 className="text-xl font-bold text-notWhite border-b-2 border-limeGreenOpacity pb-2 mb-4">
+          People also read
+        </h4>
+        <div className="mt-4 space-y-6">
+          {ContentFalseNine.slice(1, 5).map((post, index) => (
             <button
+              key={index}
               onClick={() => {
-                setCurrentIndex(currentIndex);
-                window.scrollTo(0, 0); // Scroll to the top of the article
+                setCurrentIndex(index + 1); // Update the current index when a card is clicked
+                window.scrollTo(0, 0); // Scroll to top
               }}
-              className="mt-2 w-full"
+              className="bg-purplePanel p-4 rounded-md text-lightPurple flex items-center w-full border-2 border-limeGreenOpacity"
             >
-              <div className="flex flex-col items-center space-y-2">
-                <Image
-                  src={ContentFalseNine[currentIndex].image}
-                  alt="Post Image"
-                  className="rounded-md"
-                  layout="responsive"
-                  width={500}
-                  height={300}
-                />
-                <h3 className="font-bold text-xl text-notWhite">{ContentFalseNine[currentIndex].title}</h3>
+              {/* Left side: Title and Date */}
+              <div className="flex-1 pr-4">
+                <div className="flex flex-col">
+                  <h5 className="font-bold text-md text-notWhite">{post.title}</h5>
+                  <p className="text-sm text-gray-500">
+                    {new Date(post.pubDate).toLocaleDateString('en-GB', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right side: Image */}
+              <div className="w-36 h-24 overflow-hidden rounded-md ml-4">
+                {post.image && (
+                  <Image
+                    src={post.image}
+                    alt="Thumbnail"
+                    width={150}
+                    height={100}
+                    className="w-full h-auto object-cover"
+                  />
+                )}
               </div>
             </button>
-          )}
-
-          {/* Subscribe Button */}
-          <div className="mt-4">
-            <Button onClick={handleSubscribeClick}>Subscribe</Button>
-          </div>
-
-          {/* Article Content */}
-          <div
-            className="text-lightPurple bg-purplePanel mt-2 space-y-2"
-            dangerouslySetInnerHTML={{
-              __html: ContentFalseNine[currentIndex].content,
-            }}
-          />
-
-          {/* Full width preview cards for other articles */}
-          <div className="mt-8">
-            <h4 className="text-xl font-bold text-notWhite">People also read</h4>
-            <div className="mt-4 space-y-6">
-              {ContentFalseNine.slice(1, 5).map((post, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setCurrentIndex(index + 1); // Update the current index when a card is clicked
-                    window.scrollTo(0, 0); // Scroll to top
-                  }}
-                  className="bg-purplePanel p-4 rounded-md text-lightPurple flex items-center w-full"
-                >
-                  {/* Left side: Title and Date */}
-                  <div className="flex-1 pr-4">
-                    <div className="flex flex-col">
-                      <h5 className="font-bold text-md text-notWhite">{post.title}</h5>
-                      <p className="text-sm text-gray-500">
-                        {new Date(post.pubDate).toLocaleDateString('en-GB', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Right side: Image */}
-                  <div className="w-36 h-24 overflow-hidden rounded-md ml-4">
-                    {post.image && (
-                      <Image
-                        src={post.image}
-                        alt="Thumbnail"
-                        width={150}
-                        height={100}
-                        className="w-full h-auto object-cover"
-                      />
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
-      ) : (
-        <div className='text-fontRed'>Content not available.</div>
-      )}
+      </div>
     </div>
+  ) : (
+    <div className='text-fontRed'>Content not available.</div>
+  )}
+</div>
+
+
+
   );
 };
 
