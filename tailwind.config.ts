@@ -8,6 +8,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        bebas: ['"Bebas Neue"', 'cursive'],
+        vt323: ['VT323', 'monospace'],
+      },
       colors: {
         background: '#181424',
         foreground: '#FEA282',
