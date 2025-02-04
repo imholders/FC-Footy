@@ -335,7 +335,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               {/* Combined Fan Avatars Section */}
               <div className="mt-4">
                 <h4 className="text-notWhite font-semibold mb-1">
-                  Fans ({combinedFanAvatars.length})
+                  Following match ({combinedFanAvatars.length})
                 </h4>
                 <div className="flex space-x-1 overflow-x-auto">
                   {combinedFanAvatars.length > 0 ? (
