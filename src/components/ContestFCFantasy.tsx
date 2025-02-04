@@ -6,7 +6,7 @@ import { usePrivy } from "@privy-io/react-auth";
 // import html2canvas from 'html2canvas';
 
 interface FantasyEntry {
-  rank: number;
+  rank: number | null;
   pfp: string | null;
   team: {
     name: string | null;
@@ -18,6 +18,7 @@ interface FantasyEntry {
   fav_team: number | null;
   total: number | null;
 }
+
 
 const loadingMessages = [
   "Waiting is the hardest part...",
