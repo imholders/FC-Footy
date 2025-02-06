@@ -10,6 +10,11 @@ const supabase = createClient<Database>(
   supabaseApiKey
 );
 
+interface TeamInfo {
+  name: string | null;
+  logo: string | null;
+}
+
 // Define FantasyEntry type to match the expected data structure
 interface FantasyEntry {
   pfp: string | null;
@@ -25,6 +30,7 @@ interface FantasyEntry {
 }
 
 export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
+
   try {
     // Query Supabase 'standings' table
     const { data, error } = await supabase
@@ -78,7 +84,7 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
           }
         }
 
-        let teamInfo = { name: null, logo: null }; // Ensure anon accounts have no fav_team
+        let teamInfo: TeamInfo = { name: null, logo: null };
 
         console.log(`Processing entry - fav_team: ${fav_team}, manager: ${username}`); // Debugging
 
@@ -92,11 +98,12 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
             .eq('id', fav_team)
             .single();
 
-          if (!teamError && teamData) {
-            teamInfo = teamData;
-          } else {
-            console.error("Error fetching team data", teamError);
-          }
+            if (!teamError && teamData) {
+              // Make sure teamData matches the expected TeamInfo type
+              teamInfo = teamData as TeamInfo;
+            } else {
+              console.error("Error fetching team data", teamError);
+            }
         }
 
         return {
