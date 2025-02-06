@@ -6,6 +6,7 @@ import frameSdk from "@farcaster/frame-sdk";
 import { FrameContext } from '@farcaster/frame-node';
 
 interface FantasyEntry {
+  rank: number | null;  // Allow null for rank if needed
   pfp: string | null;
   team: {
     name: string | null;
@@ -13,14 +14,15 @@ interface FantasyEntry {
   };
   manager: string;
   entry_name: string | null;
-  rank: number | null;
   last_name: string | null;
   fav_team: number | null;
   total: number | null;
+  location: string | null;  // location can be string or null
+  fid: number | null;
 }
 
 interface FantasyRowProps {
-  entry: FantasyEntry;
+  entry: FantasyEntry;  // Consistent FantasyEntry type
   onRowClick: (entry: FantasyEntry) => void;
 }
 

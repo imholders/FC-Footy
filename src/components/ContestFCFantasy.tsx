@@ -6,7 +6,7 @@ import { usePrivy } from "@privy-io/react-auth";
 // import { fetchCountryFromGeo } from './CountryFlags';
 
 interface FantasyEntry {
-  rank: number | null;
+  rank: number | null;  // Allow null for rank if needed
   pfp: string | null;
   team: {
     name: string | null;
@@ -17,9 +17,10 @@ interface FantasyEntry {
   last_name: string | null;
   fav_team: number | null;
   total: number | null;
-  location: string;
-  fid: string;
+  location: string | null;  // location can be string or null
+  fid: number | null;
 }
+
 
 
 const loadingMessages = [
