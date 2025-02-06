@@ -46,16 +46,11 @@ const FantasyRow: React.FC<FantasyRowProps> = ({ entry, onRowClick }) => {
     }
   }, [isContextLoaded]);
 
-  // When a row is clicked, call the provided callback with the entry.
-  const handleRowClick = () => {
-    onRowClick(entry);
-  };
 
   return (
     <tr
       className="border-b border-limeGreenOpacity hover:bg-purplePanel transition-colors text-lightPurple text-sm cursor-pointer"
-      onClick={handleRowClick}
-    >
+      onClick={() => onRowClick(entry)}>
       <td className="py-2 px-2 text-center text-lightPurple font-bold">
         {entry.rank ?? 'N/A'}
       </td>

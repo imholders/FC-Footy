@@ -17,8 +17,8 @@ interface FantasyEntry {
   last_name: string | null;
   fav_team: number | null;
   total: number | null;
-  location: string | null;
-  fid: number | null;
+  location: string;
+  fid: string;
 }
 
 
@@ -188,7 +188,7 @@ const ContestFCFantasy = () => {
       </thead>
       <tbody>
         {fantasyData.map((entry, index) => (
-          <FantasyRow key={index} entry={entry} onRowClick={handleRowSelect} />
+          <FantasyRow key={index} entry={entry as FantasyEntry} onRowClick={handleRowSelect} />
         ))}
       </tbody>
     </table>
