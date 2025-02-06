@@ -19,7 +19,7 @@ const Contests = () => {
             selectedTab === "fCFantasy" ? "border-limeGreenOpacity text-lightPurple" : "border-gray-500 text-gray-500"
           }`}
         >
-          FC FEPL
+          EPL
         </button>
       </div>
 

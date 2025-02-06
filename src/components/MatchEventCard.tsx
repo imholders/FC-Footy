@@ -4,7 +4,7 @@ import Link from 'next/link';
 import RAGameContext from './ai/RAGameContext';
 import { WarpcastShareButton } from './ui/WarpcastShareButton';
 import { getFansForTeam } from '../lib/kvPerferences';
-import { fetchFanPfp } from './utils/fetchFCProfile';
+import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchTeamLogos } from './utils/fetchTeamLogos';
 
 interface Detail {
@@ -184,71 +184,68 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
     setShowDetails(!showDetails);
   };
 
-  // When key moments are toggled on, fetch fan avatars for each team separately.
-  useEffect(() => {
-    const fetchTeamFanAvatars = async () => {
-      const team1 = event.competitions[0]?.competitors[0]?.team;
-      const team2 = event.competitions[0]?.competitors[1]?.team;
-      if (team1 && team2) {
-        try {
-          // Determine unique team IDs using our fetched teams.
-          const team1Data = teams.find(
-            (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
-          );
-          const team2Data = teams.find(
-            (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
-          );
-          const team1UniqueId = team1Data ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}` : team1.abbreviation.toLowerCase();
-          const team2UniqueId = team2Data ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}` : team2.abbreviation.toLowerCase();
+// Inside the useEffect where you fetch team fan avatars:
+useEffect(() => {
+  const fetchTeamFanAvatars = async () => {
+    const team1 = event.competitions[0]?.competitors[0]?.team;
+    const team2 = event.competitions[0]?.competitors[1]?.team;
+    if (team1 && team2) {
+      try {
+        // Determine unique team IDs using our fetched teams.
+        const team1Data = teams.find(
+          (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
+        );
+        const team2Data = teams.find(
+          (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
+        );
+        const team1UniqueId = team1Data ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}` : team1.abbreviation.toLowerCase();
+        const team2UniqueId = team2Data ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}` : team2.abbreviation.toLowerCase();
 
-          console.log("Fetching fans for team1:", team1UniqueId);
-          const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
-          console.log("Fan FIDs for team1:", fanFidsTeam1);
-          const fanPfpPromises1 = fanFidsTeam1.map(async (fid) => {
-            const pfp = await fetchFanPfp(fid);
-            console.log(`Fetched pfp for fid ${fid} (team1):`, pfp);
-            return pfp ? { fid, pfp } : null;
-          });
-          const fanResults1 = await Promise.all(fanPfpPromises1);
-          const validFans1 = fanResults1.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
-          console.log("Valid fans for team1:", validFans1);
-          setMatchFanAvatarsTeam1(validFans1);
-
-          console.log("Fetching fans for team2:", team2UniqueId);
-          const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
-          console.log("Fan FIDs for team2:", fanFidsTeam2);
-          const fanPfpPromises2 = fanFidsTeam2.map(async (fid) => {
-            const pfp = await fetchFanPfp(fid);
-            console.log(`Fetched pfp for fid ${fid} (team2):`, pfp);
-            return pfp ? { fid, pfp } : null;
-          });
-          const fanResults2 = await Promise.all(fanPfpPromises2);
-          const validFans2 = fanResults2.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
-          console.log("Valid fans for team2:", validFans2);
-          setMatchFanAvatarsTeam2(validFans2);
-        } catch (error) {
-          console.error("Error fetching match fan avatars:", error);
-        }
-      } else {
-        console.error("Match teams not defined.");
+        const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
+        const fanPfpPromises1 = fanFidsTeam1.map(async (fid) => {
+          const userData = await fetchFanUserData(fid);
+          // Extract the profile picture URL from USER_DATA_TYPE_PFP.
+          const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+          return userData && pfp ? { fid, pfp } : null;
+        });
+        const fanResults1 = await Promise.all(fanPfpPromises1);
+        const validFans1 = fanResults1.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
+        setMatchFanAvatarsTeam1(validFans1);
+        const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
+        const fanPfpPromises2 = fanFidsTeam2.map(async (fid) => {
+          const userData = await fetchFanUserData(fid);
+          // Extract the profile picture URL from USER_DATA_TYPE_PFP.
+          const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+          return userData && pfp ? { fid, pfp } : null;
+        });
+        const fanResults2 = await Promise.all(fanPfpPromises2);
+        const validFans2 = fanResults2.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
+        setMatchFanAvatarsTeam2(validFans2);
+      } catch (error) {
+        console.error("Error fetching match fan avatars:", error);
       }
-    };
-
-    if (showDetails) {
-      fetchTeamFanAvatars();
     } else {
-      setMatchFanAvatarsTeam1([]);
-      setMatchFanAvatarsTeam2([]);
+      console.error("Match teams not defined.");
     }
-  }, [showDetails, event, teams]);
+  };
+
+  if (showDetails) {
+    fetchTeamFanAvatars();
+  } else {
+    setMatchFanAvatarsTeam1([]);
+    setMatchFanAvatarsTeam2([]);
+  }
+}, [showDetails, event, teams]);
 
   // Combine both teams' fan avatars into one array and deduplicate by fid.
   const combinedFanAvatars = Array.from(
     new Map(
-      [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2].map((fan) => [fan.fid, fan])
+      [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2].map((fan) => [
+        fan.fid,
+        { fid: fan.fid, pfp: fan.pfp },
+      ])
     ).values()
   );
-
   return (
     <div key={event.id} className="sidebar">
       <div className="cursor-pointer border border-darkPurple">
@@ -335,7 +332,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               {/* Combined Fan Avatars Section */}
               <div className="mt-4">
                 <h4 className="text-notWhite font-semibold mb-1">
-                  Following match ({combinedFanAvatars.length})
+                  Fans ({combinedFanAvatars.length})
                 </h4>
                 <div className="flex space-x-1 overflow-x-auto">
                   {combinedFanAvatars.length > 0 ? (

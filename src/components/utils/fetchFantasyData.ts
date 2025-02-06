@@ -13,16 +13,15 @@ const supabase = createClient<Database>(
 // Define FantasyEntry type to match the expected data structure
 interface FantasyEntry {
   pfp: string | null;
-  team: {
-    name: string | null;
-    logo: string | null;
-  };
+  team: { name: string | null; logo: string | null };
   manager: string;
   entry_name: string | null;
   rank: number | null;
   last_name: string | null;
   fav_team: number | null;
   total: number | null;
+  location: string | null;
+  fid: number | null;
 }
 
 export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
@@ -40,10 +39,15 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
     const updatedFantasyData = await Promise.all(
       data.map(async (entry: { entry_name: string | null; rank: number | null; last_name: string | null; fav_team: number | null; total: number | null; }) => {
         const { last_name, fav_team } = entry;
+        let pfpUrl = '/defifa_spinner.gif';
+        let username = 'anon';
+        let location = 'Unknown';
+        let fid: number | null = null;
 
         // Handle last_name being a valid number (fid)
         if (last_name && !isNaN(Number(last_name))) {
-          const fid = parseInt(last_name, 10);
+          fid = parseInt(last_name, 10);
+
           if (Number.isInteger(fid)) {
             const server = "https://hubs.airstack.xyz";
             try {
@@ -55,9 +59,7 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
                 }
               });
 
-              // Extract profile image and username from the response
-              let pfpUrl = null;
-              let username = null;
+              // Extract profile image, username, and location from response
               const messages = response.data.messages || [];
               for (const message of messages) {
                 if (message.data?.userDataBody?.type === 'USER_DATA_TYPE_PFP') {
@@ -66,49 +68,44 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
                 if (message.data?.userDataBody?.type === 'USER_DATA_TYPE_USERNAME') {
                   username = message.data.userDataBody.value;
                 }
-              }
-
-              // Step 2: Fetch team info based on fav_team
-              let teamInfo = null;
-              if (fav_team) {
-                const { data: teamData, error: teamError } = await supabase
-                  .from('teams')
-                  .select('name, logo')
-                  .eq('id', fav_team)
-                  .single();
-
-                if (teamError) {
-                  console.error("Error fetching team data", teamError);
-                } else {
-                  teamInfo = teamData;
+                if (message.data?.userDataBody?.type === 'USER_DATA_TYPE_LOCATION') {
+                  location = message.data.userDataBody.value;
                 }
               }
-
-              // Fallback to default values if no team data is found
-              if (!teamInfo) {
-                teamInfo = { name: 'N/A', logo: '/defifa_spinner.gif' };
-              }
-
-              // Return updated entry with profile, team info
-              return {
-                ...entry,
-                pfp: pfpUrl || '/defifa_spinner.gif', // Ensure pfp has a fallback
-                team: teamInfo, // Ensure team info is always provided
-                manager: username || 'anon', // Ensure manager has a fallback
-              };
             } catch (e) {
-              console.error("Error fetching user data", e);
-              return { ...entry, pfp: '/defifa_spinner.gif', team: { name: 'N/A', logo: '/defifa_spinner.gif' }, manager: 'FID not set 🤦🏽‍♂️' }; // Fallback if error occurs
+              console.error("Error fetching user data for fid:", fid, e);
             }
           }
         }
 
-        // Return entry as-is if no valid fid or last_name
-        return { 
-          ...entry, 
-          pfp: '/defifa_spinner.gif', 
-          team: { name: 'N/A', logo: '/defifa_spinner.gif' },
-          manager: 'FID not set 🤦🏽‍♂️' 
+        let teamInfo = { name: null, logo: null }; // Ensure anon accounts have no fav_team
+
+        console.log(`Processing entry - fav_team: ${fav_team}, manager: ${username}`); // Debugging
+
+        // Ensure only valid fav_team values trigger the lookup
+        if (typeof fav_team === "number" && fav_team > 0) {  
+          console.log(`Fetching team data for fav_team: ${fav_team}`); // Debugging
+
+          const { data: teamData, error: teamError } = await supabase
+            .from('teams')
+            .select('name, logo')
+            .eq('id', fav_team)
+            .single();
+
+          if (!teamError && teamData) {
+            teamInfo = teamData;
+          } else {
+            console.error("Error fetching team data", teamError);
+          }
+        }
+
+        return {
+          ...entry,
+          pfp: pfpUrl,  // Ensure pfp has a fallback
+          team: teamInfo,  // Ensure team info is always provided
+          manager: username,  // Ensure manager has a fallback
+          location: location,  // Location from geo lookup
+          fid: fid // Include FID explicitly
         };
       })
     );

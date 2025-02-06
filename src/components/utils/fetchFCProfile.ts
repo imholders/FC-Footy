@@ -9,7 +9,6 @@ interface PinataData {
 
 interface PinataMessage {
   data: PinataData;
-  // You can add other fields if needed.
 }
 
 interface PinataResponse {
@@ -18,27 +17,37 @@ interface PinataResponse {
 }
 
 /**
- * Fetch the farcaster profile picture (pfp) for a fan using their fid.
- * This calls the Pinata endpoint and looks for the USER_DATA_TYPE_PFP message.
+ * Fetch and return all user data types and their values for a given FID.
  *
  * @param fanFid - The fan's fid.
- * @returns The pfp URL if found, otherwise null.
+ * @returns A record mapping each user data type to an array of its values.
  */
-export async function fetchFanPfp(fanFid: number): Promise<string | null> {
+export async function fetchFanUserData(fanFid: number): Promise<Record<string, string[]>> {
   try {
     const response = await fetch(`https://hub.pinata.cloud/v1/userDataByFid?fid=${fanFid}`);
     const data: PinataResponse = await response.json();
-    if (data.messages && data.messages.length > 0) {
-      const pfpMessage = data.messages.find(
-        (msg) => msg.data.userDataBody?.type === "USER_DATA_TYPE_PFP"
-      );
-      if (pfpMessage && pfpMessage.data.userDataBody?.value) {
-        return pfpMessage.data.userDataBody.value;
+
+    if (!data.messages || data.messages.length === 0) {
+      return {};
+    }
+
+    // Object to store the extracted data types and their corresponding values
+    const userDataMap: Record<string, string[]> = {};
+
+    // Iterate through messages to collect user data types and values
+    for (const message of data.messages) {
+      const userData = message.data.userDataBody;
+      if (userData?.type && userData?.value) {
+        if (!userDataMap[userData.type]) {
+          userDataMap[userData.type] = [];
+        }
+        userDataMap[userData.type].push(userData.value);
       }
     }
-    return null;
+    console.log("User data for fid:", fanFid, userDataMap.value);
+    return userDataMap;
   } catch (error) {
-    console.error("Error fetching fan pfp for fid:", fanFid, error);
-    return null;
+    console.error("Error fetching fan user data for fid:", fanFid, error);
+    return {};
   }
 }
