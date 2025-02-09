@@ -86,11 +86,11 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
 
         let teamInfo: TeamInfo = { name: null, logo: null };
 
-        console.log(`Processing entry - fav_team: ${fav_team}, manager: ${username}`); // Debugging
+        // console.log(`Processing entry - fav_team: ${fav_team}, manager: ${username}`); // Debugging
 
         // Ensure only valid fav_team values trigger the lookup
         if (typeof fav_team === "number" && fav_team > 0) {  
-          console.log(`Fetching team data for fav_team: ${fav_team}`); // Debugging
+          // console.log(`Fetching team data for fav_team: ${fav_team}`); // Debugging
 
           const { data: teamData, error: teamError } = await supabase
             .from('teams')

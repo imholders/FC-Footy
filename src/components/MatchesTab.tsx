@@ -82,11 +82,11 @@ const MatchesTab = () => {
           <div className="text-red-500">{error}</div>
         ) : events.length > 0 ? (
           events.map((event: any) => ( 
-            <EventCard 
-              key={event.id} 
-              event={event} 
-              sportId={selectedSport}
-            />
+            <><EventCard
+              key={event.id}
+              event={event}
+              sportId={selectedSport} />              
+            </>
           ))
         ) : (
           <div>No events available for {selectedSport}</div>

@@ -77,7 +77,7 @@ const teamsByLeague: { [league: string]: { team: string; abbr: string }[] } = {
     { team: "1.FSV Mainz 05", abbr: "mai" },
     { team: "Bayer 04 Leverkusen", abbr: "lev" },
     { team: "Bayern Munich", abbr: "bay" },
-    { team: "Borussia Dortmund", abbr: "bvb" },
+    { team: "Borussia Dortmund", abbr: "dor" },
     { team: "Borussia Mönchengladbach", abbr: "mgl" },
     { team: "Eintracht Frankfurt", abbr: "eff" },
     { team: "FC Augsburg", abbr: "aug" },

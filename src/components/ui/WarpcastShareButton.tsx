@@ -19,9 +19,10 @@ interface SelectedMatch {
 interface WarpcastShareButtonProps {
   selectedMatch: SelectedMatch;
   targetElement?: HTMLElement | null;
+  buttonText?: string;
 }
 
-export function WarpcastShareButton({ selectedMatch }: WarpcastShareButtonProps) {
+export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShareButtonProps) {
   const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
 
@@ -78,7 +79,7 @@ export function WarpcastShareButton({ selectedMatch }: WarpcastShareButtonProps)
       onClick={openWarpcastUrl}
       className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
     >
-      Share
+      {buttonText || 'Share'}
     </button>
   );
 }

@@ -6,6 +6,8 @@ import { WarpcastShareButton } from './ui/WarpcastShareButton';
 import { getFansForTeam } from '../lib/kvPerferences';
 import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchTeamLogos } from './utils/fetchTeamLogos';
+import ContestScoreSquare from './ContestScoreSquare';
+// import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 
 interface Detail {
   athletesInvolved: Array<{ displayName: string }>;
@@ -60,9 +62,6 @@ interface Team {
   league: string;
   logoUrl: string;
 }
-
-// Helper to generate unique team ID from a Team object.
-// const getTeamId = (team: Team): string => `${team.league}-${team.abbreviation.toLowerCase()}`;
 
 const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(null);
@@ -184,60 +183,61 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
     setShowDetails(!showDetails);
   };
 
-// Inside the useEffect where you fetch team fan avatars:
-useEffect(() => {
-  const fetchTeamFanAvatars = async () => {
-    const team1 = event.competitions[0]?.competitors[0]?.team;
-    const team2 = event.competitions[0]?.competitors[1]?.team;
-    if (team1 && team2) {
-      try {
-        // Determine unique team IDs using our fetched teams.
-        const team1Data = teams.find(
-          (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
-        );
-        const team2Data = teams.find(
-          (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
-        );
-        const team1UniqueId = team1Data ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}` : team1.abbreviation.toLowerCase();
-        const team2UniqueId = team2Data ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}` : team2.abbreviation.toLowerCase();
+  // Fetch team fan avatars.
+  useEffect(() => {
+    const fetchTeamFanAvatars = async () => {
+      const team1 = event.competitions[0]?.competitors[0]?.team;
+      const team2 = event.competitions[0]?.competitors[1]?.team;
+      if (team1 && team2) {
+        try {
+          const team1Data = teams.find(
+            (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
+          );
+          const team2Data = teams.find(
+            (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
+          );
+          const team1UniqueId = team1Data
+            ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}`
+            : team1.abbreviation.toLowerCase();
+          const team2UniqueId = team2Data
+            ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}`
+            : team2.abbreviation.toLowerCase();
 
-        const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
-        const fanPfpPromises1 = fanFidsTeam1.map(async (fid) => {
-          const userData = await fetchFanUserData(fid);
-          // Extract the profile picture URL from USER_DATA_TYPE_PFP.
-          const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
-          return userData && pfp ? { fid, pfp } : null;
-        });
-        const fanResults1 = await Promise.all(fanPfpPromises1);
-        const validFans1 = fanResults1.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
-        setMatchFanAvatarsTeam1(validFans1);
-        const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
-        const fanPfpPromises2 = fanFidsTeam2.map(async (fid) => {
-          const userData = await fetchFanUserData(fid);
-          // Extract the profile picture URL from USER_DATA_TYPE_PFP.
-          const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
-          return userData && pfp ? { fid, pfp } : null;
-        });
-        const fanResults2 = await Promise.all(fanPfpPromises2);
-        const validFans2 = fanResults2.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
-        setMatchFanAvatarsTeam2(validFans2);
-      } catch (error) {
-        console.error("Error fetching match fan avatars:", error);
+          const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
+          const fanPfpPromises1 = fanFidsTeam1.map(async (fid) => {
+            const userData = await fetchFanUserData(fid);
+            const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+            return userData && pfp ? { fid, pfp } : null;
+          });
+          const fanResults1 = await Promise.all(fanPfpPromises1);
+          const validFans1 = fanResults1.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
+          setMatchFanAvatarsTeam1(validFans1);
+
+          const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
+          const fanPfpPromises2 = fanFidsTeam2.map(async (fid) => {
+            const userData = await fetchFanUserData(fid);
+            const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+            return userData && pfp ? { fid, pfp } : null;
+          });
+          const fanResults2 = await Promise.all(fanPfpPromises2);
+          const validFans2 = fanResults2.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
+          setMatchFanAvatarsTeam2(validFans2);
+        } catch (error) {
+          console.error("Error fetching match fan avatars:", error);
+        }
+      } else {
+        console.error("Match teams not defined.");
       }
+    };
+
+    if (showDetails) {
+      fetchTeamFanAvatars();
     } else {
-      console.error("Match teams not defined.");
+      setMatchFanAvatarsTeam1([]);
+      setMatchFanAvatarsTeam2([]);
     }
-  };
+  }, [showDetails, event, teams]);
 
-  if (showDetails) {
-    fetchTeamFanAvatars();
-  } else {
-    setMatchFanAvatarsTeam1([]);
-    setMatchFanAvatarsTeam2([]);
-  }
-}, [showDetails, event, teams]);
-
-  // Combine both teams' fan avatars into one array and deduplicate by fid.
   const combinedFanAvatars = Array.from(
     new Map(
       [...matchFanAvatarsTeam1, ...matchFanAvatarsTeam2].map((fan) => [
@@ -246,6 +246,7 @@ useEffect(() => {
       ])
     ).values()
   );
+
   return (
     <div key={event.id} className="sidebar">
       <div className="cursor-pointer border border-darkPurple">
@@ -306,7 +307,7 @@ useEffect(() => {
       </div>
 
       {showDetails && selectedMatch && (
-        <div ref={elementRef} className="mt-2 bg-purplePanel p-4 rounded-lg">
+        <div ref={elementRef} className="mt-2 bg-purplePanel p-2 rounded-lg">
           {keyMoments.length > 0 && (
             <>
               <h4 className="text-notWhite font-semibold mb-2">Key Moments:</h4>
@@ -329,32 +330,32 @@ useEffect(() => {
             </>
           )}
 
-              {/* Combined Fan Avatars Section */}
-              <div className="mt-4">
-                <h4 className="text-notWhite font-semibold mb-1">
-                  Fans ({combinedFanAvatars.length})
-                </h4>
-                <div className="flex space-x-1 overflow-x-auto">
-                  {combinedFanAvatars.length > 0 ? (
-                    combinedFanAvatars.map((fan) => (
-                      <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
-                        <Image
-                          src={fan.pfp}
-                          alt={`Fan ${fan.fid}`}
-                          width={20}
-                          height={20}
-                          className="rounded-full"
-                        />
-                      </Link>
-                    ))
-                  ) : (
-                    <span className="text-sm text-gray-400">No fans found.</span>
-                  )}
-                </div>
-              </div>
+          {/* Combined Fan Avatars Section */}
+          <div className="mt-4">
+            <h3 className="text-notWhite font-semibold mb-1">
+              Following ({combinedFanAvatars.length})
+            </h3>
+            <div className="flex space-x-1 overflow-x-auto">
+              {combinedFanAvatars.length > 0 ? (
+                combinedFanAvatars.map((fan) => (
+                  <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
+                    <Image
+                      src={fan.pfp}
+                      alt={`Fan ${fan.fid}`}
+                      width={20}
+                      height={20}
+                      className="rounded-full"
+                    />
+                  </Link>
+                ))
+              ) : (
+                <span className="text-sm text-gray-400">No fans found.</span>
+              )}
+            </div>
+          </div>
           <div className="mt-4 flex flex-row gap-4 justify-center items-center">
             <button
-              className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-deepPink hover:bg-fontRed"
+              className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-fontRed"
               onClick={fetchAiSummary}
               disabled={loading}
             >
@@ -391,8 +392,13 @@ useEffect(() => {
               selectedMatch={selectedMatch}
               targetElement={elementRef.current}
             />
+            </div>
+          <div className="mt-4">
+            <ContestScoreSquare 
+              home={event.competitions?.[0]?.competitors?.[0]?.team?.abbreviation || ''} 
+              away={event.competitions?.[0]?.competitors?.[1]?.team?.abbreviation || ''} 
+            />
           </div>
-
           {gameContext && (
             <div className="mt-4 text-lightPurple bg-purplePanel">
               <h2 className="font-2xl text-notWhite font-bold mb-4">
@@ -401,10 +407,6 @@ useEffect(() => {
                 </button>
               </h2>
               <pre className="text-sm whitespace-pre-wrap break-words mb-4">{gameContext}</pre>
-              <WarpcastShareButton
-                selectedMatch={selectedMatch}
-                targetElement={elementRef.current}
-              />
             </div>
           )}
         </div>

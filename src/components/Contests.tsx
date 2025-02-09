@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ContestFCFantasy from "./ContestFCFantasy";
+import ContestScoreSquare from "./ContestScoreSquare";
 
 const Contests = () => {
   const [selectedTab, setSelectedTab] = useState<string>("fCFantasy");
@@ -21,10 +22,21 @@ const Contests = () => {
         >
           EPL
         </button>
+
+        <button
+          onClick={() => handleTabSelect("scoreSquare")}
+          className={`flex-shrink-0 py-1 px-6 text-sm font-semibold cursor-pointer rounded-full border-2 ${
+            selectedTab === "scoreSquare" ? "border-limeGreenOpacity text-lightPurple" : "border-gray-500 text-gray-500"
+          }`}
+        >
+          Score Square
+        </button>
       </div>
 
       <div className="bg-purplePanel text-lightPurple rounded-lg p-1">
         {selectedTab === "fCFantasy" && <ContestFCFantasy />}
+        {selectedTab === "scoreSquare" && <ContestScoreSquare />}
+
       </div>
     </div>
   );
