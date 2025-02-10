@@ -33,6 +33,7 @@ const App: React.FC<AppProps> = ({ home, away }) => {
   const [gameState, setGameState] = useState<GameState>('buying');
   const [costPerTicket, setCostPerTicket] = useState<number>(1);
   const [serviceFee, setServiceFee] = useState<number>(0.04);
+  const [refereeId, setRefereeId] = useState<number | null>(4163);
   const [homeTeam, setHomeTeam] = useState<string>("");
   const [awayTeam, setAwayTeam] = useState<string>("");
 
@@ -70,6 +71,7 @@ const App: React.FC<AppProps> = ({ home, away }) => {
           setGameState(game.gameState);
           setCostPerTicket(game.costPerTicket);
           setServiceFee(game.serviceFee);
+          setRefereeId(game.refereeId || 4163); // defaults to kmac for now
           setHomeTeam(game.homeTeam);
           setAwayTeam(game.awayTeam);
           if (game.finalScore) {
@@ -155,7 +157,7 @@ const App: React.FC<AppProps> = ({ home, away }) => {
 
   const handleSubmitScore = async () => {
     if (user?.farcaster?.username !== 'kmacb.eth') {
-      alert('Only the referee can submit the score');
+      alert('Only the referee can submit the score. Please tell @kmacb.eth');
       return;
     }
     if (team1Score === null || team2Score === null) {
@@ -291,7 +293,7 @@ const App: React.FC<AppProps> = ({ home, away }) => {
             {gameState === 'playing' && (
               <div className="mb-3 text-left text-sm text-fontRed">
                 <p>
-                  <span className="font-bold">Step 2:</span> The referee is @kmacb.eth. They will enter the final scores for each team. The winning ticket is determined by the grid cell corresponding to these scores.
+                  <span className="font-bold">Step 2:</span> The referee is {refereeId}. They will enter the final scores for each team. The winning ticket is determined by the grid cell corresponding to these scores.
                 </p>
               </div>
             )}
@@ -431,7 +433,7 @@ const App: React.FC<AppProps> = ({ home, away }) => {
                     </select>
                   </div>
                 </div>
-                {gameState === 'playing' && user?.farcaster?.username === 'kmacb.eth' && (
+                {gameState === 'playing' && user?.farcaster?.fid === refereeId && (
 
                 <button
                   onClick={handleSubmitScore}
@@ -445,7 +447,7 @@ const App: React.FC<AppProps> = ({ home, away }) => {
   
             {gameState === 'playing' && user?.farcaster?.username !== 'kmacb.eth' && (
               <div className="bg-darkPurple p-3 rounded-lg text-center text-xs text-lightPurple">
-                Final score submission is only available to the referee.
+                Final score submission is only available to the referee. Please contact {refereeId}
               </div>
             )}
   

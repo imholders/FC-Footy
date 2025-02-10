@@ -137,7 +137,7 @@ export async function randomizeBoard(gameId: string): Promise<void> {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     game.boardPositions = shuffled;
-    game.gameState = 'placing';
+    game.gameState = 'playing';
     game.updatedAt = new Date().toISOString();
     await redis.set(getGameKey(gameId), JSON.stringify(game));
   }
