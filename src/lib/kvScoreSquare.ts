@@ -25,7 +25,7 @@ export interface GameData {
   boardPositions?: TicketType[];
   finalScore?: { home: number; away: number };
   winningTicket?: number;
-  refereeId?: string;
+  refereeId?: number | null;
   payout?: number;
   prizeClaimed?: boolean;
   createdAt: string;
@@ -154,7 +154,7 @@ export async function submitFinalScore(
     const colIndex = finalScore.home >= 4 ? 4 : finalScore.home;
     const rowIndex = finalScore.away >= 4 ? 4 : finalScore.away;
     game.winningTicket = rowIndex * 5 + colIndex;
-    game.refereeId = refereeId;
+    game.refereeId = refereeId ? parseInt(refereeId, 10) : null; 
     const purchasedCount = game.tickets.filter(ticket => ticket.owner !== null).length;
     const pot = purchasedCount * game.costPerTicket;
     game.payout = pot * (1 - game.serviceFee);

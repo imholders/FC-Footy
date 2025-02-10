@@ -6,10 +6,11 @@ import { Info } from 'lucide-react';
 interface ContestScoreSquareCreateProps {
   home: string;
   away: string;
+  refereeId: number | null;
 }
   
-const ContestScoreSquareCreate: React.FC<ContestScoreSquareCreateProps> = ({ home, away }) => {
-      console.log('home', home, 'away', away);
+const ContestScoreSquareCreate: React.FC<ContestScoreSquareCreateProps> = ({ home, away, refereeId }) => {
+      console.log('home', home, 'away', away, 'refereeId', refereeId);
   const [homeTeam, setHomeTeam] = useState<string>(home);
   const [awayTeam, setAwayTeam] = useState<string>(away);
   const [costPerTicket, setCostPerTicket] = useState<number>(1);
@@ -50,6 +51,7 @@ const ContestScoreSquareCreate: React.FC<ContestScoreSquareCreateProps> = ({ hom
         tickets: initialTickets,
         createdAt: now,
         updatedAt: now,
+        refereeId: refereeId || null,
       };
 
       await createGame(newGame);
