@@ -4396,10 +4396,10 @@ fetch-retry@^5.0.6:
   resolved "https://registry.yarnpkg.com/fetch-retry/-/fetch-retry-5.0.6.tgz#17d0bc90423405b7a88b74355bf364acd2a7fa56"
   integrity sha512-3yurQZ2hD9VISAhJJP9bpYFNQrHHBXE2JxxjY5aLEcDi46RmAzJE2OC9FAde0yis5ElW0jTTzs0zfg/Cca4XqQ==
 
-fhub@0.0.0-canary-20250130220554:
-  version "0.0.0-canary-20250130220554"
-  resolved "https://registry.yarnpkg.com/fhub/-/fhub-0.0.0-canary-20250130220554.tgz#5b1f59e714dd1abcc10e3746b3cfa89b892bc996"
-  integrity sha512-yRERxQG12dEsB0ZjAxBK2Z5A6W6J6jnHXvJ+/GcWO54mqN/I6o9tk5EQW45x13hCgUcNXLkCkz77vENI/jZ8UQ==
+fhub@0.0.0-canary-20250209232957:
+  version "0.0.0-canary-20250209232957"
+  resolved "https://registry.yarnpkg.com/fhub/-/fhub-0.0.0-canary-20250209232957.tgz#613ce79d8a68cf048feed4a2db2d000951d84174"
+  integrity sha512-RpGriq0gJIrvuhRbzfjyu+dhC3nXRkxNpMnfw2M+xIl0rcfWVmwDxW2bCvKtsw30jgIU8SXCv/YpLLcl6r8FFA==
   dependencies:
     "@bufbuild/protobuf" "^2.2.2"
     "@connectrpc/connect" "^2.0.0"

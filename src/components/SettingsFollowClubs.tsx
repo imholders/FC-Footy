@@ -1,11 +1,14 @@
+'use client'
 import React, { useState, useEffect } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { useFarcasterSigner, usePrivy } from "@privy-io/react-auth";
 import Image from "next/image";
 import { fetchTeamLogos } from "./utils/fetchTeamLogos";
 import {
   getTeamPreferences,
   setTeamPreferences,
 } from "../lib/kvPerferences";
+import { Account } from 'fhub'
+import { useUserUpdateMutation } from "~/hooks/fhub/useUserUpdateMutation";
 
 interface Team {
   name: string;
@@ -18,6 +21,8 @@ interface Team {
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
 
 const Settings = () => {
+  const userUpdateMutation = useUserUpdateMutation();
+  const { requestFarcasterSignerFromWarpcast, getFarcasterSignerPublicKey, signFarcasterMessage } = useFarcasterSigner();
   const [teams, setTeams] = useState<Team[]>([]);
   // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
@@ -65,6 +70,19 @@ const Settings = () => {
     if (favTeams.includes(teamId)) {
       console.log(`Removing ${team.name} (${teamId}) from notifications`);
       updatedFavTeams = favTeams.filter((id) => id !== teamId);
+      userUpdateMutation({
+        account: Account.fromEd25519Signer({
+          fid: BigInt(fid),
+          signer: {
+          getSignerKey: getFarcasterSignerPublicKey,
+          signMessageHash: signFarcasterMessage,
+          },
+        }),
+        data: {
+          type: "url",
+          value: "https://farcaster.app",
+        },
+      });
     } else {
       console.log(`Adding ${team.name} (${teamId}) as favorite`);
       updatedFavTeams = [...favTeams, teamId];
