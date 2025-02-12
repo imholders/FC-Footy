@@ -1,6 +1,6 @@
 'use server'
 import { fhubClient } from '../client'
-import { Actions } from 'fhub'
+import * as Actions from 'fhub/Actions'
 
 export async function action(
   parameters: Actions.Warpcast.getCastIdFromUrl.ParametersType,

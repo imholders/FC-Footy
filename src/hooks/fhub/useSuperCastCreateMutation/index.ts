@@ -1,5 +1,5 @@
 import { action } from './action'
-import { Actions } from 'fhub'
+import * as Actions from 'fhub/Actions'
 import { useMutation, type UseMutationOptions } from '@tanstack/react-query'
 
 export function useSuperCastCreateMutation({

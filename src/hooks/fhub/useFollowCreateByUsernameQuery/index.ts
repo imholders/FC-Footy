@@ -1,5 +1,5 @@
 import { action } from './action'
-import type { Actions } from 'fhub'
+import type * as Actions from 'fhub/Actions'
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
 
 type QueryKey = [

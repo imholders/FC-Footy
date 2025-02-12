@@ -44,7 +44,8 @@ export async function fetchFanUserData(fanFid: number): Promise<Record<string, s
         userDataMap[userData.type].push(userData.value);
       }
     }
-    console.log("User data for fid:", fanFid, userDataMap.value);
+
+    console.log("User data for fid:", fanFid, userDataMap);
     return userDataMap;
   } catch (error) {
     console.error("Error fetching fan user data for fid:", fanFid, error);

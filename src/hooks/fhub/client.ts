@@ -1,4 +1,5 @@
-import { Client, Transport } from 'fhub'
+import * as Client from 'fhub/Client'
+import * as Transport from 'fhub/Transport'
 
 export const fhubClient = Client.create(
   Transport.grpcNode({ baseUrl: 'https://hub-grpc.pinata.cloud' }),

@@ -1,4 +1,5 @@
-'use client'
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useFarcasterSigner, usePrivy } from "@privy-io/react-auth";
 import Image from "next/image";
@@ -7,9 +8,14 @@ import {
   getTeamPreferences,
   setTeamPreferences,
 } from "../lib/kvPerferences";
-import { Account } from 'fhub'
+import * as Account from "fhub/Account";
 import { useUserUpdateMutation } from "~/hooks/fhub/useUserUpdateMutation";
+import uploadFilesToIPFS from "./utils/pinToIPFS";
+import userProfileTemplate from "../lib/profileMetaData";
+import { fetchFanUserData } from "../components/utils/fetchFCProfile";
 
+// Define interfaces for team and user profile data.
+// (Adjust or extend these interfaces as needed based on your actual schema.)
 interface Team {
   name: string;
   abbreviation: string;
@@ -17,38 +23,76 @@ interface Team {
   logoUrl: string;
 }
 
-// Helper function to generate a unique ID for each team.
+interface AppData {
+  name: string;
+  value: any;
+}
+
+interface App {
+  appName: string;
+  domain: string;
+  data: AppData[];
+}
+
+interface UserProfile {
+  FID: string;
+  version: string;
+  schemaVersion: string;
+  userName: string;
+  personalInfo: any;
+  apps: App[];
+}
+
+// We'll use UserProfile as our profile type from IPFS.
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
+
+// Define the key that holds the URL in the IPFS data.
+const USER_DATA_TYPE_URL = "USER_DATA_TYPE_URL";
 
 const Settings = () => {
   const userUpdateMutation = useUserUpdateMutation();
-  const { requestFarcasterSignerFromWarpcast, getFarcasterSignerPublicKey, signFarcasterMessage } = useFarcasterSigner();
+  const { getFarcasterSignerPublicKey, signMessageHash: signFarcasterMessage } = useFarcasterSigner();
   const [teams, setTeams] = useState<Team[]>([]);
-  // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  // loadingTeamIds will store the team IDs currently processing an update.
   const [loadingTeamIds, setLoadingTeamIds] = useState<string[]>([]);
+  // userProfile holds the backup profile fetched from IPFS.
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { user } = usePrivy();
   const farcasterAccount = user?.linkedAccounts.find(
     (account) => account.type === "farcaster"
   );
 
   useEffect(() => {
-    if (farcasterAccount) {
-      const fid = Number(farcasterAccount.fid);
-      getTeamPreferences(fid)
-        .then((teamsFromRedis) => {
+    const fetchData = async () => {
+      if (farcasterAccount) {
+        try {
+          const fid = Number(farcasterAccount.fid);
+          // Fetch favorite teams from the KV database (source of truth)
+          const teamsFromRedis = await getTeamPreferences(fid);
           console.log("Existing team preferences:", teamsFromRedis);
           if (teamsFromRedis) {
             setFavTeams(teamsFromRedis);
+            // Fetch backup profile data from IPFS
+            const ipfsProfile = await fetchFanUserData(Number(farcasterAccount.fid));
+            // Assume fetchFanUserData returns a full UserProfile object.
+            console.log("IPFS profile data:", ipfsProfile);
+            setUserProfile(ipfsProfile);
           }
-        })
-        .catch((err) => {
-          console.error("Error fetching team preferences:", err);
-        });
-    }
-    fetchTeamLogos().then((data) => setTeams(data));
+        } catch (err) {
+          console.error("Error fetching team preferences or user data:", err);
+        }
+      }
+      // Fetch team logos
+      try {
+        const logos = await fetchTeamLogos();
+        setTeams(logos);
+      } catch (err) {
+        console.error("Error fetching team logos:", err);
+      }
+    };
+
+    fetchData();
   }, [farcasterAccount]);
 
   const handleRowClick = async (team: Team) => {
@@ -59,10 +103,8 @@ const Settings = () => {
     const teamId = getTeamId(team);
     const fid = Number(farcasterAccount.fid);
 
-    // Prevent new clicks if any update is already in progress.
+    // Prevent concurrent updates.
     if (loadingTeamIds.length > 0) return;
-
-    // Mark this team as loading.
     setLoadingTeamIds((prev) => [...prev, teamId]);
 
     let updatedFavTeams: string[];
@@ -70,42 +112,120 @@ const Settings = () => {
     if (favTeams.includes(teamId)) {
       console.log(`Removing ${team.name} (${teamId}) from notifications`);
       updatedFavTeams = favTeams.filter((id) => id !== teamId);
-      userUpdateMutation({
-        account: Account.fromEd25519Signer({
-          fid: BigInt(fid),
-          signer: {
-          getSignerKey: getFarcasterSignerPublicKey,
-          signMessageHash: signFarcasterMessage,
-          },
-        }),
-        data: {
-          type: "url",
-          value: "https://farcaster.app",
-        },
-      });
     } else {
       console.log(`Adding ${team.name} (${teamId}) as favorite`);
       updatedFavTeams = [...favTeams, teamId];
+
+      // Pin the updated favorite team to IPFS (this is our backup)
+      // Here we pass a URL representing the favorite team backup.
+      const cid = await uploadFilesToIPFS("https://defifa.net");
+      console.log("IPFS CID:", cid);
+      console.log("userProfile", userProfile);
+      // Update the backup profile in IPFS with the new favorite team CID.
+      if (userProfile) {
+        // Ensure the apps array exists.
+        if (!userProfile.apps) {
+          userProfile.apps = [];
+        }
+        // Look for an existing "fc-footy" app.
+        let fcFootyApp = userProfile.apps.find((app) => app.appName === "fc-footy");
+
+        if (fcFootyApp) {
+          // Look for an existing USER_DATA_TYPE_URL entry.
+          const urlDataIndex = fcFootyApp.data.findIndex(
+            (item) => item.name === USER_DATA_TYPE_URL
+          );
+          if (urlDataIndex !== -1) {
+            // Update the URL with the new CID.
+            fcFootyApp.data[urlDataIndex].value = `https://ipfs.io/ipfs/${cid}`;
+          } else {
+            // Add a new entry if not present.
+            fcFootyApp.data.push({
+              name: USER_DATA_TYPE_URL,
+              value: `https://ipfs.io/ipfs/${cid}`,
+            });
+          }
+        } else {
+          // If the fc-footy app doesn't exist, create a new app object.
+          const newApp: App = {
+            appName: "fc-footy",
+            domain: "fc-footy.example.com",
+            data: [
+              {
+                name: USER_DATA_TYPE_URL,
+                value: `https://ipfs.io/ipfs/${cid}`,
+              },
+            ],
+          };
+          userProfile.apps.push(newApp);
+        }
+
+        // Execute the mutation to update the backup profile with the new URL.
+        userUpdateMutation.mutate({
+          account: Account.fromEd25519Signer({
+            fid: BigInt(fid),
+            signer: {
+              getSignerKey: getFarcasterSignerPublicKey,
+              signMessageHash: signFarcasterMessage,
+            },
+          }),
+          data: {
+            type: "url",
+            value: `https://ipfs.io/ipfs/${cid}/well-known/farcaster-preferences.json`,
+          },
+        });
+      } else {
+        // If no profile was fetched from IPFS, use the template.
+        let newUserProfile: UserProfile = { ...userProfileTemplate };
+        // Ensure the apps array exists.
+        if (!newUserProfile.apps) {
+          newUserProfile.apps = [];
+        }
+        const newApp: App = {
+          appName: "fc-footy",
+          domain: "fc-footy.example.com",
+          data: [
+            {
+              name: USER_DATA_TYPE_URL,
+              value: `https://ipfs.io/ipfs/${cid}/well-known/farcaster-preferences.json`,
+            },
+          ],
+        };
+        newUserProfile.apps.push(newApp);
+        setUserProfile(newUserProfile);
+        userUpdateMutation.mutate({
+          account: Account.fromEd25519Signer({
+            fid: BigInt(fid),
+            signer: {
+              getSignerKey: getFarcasterSignerPublicKey,
+              signMessageHash: signFarcasterMessage,
+            },
+          }),
+          data: {
+            type: "url",
+            value: `https://ipfs.io/ipfs/${cid}/well-known/farcaster-preferences.json`,
+          },
+        });
+      }
     }
 
+    // Update the favorite teams in the KV database (source of truth).
     await setTeamPreferences(fid, updatedFavTeams);
     setFavTeams(updatedFavTeams);
 
-    // Remove the loading state for this team.
+    // Remove the team from the loading state.
     setLoadingTeamIds((prev) => prev.filter((id) => id !== teamId));
 
-    // Clear the search term if any.
+    // Clear the search term if present.
     if (searchTerm.trim() !== "") {
       setSearchTerm("");
     }
   };
 
-  // Filter teams based on the search term (case-insensitive)
+  // Filter and order teams based on the search term and favorite teams.
   const filteredTeams = teams.filter((team) =>
     team.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // When there is no search term, order the teams so that those with notifications appear first.
   const orderedTeams =
     searchTerm.trim() === ""
       ? [...filteredTeams].sort((a, b) => {
@@ -116,7 +236,6 @@ const Settings = () => {
         })
       : filteredTeams;
 
-  // Lookup the full team object for the first favorite team (if any).
   const favTeamObj =
     favTeams.length > 0
       ? teams.find((team) => getTeamId(team) === favTeams[0])
@@ -139,7 +258,7 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Search input */}
+      {/* Search Input */}
       <div className="mb-4 w-full">
         <input
           type="text"
@@ -150,7 +269,7 @@ const Settings = () => {
         />
       </div>
 
-      {/* Scrollable table container */}
+      {/* Teams Table */}
       <div className="w-full h-[500px] overflow-y-auto">
         <table className="w-full bg-darkPurple">
           {favTeams.length === 0 && (
@@ -171,7 +290,6 @@ const Settings = () => {
               return (
                 <tr
                   key={teamId}
-                  // Only allow row clicks if no row is loading.
                   onClick={() => {
                     if (!isLoading && loadingTeamIds.length === 0) {
                       handleRowClick(team);
@@ -187,13 +305,6 @@ const Settings = () => {
                       {favTeams.includes(teamId) && (
                         <span role="img" aria-label="notification" className="ml-2">
                           🔔
-                          {/* <Image
-                            src="/banny_goal.png"
-                            alt="goal emoji"
-                            className="inline-block w-6 h-6"
-                            width={30}
-                            height={30}
-                          /> */}
                         </span>
                       )}
                     </div>
