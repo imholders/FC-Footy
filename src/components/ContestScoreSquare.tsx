@@ -362,11 +362,17 @@ const App: React.FC<AppProps> = ({ home, away }) => {
                             className="aspect-square rounded p-1 flex items-center justify-center bg-darkPurple transition-all duration-200 border border-lightPurple"
                           >
                             {currentTicket.owner ? (
+                             <a
+                             href={`https://warpcast.com/~/profiles/${currentTicket.owner}`}
+                             target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               <img
                                 src={currentTicket.pfp}
                                 alt="Ticket Owner"
                                 className="w-6 h-6 rounded-full"
                               />
+                            </a>
                             ) : null}
                           </div>
                         ) : (
@@ -381,11 +387,16 @@ const App: React.FC<AppProps> = ({ home, away }) => {
                             `}
                           >
                             {currentTicket.owner && (
-                              <img
-                                src={currentTicket.pfp}
-                                alt="Ticket Owner"
-                                className="mt-1 w-8 h-8 rounded-full"
-                              />
+                           <a
+                           href={`https://warpcast.com/~/profiles/${currentTicket.owner}`} target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <img
+                              src={currentTicket.pfp}
+                              alt="Ticket Owner"
+                              className="mt-1 w-8 h-8 rounded-full"
+                            />
+                          </a>
                             )}
                           </div>
                         );
