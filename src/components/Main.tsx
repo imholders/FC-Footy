@@ -107,7 +107,7 @@ export default function Main() {
   
   // Render main app UI
   return (
-    <div className="w-[400px] mx-auto py-4 px-2">
+    <div className="w-[380px] mx-auto py-4 px-2">
       {context === undefined && showH2 && (
         <h2 className="text-2xl font-bold text-center text-notWhite">
           The Footy App. Match previews, summaries, fantasy EPL, analysis and money games.

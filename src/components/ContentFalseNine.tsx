@@ -86,7 +86,7 @@ const ContentFalseNine = () => {
   }, [currentIndex]); // Run the scroll when the currentIndex changes
 
   return (
-    <div className="w-full h-[500px] overflow-y-auto">
+    <div className="w-full h-[500px] overflow-y-auto overflow-x-hidden">
       {ContentFalseNine.length > 0 ? (
         <div key={currentIndex} className="mb-4" ref={contentRef}>
           {/* Title, Author, and Date */}
