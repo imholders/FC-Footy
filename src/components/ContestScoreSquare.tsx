@@ -233,7 +233,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
               No Score Square games have been deployed for this match.
             </p>
             {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
-              <ContestScoreSquareCreate home={homeTeam} away={awayTeam} refereeId={user?.farcaster?.fid} />
+              <ContestScoreSquareCreate home={homeTeam} away={awayTeam} refereeId={user.farcaster.fid || 4163} />
               ) : (
               <WarpcastShareButton
                 selectedMatch={{
