@@ -396,7 +396,9 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
           <div className="mt-4">
             <ContestScoreSquare 
               home={event.competitions?.[0]?.competitors?.[0]?.team?.abbreviation || ''} 
-              away={event.competitions?.[0]?.competitors?.[1]?.team?.abbreviation || ''} 
+              away={event.competitions?.[0]?.competitors?.[1]?.team?.abbreviation || ''}
+              homeScore={homeScore}
+              awayScore={awayScore} 
             />
           </div>
           {gameContext && (
