@@ -6,7 +6,7 @@ import { Info } from 'lucide-react';
 interface ContestScoreSquareCreateProps {
   home: string;
   away: string;
-  refereeId: number | null;
+  refereeId: number;
 }
   
 const ContestScoreSquareCreate: React.FC<ContestScoreSquareCreateProps> = ({ home, away, refereeId }) => {
@@ -51,7 +51,7 @@ const ContestScoreSquareCreate: React.FC<ContestScoreSquareCreateProps> = ({ hom
         tickets: initialTickets,
         createdAt: now,
         updatedAt: now,
-        refereeId: refereeId || null,
+        refereeId: refereeId,
       };
 
       await createGame(newGame);
