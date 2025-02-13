@@ -453,7 +453,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                           >
                             {currentTicket.owner && (
                               <a
-                                href={`https://warpcast.com/~/profiles/${currentTicket.fid}`}
+                                href={`https://warpcast.com/~/profiles/${currentTicket.owner}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
