@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import frameSdk from "@farcaster/frame-sdk";
 import { FrameContext } from '@farcaster/frame-node';
-
+import ScoreGrid from './ui/ScoreGrid';
 import { usePrivy } from '@privy-io/react-auth';
 // import GetBalance from './ui/Balance';
 import { Ticket } from 'lucide-react';
@@ -55,10 +55,6 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const playerPfp = farcasterAccount?.pfp || '/default-avatar.png';
   const playerFid = farcasterAccount?.fid || 0;
   
-  // constant variables for grid headers
-  const colHeaders = ['0', '1', '2', '3', '4+'];
-  const rowHeaders = ['0', '1', '2', '3', '4+'];
-
   useEffect(() => {
     const loadContext = async () => {
       try {
@@ -330,8 +326,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
             )}
   
             <div className="flex mb-4">
-              <div className="flex items-center justify-center">
-                {/* The away score label is on the left side */}
+ {/*              <div className="flex items-center justify-center">
                 <span
                   className={`rotate-[-90deg] text-xs font-bold whitespace-nowrap ${
                     awayScore < 4
@@ -375,8 +370,8 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                         );
                       })}
                     </>
-                  )}
-                  {Array.from({ length: 5 }, (_, rowIdx) => (
+                  )} */}
+{/*                   {Array.from({ length: 5 }, (_, rowIdx) => (
                     <React.Fragment key={`row-${rowIdx}`}>
                       {gameState !== 'buying' && (
                         <div
@@ -468,10 +463,18 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                         );
                       })}
                     </React.Fragment>
-                  ))}
-
-                </div>
-              </div>
+                  ))} */}
+                  
+                  <ScoreGrid
+                      homeScore={homeScore}
+                      awayScore={awayScore}
+                      homeTeam={homeTeam}
+                      awayTeam={awayTeam}
+                      tickets={tickets}
+                      boardPositions={boardPositions}
+                      gameState={gameState}
+                      winningTicket={winningTicket}
+                      />
             </div>
 
             {gameState === 'placing' && (
@@ -524,7 +527,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
               </div>
             )}
 
-            {gameState === 'playing' && user?.farcaster?.username !== 'kmacb1.eth' && (
+            {gameState === 'playing' && user?.farcaster?.username !== 'kmacb.eth' && (
               <div className="bg-darkPurple p-3 rounded-lg text-center text-xs text-lightPurple">
                 Final score submission is only available to the referee. Please contact {refereeId}
               </div>
