@@ -35,7 +35,7 @@ const ContestScoreSquareCreate: React.FC<ContestScoreSquareCreateProps> = ({ hom
           const row = Math.floor(index / 5);
           const col = index % 5;
           return {
-            score: `${homeTeam} ${row} - ${col} ${awayTeam}`,
+            boughtRCPreShuffle: `${row} - ${col}`,
             owner: null,
           };
         });

@@ -98,7 +98,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
             setTeam2Score(Number(game.finalScore.away)); // Ensure it's a number          
           }
           if (game.winningTicket !== undefined) {
-            setWinningTicket(Number(game.winningTicket)); // Ensure winning ticket is stored as a number
+            setWinningTicket(Number(game.winningTicket)); // Ensure winning ticket is stored as a number 0-24
           }
         } else {
           console.error('No games found for prefix:', home, away);

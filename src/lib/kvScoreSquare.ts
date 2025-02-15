@@ -9,7 +9,7 @@ const redis = new Redis({
 export type GameState = 'buying' | 'placing' | 'playing' | 'completed';
 
 export type TicketType = {
-  score: string;
+  boughtRCPreShuffle: string;
   owner: number | null;
   pfp?: string;
 };
