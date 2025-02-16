@@ -20,7 +20,7 @@ const MatchesTab = ({ setSelectedTab }: MatchesTabProps) => {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="ml-1 text-2xl text-notWhite font-bold mb-4">
+        <h2 className="ml-1 font-xl text-notWhite font-bold mb-4">
           Select league
         </h2>
         <button
