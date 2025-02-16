@@ -1,63 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
-import EventCard from './MatchEventCard'; // Import the EventCard component
-import useEventsData from './utils/useEventsData'; // Import the custom hook
-import sportsData from './utils/sportsData'; // Import the sports data
+import React, { useState } from "react";
+import EventCard from "./MatchEventCard";
+import useEventsData from "./utils/useEventsData";
+import sportsData from "./utils/sportsData";
 
-// Define the structure for event details
-interface Detail {
-  athletesInvolved: Array<{ displayName: string }>;
-  type: {
-    text: string;
-  };
-  clock: {
-    displayValue: string;
-  };
-  team: {
-    id: string;
-    abbreviation: string;
-  };
+interface MatchesTabProps {
+  setSelectedTab: (tab: string) => void;
 }
 
-// Define the structure for events
-export interface Event {
-  id: string;
-  shortName: string;
-  name: string;
-  date: string;
-  status: {
-    displayClock: string;
-    type: {
-      detail: string;
-    };
-  };
-  competitions: {
-    competitors: {
-      team: {
-        logo: string;
-        id: string;
-        abbreviation: string;
-      };
-      score: number;
-    }[];
-    details: Detail[];
-  }[];
-}
+const MatchesTab = ({ setSelectedTab }: MatchesTabProps) => {
+  const [selectedSport, setSelectedSport] = useState<string>(sportsData[0].sportId);
+  const { events, loading, error } = useEventsData(selectedSport);
 
-const MatchesTab = () => {
-  const [selectedSport, setSelectedSport] = useState<string>(sportsData[0].sportId); // Default sport
-  const { events, loading, error } = useEventsData(selectedSport); // Fetch events based on selected sport
-
-  // Function to handle sport selection
   const handleTabClick = (sportId: string) => {
-    console.log('Selected sport:', sportId);
-    setSelectedSport(sportId); // Update selected sport
+    console.log("Selected sport:", sportId);
+    setSelectedSport(sportId);
   };
 
   return (
     <div>
-      <h2 className="ml-1 font-2xl text-notWhite font-bold mb-4">Select league</h2>
-
+      <div className="flex items-center justify-between">
+        <h2 className="ml-1 text-2xl text-notWhite font-bold mb-4">
+          Select league
+        </h2>
+        <button
+          onClick={() => setSelectedTab("settings")}
+          className="mb-2 flex items-center text-sm text-fontRed hover:underline focus:outline-none"
+        >
+          <span>Follow clubs 🔔</span>
+        </button>
+      </div>
       {/* Horizontal Scrollable Menu for Sports */}
       <div className="flex overflow-x-auto space-x-4 mb-4">
         {sportsData.map((sport) => (
@@ -66,14 +38,14 @@ const MatchesTab = () => {
             onClick={() => handleTabClick(sport.sportId)}
             className={`flex-shrink-0 py-1 px-6 text-sm font-semibold cursor-pointer rounded-full border-2 ${
               selectedSport === sport.sportId
-                ? "border-limeGreenOpacity text-lightPurple" : "border-gray-500 text-gray-500"
+                ? "border-limeGreenOpacity text-lightPurple"
+                : "border-gray-500 text-gray-500"
             }`}
           >
-            {sport.name} {/* Display the human-readable name */}
+            {sport.name}
           </button>
         ))}
       </div>
-
       {/* Matches Content */}
       <div className="p-4 mt-2 bg-purplePanel text-lightPurple rounded-lg">
         {loading ? (
@@ -81,12 +53,8 @@ const MatchesTab = () => {
         ) : error ? (
           <div className="text-red-500">{error}</div>
         ) : events.length > 0 ? (
-          events.map((event: any) => ( 
-            <><EventCard
-              key={event.id}
-              event={event}
-              sportId={selectedSport} />              
-            </>
+          events.map((event:any) => (
+            <EventCard key={event.id} event={event} sportId={selectedSport} />
           ))
         ) : (
           <div>No events available for {selectedSport}</div>

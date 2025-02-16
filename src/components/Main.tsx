@@ -127,11 +127,12 @@ export default function Main() {
         <>
           <TabNavigation selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
           <div className="bg-darkPurple p-4 rounded-md text-white">
-            {selectedTab === "matches" && <MatchesTab />}
-            {selectedTab === "contests" && <Contests />}
+          {selectedTab === "matches" && <MatchesTab setSelectedTab={setSelectedTab} />}
+          {selectedTab === "contests" && <Contests />}
             {selectedTab === "scout Players" && <Scout />}
             {selectedTab === "extra Time" && <ContentTab />}
             {selectedTab === "settings" && <Settings />}
+  
            {/* {selectedTab === "money Games" && <MoneyGames />}
             {/* Show generic "Coming soon" message if tab is unrecognized */}
             {!["matches", "contests", "scout Players", "extra Time", "settings"].includes(selectedTab) && (
