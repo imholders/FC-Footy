@@ -25,7 +25,7 @@ const MatchesTab = ({ setSelectedTab }: MatchesTabProps) => {
         </h2>
         <button
           onClick={() => setSelectedTab("settings")}
-          className="mb-2 flex items-center text-sm text-fontRed hover:underline focus:outline-none"
+          className="mb-3 flex items-center text-sm text-fontRed hover:underline focus:outline-none"
         >
           <span>Follow clubs 🔔</span>
         </button>
