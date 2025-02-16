@@ -4,7 +4,7 @@ import frameSdk from "@farcaster/frame-sdk";
 import { FrameContext } from '@farcaster/frame-node';
 import ScoreGrid from './ui/ScoreGrid';
 import { usePrivy } from '@privy-io/react-auth';
-// import GetBalance from './ui/Balance';
+import GetBalance from './ui/Balance';
 import { Ticket } from 'lucide-react';
 import {
   getGame,
@@ -19,6 +19,8 @@ import {
 } from '../lib/kvScoreSquare';
 import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 import WarpcastShareButton from './ui/WarpcastShareButton';
+import SendEthTransaction from "~/components/ui/SendEthTransaction"; // adjust the path accordingly
+import { Button } from './ui/Button';
 
 interface AppProps {
   home: string;
@@ -275,10 +277,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                   <div className="flex items-center gap-3 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <img src={playerPfp} alt="Player Avatar" className="rounded-full w-10 h-10" />
                     <span className="font-semibold text-lg">{playerName}</span>
-                    {/* <GetBalance /> */}
-                    <p className="text-sm text-lightPurple">
-                      Test Match. No money involved.
-                    </p>
+                    <GetBalance />
                   </div>
                 </div>
                 <div className="mb-3 text-left text-md text-lightPurple">
@@ -307,6 +306,8 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                   <button onClick={finalizePurchase} className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
                     Buy Tickets
                   </button>
+                    <SendEthTransaction />
+
                 </div>
               </>
             )}
@@ -326,145 +327,6 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
             )}
   
             <div className="flex mb-4">
- {/*              <div className="flex items-center justify-center">
-                <span
-                  className={`rotate-[-90deg] text-xs font-bold whitespace-nowrap ${
-                    awayScore < 4
-                      ? rowHeaders[0] === awayScore.toString() && awayScore.toString() === rowHeaders[0]
-                        ? 'text-limeGreenOpacity'
-                        : 'text-notWhite'
-                      : rowHeaders[0] === '4+' ? 'text-limeGreenOpacity' : 'text-notWhite'
-                  }`}
-                >
-                <div className="mb-1 mb-4 text-center font-bold text-notWhite text-xs">
-                  {awayTeam} Score
-                </div>
-                </span>
-              </div>
-              <div>
-                <div className="mb-1 mb-4 text-center font-bold text-notWhite text-xs">
-                  {homeTeam} Score
-                </div>
-                <div
-                  className="grid gap-1 mb-4"
-                  style={{
-                    gridTemplateColumns: gameState === 'buying' ? 'repeat(5, 45px)' : '1px repeat(5, 45px)',
-                  }}
-                >
-                  {gameState !== 'buying' && (
-                    <>
-                      <div></div>
-                      {colHeaders.map((header, colIdx) => {
-                        // Highlight the header if it matches homeScore.
-                        const isHomeScoreHighlight =
-                          homeScore < 4 ? header === homeScore.toString() : header === '4+';
-                        return (
-                          <div
-                            key={`col-${colIdx}`}
-                            className={`flex items-center justify-center text-center font-bold text-xs ${
-                              isHomeScoreHighlight ? 'text-limeGreenOpacity' : 'text-notWhite'
-                            }`}
-                          >
-                            {header}
-                          </div>
-                        );
-                      })}
-                    </>
-                  )} */}
-{/*                   {Array.from({ length: 5 }, (_, rowIdx) => (
-                    <React.Fragment key={`row-${rowIdx}`}>
-                      {gameState !== 'buying' && (
-                        <div
-                          className={`flex items-center justify-center text-center font-bold text-xs ${
-                            (awayScore < 4
-                              ? rowHeaders[rowIdx] === awayScore.toString()
-                              : rowHeaders[rowIdx] === '4+') 
-                              ? 'text-limeGreenOpacity'
-                              : 'text-notWhite'
-                          }`}
-                        >
-                          {rowHeaders[rowIdx]}
-                        </div>
-                      )}
-                      {Array.from({ length: 5 }, (_, colIdx) => {
-                        const ticketIndex = rowIdx * 5 + colIdx;
-                        const currentTicket =
-                          gameState === 'buying' ? tickets[ticketIndex] : boardPositions[ticketIndex];
-
-                        // Convert header values to numbers (treat "4+" as 4)
-                        const rowVal = rowHeaders[rowIdx] === '4+' ? 4 : parseInt(rowHeaders[rowIdx]);
-                        const colVal = colHeaders[colIdx] === '4+' ? 4 : parseInt(colHeaders[colIdx]);
-
-                        // Determine if this cell should be highlighted based on score
-                        const shouldHighlight = rowVal < awayScore || colVal < homeScore;
-                        const isScoreMatch =
-                          (homeScore < 4
-                            ? colHeaders[colIdx] === homeScore.toString()
-                            : colHeaders[colIdx] === '4+') &&
-                          (awayScore < 4
-                            ? rowHeaders[rowIdx] === awayScore.toString()
-                            : rowHeaders[rowIdx] === '4+');
-
-                        // Only apply score styles when the game is not in the "buying" state.
-                        const applyScoreStyles = gameState !== 'buying';
-                        const cellBgClass = applyScoreStyles && isScoreMatch ? 'bg-limeGreenOpacity' : '';
-                        const imgBorderClass = applyScoreStyles && shouldHighlight ? 'border border-2 border-fontRed' : '';
-
-                        if (!currentTicket) {
-                          return (
-                            <div
-                              key={ticketIndex}
-                              className={`aspect-square rounded p-1 flex items-center justify-center bg-darkPurple border border-lightPurple ${cellBgClass}`}
-                            />
-                          );
-                        }
-
-                        return gameState === 'buying' ? (
-                          <div
-                            key={ticketIndex}
-                            className="aspect-square rounded p-1 flex items-center justify-center bg-darkPurple transition-all duration-200 border border-lightPurple"
-                          >
-                            {currentTicket.owner && (
-                              <a
-                                href={`https://warpcast.com/~/profiles/${currentTicket.owner}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={currentTicket.pfp}
-                                  alt="Ticket Owner"
-                                  className="w-8 h-8 rounded-full"
-                                />
-                              </a>
-                            )}
-                          </div>
-                        ) : (
-                          <div
-                            key={ticketIndex}
-                            className={`aspect-square rounded p-1 flex flex-col items-center justify-center border border-lightPurple transition-all duration-200 
-                              ${cellBgClass} ${currentTicket.owner ? 'text-lightPurple' : 'bg-gray-100'} 
-                              ${winningTicket === ticketIndex && gameState === 'completed' ? 'ring-2 ring-limeGreenOpacity' : ''}
-                              ${gameState === 'placing' ? 'animate-pulse' : ''}`}
-                          >
-                            {currentTicket.owner && (
-                              <a
-                                href={`https://warpcast.com/~/profiles/${currentTicket.owner}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={currentTicket.pfp}
-                                  alt="Ticket Owner"
-                                  className={`w-8 h-8 rounded-full ${imgBorderClass}`}
-                                />
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))} */}
-                  
                   <ScoreGrid
                       homeScore={homeScore}
                       awayScore={awayScore}
