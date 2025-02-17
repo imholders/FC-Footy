@@ -237,7 +237,7 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
     mainContent = (
       <>
         <div className="mb-4 text-center text-notWhite font-semibold">
-          You haven't set a favorite team yet.
+          You have not set a favorite team yet.
         </div>
         <button
           onClick={() => onTabChange("followClubs")}
