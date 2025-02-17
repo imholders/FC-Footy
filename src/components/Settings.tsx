@@ -35,8 +35,9 @@ const Settings = () => {
 
       <div className="bg-purplePanel text-lightPurple rounded-lg p-2">
         {selectedTab === "followClubs" && <SettingsfollowClubs />}
-        {selectedTab === "updatePFP" && <SettingsPFPClubs />}
-      </div>
+        {selectedTab === "updatePFP" && (
+          <SettingsPFPClubs onTabChange={setSelectedTab} />
+        )}      </div>
     </div>
   );
 };

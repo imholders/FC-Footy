@@ -11,7 +11,6 @@ import frameSdk from "@farcaster/frame-sdk";
 import toast, { Toaster } from "react-hot-toast";
 import { Rnd } from "react-rnd";
 
-// --- Team Settings Types & Helpers ---
 interface Team {
   name: string;
   abbreviation: string;
@@ -19,15 +18,18 @@ interface Team {
   logoUrl: string;
 }
 
+interface SettingsPFPClubsProps {
+  onTabChange: (tab: string) => void;
+}
+
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
 // Fallback image if no team logo is available.
 const defaultLogoUrl = "/defifa_spinner.gif";
 
-const Settings = () => {
-  // FHub user update mutation.
+const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
+  // FHub update mutation.
   const userUpdateMutation = useUserUpdateMutation();
-  // Minimal Farcaster signer functions.
-  const { getFarcasterSignerPublicKey, signFarcasterMessage } =
+  const { getFarcasterSignerPublicKey, signFarcasterMessage: signFarcasterMessage } =
     useFarcasterSigner();
   const { user } = usePrivy();
   const farcasterAccount = user?.linkedAccounts.find(
@@ -59,8 +61,7 @@ const Settings = () => {
   const [renderedSrc, setRenderedSrc] = useState<string>(
     user?.farcaster?.pfp || defaultLogoUrl
   );
-
-  // Club sticker active by default.
+  // Club sticker is active by default.
   const [footyClubSticker, setFootyClubSticker] = useState({
     visible: true,
     x: 20,
@@ -102,7 +103,9 @@ const Settings = () => {
           img.onerror = (err) => reject(err);
         });
 
-        let sx = 0, sy = 0, sSize = 0;
+        let sx = 0,
+          sy = 0,
+          sSize = 0;
         if (img.naturalWidth >= img.naturalHeight) {
           sSize = img.naturalHeight;
           sx = (img.naturalWidth - sSize) / 2;
@@ -144,16 +147,40 @@ const Settings = () => {
       } catch (err) {
         console.error(err);
         toast.error(
-          `Error rendering image: ${
-            err instanceof Error ? err.message : String(err)
-          }`
+          `Error rendering image: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
     void renderFinalImage();
   }, [color, user?.farcaster?.pfp, footyClubSticker, favTeamObj]);
 
-  // setPfp uses FHub's mutation and expects the signer functions.
+//  const [loading, setLoading] = useState<boolean>(false);
+/*   const downloadFilteredImage = async () => {
+    const toastId = toast.loading("Uploading tinted image...");
+    setLoading(true);
+    try {
+      const response = await fetch("https://images.colorino.site/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: renderedSrc }),
+      });
+      if (!response.ok)
+        throw new Error(`Upload failed: ${response.statusText}`);
+      const json = await response.json();
+      const imageUrl = `https://images.colorino.site/${json.hash}.png`;
+      return frameSdk.actions.openUrl(imageUrl);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error(
+        `Error uploading image: ${error instanceof Error ? error.message : String(error)}`
+      );
+    } finally {
+      toast.dismiss(toastId);
+      setLoading(false);
+    }
+  }; */
+
+  // setPfp uses FHub's update mutation.
   const setPfp = useCallback(async () => {
     const toastId = toast.loading("Setting new profile picture...");
     try {
@@ -162,13 +189,17 @@ const Settings = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: renderedSrc }),
       });
-      if (!response.ok) throw new Error(`Upload failed: ${response.statusText}`);
+      console.log("Response:", response);
+      if (!response.ok)
+        throw new Error(`Upload failed: ${response.statusText}`);
       const json = await response.json();
       const imageUrl = `https://images.colorino.site/${json.hash}.png`;
       const fid = farcasterAccount ? Number(farcasterAccount.fid) : 0;
+      console.log("Setting PFP to:", imageUrl, " for FID: ", fid);
       const signer = {
         getSignerKey: getFarcasterSignerPublicKey,
-        signMessageHash: (messageHash: Uint8Array) => signFarcasterMessage(messageHash),
+        signMessageHash: (messageHash: Uint8Array) =>
+          signFarcasterMessage(messageHash),
       };
       userUpdateMutation.mutate({
         account: Account.fromEd25519Signer({
@@ -181,9 +212,7 @@ const Settings = () => {
     } catch (error) {
       console.error("Error setting profile picture:", error);
       toast.error(
-        `Error setting profile picture: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Error setting profile picture: ${error instanceof Error ? error.message : String(error)}`
       );
     } finally {
       toast.dismiss(toastId);
@@ -197,12 +226,26 @@ const Settings = () => {
   ]);
 
   let mainContent;
-  if (!user?.farcaster?.pfp) {
+  if (!user?.farcaster?.fid) {
     mainContent = (
       <div>
         Oops! It looks like you aren&apos;t using this website in a Farcaster frame! Please{" "}
         <a href="https://warpcast.com/warpcastadmin.eth/0x696df624">open it in a frame</a>.
       </div>
+    );
+  } else if (favTeams.length === 0) {
+    mainContent = (
+      <>
+        <div className="mb-4 text-center text-notWhite font-semibold">
+          You haven't set a favorite team yet.
+        </div>
+        <button
+          onClick={() => onTabChange("followClubs")}
+          className="mb-3 flex items-center text-sm text-fontRed hover:underline focus:outline-none"
+        >
+          Follow your favorite team first
+        </button>
+      </>
     );
   } else {
     mainContent = (
@@ -220,34 +263,6 @@ const Settings = () => {
         </div>
         {/* PFP Editing Section */}
         <div className="container prose mx-auto max-w-prose p-5">
-          {/* Club Toggle Button */}
-{/*           <div className="flex flex-wrap gap-2">
-            {footyClubSticker.visible ? (
-              <button
-                className="btn btn-sm"
-                onClick={() =>
-                  setFootyClubSticker((prev) => ({ ...prev, visible: false }))
-                }
-              >
-                Remove club
-              </button>
-            ) : (
-              <button
-                className="btn btn-sm"
-                onClick={() =>
-                  setFootyClubSticker({
-                    visible: true,
-                    x: 20,
-                    y: 140,
-                    width: 100,
-                    height: 100,
-                  })
-                }
-              >
-                Add club
-              </button>
-            )}
-          </div> */}
           <div
             ref={containerRef}
             className="relative inline-block overflow-hidden"
@@ -258,7 +273,6 @@ const Settings = () => {
               src={renderedSrc}
               alt="Filtered PFP"
             />
-            
             {footyClubSticker.visible && (
               <Rnd
                 size={{
@@ -312,13 +326,6 @@ const Settings = () => {
             >
               Set as my PFP
             </button>
-            {/* <button
-              className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-fontRed"
-              onClick={downloadFilteredImage}
-              disabled={loading}
-            >
-              Download Image
-            </button> */}
             <button
               className="text-sm"
               onClick={() =>
@@ -341,4 +348,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default SettingsPFPClubs;
