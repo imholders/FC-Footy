@@ -4,7 +4,7 @@ import { fetchTeamLogos } from "./utils/fetchTeamLogos";
 import { getFansForTeam } from "../lib/kvPerferences";
 
 interface Team {
-  fid: number; // Unique numeric ID used for preferences
+  fid?: number; // Now optional
   name: string;
   abbreviation: string;
   league: string;
