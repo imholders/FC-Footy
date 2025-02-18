@@ -27,7 +27,7 @@ const MatchesTab = ({ setSelectedTab }: MatchesTabProps) => {
           onClick={() => setSelectedTab("settings")}
           className="mb-3 flex items-center text-sm text-fontRed hover:underline focus:outline-none"
         >
-          <span>Follow clubs 🔔</span>
+          <span>Follow teams 🔔</span>
         </button>
       </div>
       {/* Horizontal Scrollable Menu for Sports */}

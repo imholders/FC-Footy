@@ -310,7 +310,7 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
                 onClick={setPfp}
                 className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors hover:bg-fontRed"
               >
-                Set as my PFP
+                Update profile pic
               </button>
             )}
             <button

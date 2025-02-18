@@ -125,7 +125,7 @@ const Settings = () => {
       <div className="mb-4 w-full">
         <input
           type="text"
-          placeholder="Search clubs..."
+          placeholder="Search teams..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-darkPurple p-2 border rounded-md border-limeGreenOpacity focus:outline-none focus:ring-2 focus:ring-darkPurple"
