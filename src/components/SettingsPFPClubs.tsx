@@ -275,6 +275,7 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
             />
             {footyClubSticker.visible && (
               <Rnd
+                lockAspectRatio
                 size={{
                   width: footyClubSticker.width,
                   height: footyClubSticker.height,
