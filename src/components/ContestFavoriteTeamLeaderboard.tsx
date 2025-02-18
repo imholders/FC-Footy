@@ -30,12 +30,7 @@ const LoadingDots = () => {
 const LoadingIndicator = () => {
   return (
     <div className="flex items-center space-x-1">
-      <Image
-        src="/defifa_spinner.gif"
-        alt="loading"
-        width={30}
-        height={30}
-      />
+      <Image src="/defifa_spinner.gif" alt="loading" width={30} height={30} />
       <LoadingDots />
     </div>
   );
@@ -95,19 +90,20 @@ const FavoriteTeamLeaderboard = () => {
   const topTeams = orderedTeams.slice(0, 10);
 
   return (
-    <div className="w-full h-full overflow-y-auto">
+    <div className="w-full h-full">
       {/* Scrollable table container */}
       <div className="w-full h-[500px] overflow-y-auto">
         <table className="w-full bg-darkPurple">
           <thead className="bg-darkPurple">
             <tr className="text-notWhite text-center border-b border-limeGreenOpacity">
+              <th className="py-1 px-2 text-left font-medium">Rank</th>
               <th className="py-1 px-4 text-left font-medium">Followers</th>
               <th className="py-1 px-4 text-left font-medium">Team</th>
               <th className="py-1 px-4 text-right font-medium">Badge</th>
             </tr>
           </thead>
           <tbody>
-            {topTeams.map((team) => {
+            {topTeams.map((team, index) => {
               const teamId = getTeamId(team);
               const isLoading = loadingTeamIds.includes(teamId);
               const fanCount = fanCounts[teamId];
@@ -124,11 +120,10 @@ const FavoriteTeamLeaderboard = () => {
                   }`}
                 >
                   <td className="py-1 px-4 border-b border-limeGreenOpacity text-left">
-                    {fanCount !== undefined ? (
-                      fanCount
-                    ) : (
-                      <LoadingIndicator />
-                    )}
+                    {index + 1}
+                  </td>
+                  <td className="py-1 px-4 border-b border-limeGreenOpacity text-left">
+                    {fanCount !== undefined ? fanCount : <LoadingIndicator />}
                   </td>
                   <td className="py-1 px-4 border-b border-limeGreenOpacity text-left">
                     {team.name}
@@ -137,12 +132,7 @@ const FavoriteTeamLeaderboard = () => {
                     {isLoading ? (
                       <LoadingIndicator />
                     ) : (
-                      <Image
-                        src={team.logoUrl}
-                        alt={team.name}
-                        width={30}
-                        height={30}
-                      />
+                      <Image src={team.logoUrl} alt={team.name} width={30} height={30} />
                     )}
                   </td>
                 </tr>
