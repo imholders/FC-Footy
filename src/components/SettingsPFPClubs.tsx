@@ -32,6 +32,7 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
   const { getFarcasterSignerPublicKey, signFarcasterMessage: signFarcasterMessage } =
     useFarcasterSigner();
   const { user } = usePrivy();
+  const { requestFarcasterSignerFromWarpcast } = useFarcasterSigner();
   const farcasterAccount = user?.linkedAccounts.find(
     (account) => account.type === "farcaster"
   );
@@ -154,32 +155,6 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
     void renderFinalImage();
   }, [color, user?.farcaster?.pfp, footyClubSticker, favTeamObj]);
 
-//  const [loading, setLoading] = useState<boolean>(false);
-/*   const downloadFilteredImage = async () => {
-    const toastId = toast.loading("Uploading tinted image...");
-    setLoading(true);
-    try {
-      const response = await fetch("https://images.colorino.site/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: renderedSrc }),
-      });
-      if (!response.ok)
-        throw new Error(`Upload failed: ${response.statusText}`);
-      const json = await response.json();
-      const imageUrl = `https://images.colorino.site/${json.hash}.png`;
-      return frameSdk.actions.openUrl(imageUrl);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error(
-        `Error uploading image: ${error instanceof Error ? error.message : String(error)}`
-      );
-    } finally {
-      toast.dismiss(toastId);
-      setLoading(false);
-    }
-  }; */
-
   // setPfp uses FHub's update mutation.
   const setPfp = useCallback(async () => {
     const toastId = toast.loading("Setting new profile picture...");
@@ -212,7 +187,9 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
     } catch (error) {
       console.error("Error setting profile picture:", error);
       toast.error(
-        `Error setting profile picture: ${error instanceof Error ? error.message : String(error)}`
+        `Error setting profile picture: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     } finally {
       toast.dismiss(toastId);
@@ -321,12 +298,21 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <button
-              className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-fontRed"
-              onClick={setPfp}
-            >
-              Set as my PFP
-            </button>
+            {farcasterAccount && !farcasterAccount.signerPublicKey ? (
+              <button
+                onClick={() => requestFarcasterSignerFromWarpcast()}
+                className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors hover:bg-fontRed"
+              >
+                Authorize pfp update
+              </button>
+            ) : (
+              <button
+                onClick={setPfp}
+                className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors hover:bg-fontRed"
+              >
+                Set as my PFP
+              </button>
+            )}
             <button
               className="text-sm"
               onClick={() =>
