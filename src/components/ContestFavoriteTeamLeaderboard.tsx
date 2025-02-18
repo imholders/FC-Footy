@@ -100,7 +100,7 @@ const FavoriteTeamLeaderboard = () => {
       <div className="w-full h-[500px] overflow-y-auto">
         <table className="w-full bg-darkPurple">
           <thead className="bg-darkPurple">
-            <tr className="text-fontRed text-center border-b border-limeGreenOpacity">
+            <tr className="text-notWhite text-center border-b border-limeGreenOpacity">
               <th className="py-1 px-4 text-left font-medium">Followers</th>
               <th className="py-1 px-4 text-left font-medium">Team</th>
               <th className="py-1 px-4 text-right font-medium">Badge</th>
