@@ -31,12 +31,13 @@ interface AppProps {
 }
 
 interface FanUserData {
-  fid?: number; // Make it optional
-  USER_DATA_TYPE_DISPLAY?: string[];
-  username?: string;
-  pfp?: string;
+  fid: number; // Ensure it's always a number (remove optional `?`)
+  USER_DATA_TYPE_DISPLAY: string[]; // Keep as an array, remove optional `?` to ensure it always exists
+  username: string; // Ensure it's always a string (no `?`)
+  pfp: string; // Ensure it's always a string (no `?`)
   [key: string]: unknown; // Allow additional properties
 }
+
 
 export type ViewProfileOptions = {
   fid: string;
@@ -89,27 +90,34 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   };
 
   useEffect(() => {
-    async function getRefereeData() {
+    const getRefereeData = async () => {
+      if (!refereeId) return;
+  
       try {
+        console.log("Fetching referee profile for ID:", refereeId);
         const profileData = await fetchFanUserData(refereeId);
   
+        // Ensure all fields exist and have correct types
         const formattedData: FanUserData = {
-          fid: refereeId, // Ensure fid is set
-          USER_DATA_TYPE_DISPLAY: profileData.USER_DATA_TYPE_DISPLAY || [],
-          username: profileData.username || "Unknown",
-          pfp: profileData.pfp || "/default-avatar.png",
-          ...profileData, // Spread remaining properties
+          fid: refereeId, // Always set `fid`
+          USER_DATA_TYPE_DISPLAY: Array.isArray(profileData.USER_DATA_TYPE_DISPLAY)
+            ? profileData.USER_DATA_TYPE_DISPLAY
+            : [], // Ensure it's always an array
+          username: typeof profileData.username === "string"
+            ? profileData.username
+            : profileData.USER_DATA_TYPE_DISPLAY?.[0] || "Unknown", // Fallback to first display name
+          pfp: typeof profileData.pfp === "string" ? profileData.pfp : "/default-avatar.png",
+          ...profileData, // Spread additional properties safely
         };
   
         setRefereeFcData(formattedData);
+        console.log("Referee data set:", formattedData);
       } catch (error) {
         console.error("Error fetching referee data:", error);
       }
-    }
+    };
   
-    if (refereeId) {
-      getRefereeData();
-    }
+    getRefereeData();
   }, [refereeId]);
   
   
@@ -183,18 +191,38 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
 
   useEffect(() => {
     async function fetchWinnerData() {
-      if (winningTicket !== null && boardPositions[winningTicket]?.owner) {
-        try {
-          const data = await fetchFanUserData(boardPositions[winningTicket].owner);
-          setWinnerFcData(data); // This is where setWinnerFcData is used.
-        } catch (error) {
-          console.error("Error fetching winner fan user data:", error);
-        }
+      if (winningTicket === null || !boardPositions[winningTicket]?.owner) {
+        console.warn("Skipping winner fetch: No valid winning ticket or owner.");
+        return;
+      }
+  
+      try {
+        console.log("Fetching winner profile for:", boardPositions[winningTicket]?.owner);
+        const profileData = await fetchFanUserData(boardPositions[winningTicket].owner);
+  
+        // Ensure type consistency and provide default values
+        const formattedData: FanUserData = {
+          fid: boardPositions[winningTicket].owner, // Ensure `fid` is always a number
+          USER_DATA_TYPE_DISPLAY: Array.isArray(profileData.USER_DATA_TYPE_DISPLAY)
+            ? profileData.USER_DATA_TYPE_DISPLAY
+            : [],
+          username: typeof profileData.username === "string"
+            ? profileData.username
+            : profileData.USER_DATA_TYPE_DISPLAY?.[0] || "Unknown",
+          pfp: typeof profileData.pfp === "string" ? profileData.pfp : "/default-avatar.png",
+          ...profileData, // Spread remaining properties safely
+        };
+  
+        setWinnerFcData(formattedData);
+        console.log("Winner data set:", formattedData);
+      } catch (error) {
+        console.error("Error fetching winner fan user data:", error);
       }
     }
+  
     fetchWinnerData();
   }, [winningTicket, boardPositions]);
-
+  
   if (loading) {
     return <div className="p-4">Loading game data...</div>;
   }
@@ -359,7 +387,9 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                     }}
                     className="text-lightPurple underline cursor-pointer ml-1"
                   >
-                    {refereeFcData ? refereeFcData.USER_DATA_TYPE_DISPLAY[0] : refereeId || 'anon'}
+                    {refereeFcData && refereeFcData.USER_DATA_TYPE_DISPLAY
+                      ? refereeFcData.USER_DATA_TYPE_DISPLAY[0]
+                      : refereeId || 'anon'}
                   </button>
                 </span>
               </div>
@@ -546,7 +576,9 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                   <div className="absolute inset-0 rounded-full border-2 border-dotted opacity-50" style={{ borderColor: '#FEA282' }}></div>
                 </a>
                 <div className="mt-2 text-xl font-semibold" style={{ color: '#FEA282' }}>
-                  {winnerFcData ? winnerFcData.USER_DATA_TYPE_DISPLAY[0] : boardPositions[winningTicket]?.owner}
+                  {winnerFcData?.USER_DATA_TYPE_DISPLAY && winnerFcData.USER_DATA_TYPE_DISPLAY.length > 0
+                    ? winnerFcData.USER_DATA_TYPE_DISPLAY[0]
+                    : boardPositions[winningTicket]?.owner}
                 </div>
               </div>
               
