@@ -27,6 +27,8 @@
     "esbuild": "^0.24.2",
     "ethers": "^6.13.5",
     "fhub": "0.0.0-canary-20250211205711",
+    "file-saver": "^2.0.5",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "jotai": "^2.12.0",
     "lucide-react": "^0.469.0",

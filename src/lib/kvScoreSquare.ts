@@ -28,6 +28,7 @@ export interface GameData {
   refereeId: number;
   payout?: number;
   prizeClaimed?: boolean;
+  prizePaid?: boolean; 
   createdAt: string;
   updatedAt: string;
 }
@@ -168,6 +169,16 @@ export async function claimPrize(gameId: string): Promise<void> {
   const game = await getGame(gameId);
   if (game && game.gameState === 'completed' && !game.prizeClaimed) {
     game.prizeClaimed = true;
+    game.prizePaid = false;
+    game.updatedAt = new Date().toISOString();
+    await redis.set(getGameKey(gameId), JSON.stringify(game));
+  }
+}
+
+export async function attestPrizePaid(gameId: string): Promise<void> {
+  const game = await getGame(gameId);
+  if (game && game.gameState === 'completed' && game.prizeClaimed && !game.prizePaid) {
+    game.prizePaid = true;
     game.updatedAt = new Date().toISOString();
     await redis.set(getGameKey(gameId), JSON.stringify(game));
   }

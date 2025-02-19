@@ -1,7 +1,7 @@
 // App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import frameSdk from "@farcaster/frame-sdk";
-import { FrameContext } from '@farcaster/frame-node';
+// import { FrameContext } from '@farcaster/frame-node';
 import ScoreGrid from './ui/ScoreGrid';
 import { usePrivy } from '@privy-io/react-auth';
 // import GetBalance from './ui/Balance';
@@ -13,12 +13,15 @@ import {
   randomizeBoard,
   submitFinalScore,
   claimPrize,
+  attestPrizePaid,
   GameState,
   TicketType,
   GameData,
 } from '../lib/kvScoreSquare';
 import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 import WarpcastShareButton from './ui/WarpcastShareButton';
+import { fetchFanUserData } from './utils/fetchFCProfile';
+import { toPng } from 'html-to-image';
 
 interface AppProps {
   home: string;
@@ -26,6 +29,18 @@ interface AppProps {
   homeScore: number;
   awayScore: number;
 }
+
+interface FanUserData {
+  USER_DATA_TYPE_DISPLAY: string[]; // Adjust based on actual structure
+  fid: number;
+  username?: string;
+  pfp?: string;
+  [key: string]: unknown; // If there are additional unknown fields
+}
+
+export type ViewProfileOptions = {
+  fid: string;
+};
 
 const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   // Local state for game data
@@ -39,7 +54,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const [refereeId, setRefereeId] = useState<number>(4163); // kmacb1.eth as default
   const [homeTeam, setHomeTeam] = useState<string>("");
   const [awayTeam, setAwayTeam] = useState<string>("");
-  const [context, setContext] = useState<FrameContext | undefined>(undefined);
+  // const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
 
   // Other local state
@@ -48,28 +63,65 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const [winningTicket, setWinningTicket] = useState<number | null>(null);
   const [cart, setCart] = useState<number[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refereeFcData, setRefereeFcData] = useState<FanUserData | null>(null);
+  const [prizeClaimed, setPrizeClaimed] = useState<boolean>(false);
+  const [prizePaid, setPrizePaid] = useState<boolean>(false);
+  const [winnerFcData, setWinnerFcData] = useState<FanUserData | null>(null);
 
   const { user } = usePrivy();
   const farcasterAccount = user?.linkedAccounts.find(account => account.type === 'farcaster');
   const playerName = farcasterAccount?.username || '';
   const playerPfp = farcasterAccount?.pfp || '/default-avatar.png';
   const playerFid = farcasterAccount?.fid || 0;
-  
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadImage = async () => {
+    if (!cardRef.current) return;
+    try {
+      const dataUrl = await toPng(cardRef.current);
+      // Option 1: Download the image immediately
+      // saveAs(dataUrl, 'winning-card.png');
+      console.log('Image data URL:', dataUrl);
+      // Option 2: Or you can use the dataUrl in an <img> tag for preview/share
+    } catch (error) {
+      console.error('Failed to generate image', error);
+    }
+  };
+
+  useEffect(() => {
+    async function getRefereeData() {
+      try {
+        const profileData = await fetchFanUserData(refereeId);
+        setRefereeFcData(profileData);
+      } catch (error) {
+        console.error("Error fetching referee data:", error);
+      }
+    }
+    // Only fetch if we have a refereeId
+    if (refereeId) {
+      getRefereeData();
+    }
+  }, [refereeId]);
+
   useEffect(() => {
     const loadContext = async () => {
       try {
-        setContext((await frameSdk.context) as FrameContext);
-        setIsContextLoaded(true);
+        const ctx = await frameSdk.context;
+        if (!ctx) {
+          console.error("Farcaster context returned null or undefined.");
+          return;
+        }
+        setIsContextLoaded(true); // Just mark it as loaded
       } catch (error) {
         console.error("Failed to load Farcaster context:", error);
       }
     };
-
+  
     if (!isContextLoaded) {
       loadContext();
     }
-  }, [isContextLoaded]);
-
+  }, [isContextLoaded]);  
+  
   // Load game data on mount.
   useEffect(() => {
     async function loadGame() {
@@ -96,6 +148,15 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
           if (game.winningTicket !== undefined) {
             setWinningTicket(Number(game.winningTicket)); // Ensure winning ticket is stored as a number 0-24
           }
+          if (typeof game.prizeClaimed === 'boolean') {
+            setPrizeClaimed(game.prizeClaimed);
+          }
+          if (typeof game.prizeClaimed === 'boolean') {
+            setPrizeClaimed(game.prizeClaimed);
+          }
+          if (typeof game.prizePaid === 'boolean') {
+            setPrizePaid(game.prizePaid);
+          }
         } else {
           console.error('No games found for prefix:', home, away);
           setHomeTeam(home);
@@ -109,6 +170,20 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
     }
     loadGame();
   }, [gameId, home, away, homeScore, awayScore]);
+
+  useEffect(() => {
+    async function fetchWinnerData() {
+      if (winningTicket !== null && boardPositions[winningTicket]?.owner) {
+        try {
+          const data = await fetchFanUserData(boardPositions[winningTicket].owner);
+          setWinnerFcData(data); // This is where setWinnerFcData is used.
+        } catch (error) {
+          console.error("Error fetching winner fan user data:", error);
+        }
+      }
+    }
+    fetchWinnerData();
+  }, [winningTicket, boardPositions]);
 
   if (loading) {
     return <div className="p-4">Loading game data...</div>;
@@ -168,7 +243,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
 
   const handleSubmitScore = async () => {
     if (user?.farcaster?.fid !== refereeId) {
-      alert('Only the referee can submit the score. Please tell @kmacb.eth');
+      alert('Only the referee can submit the score.');
       return;
     }
     if (team1Score === null || team2Score === null) {
@@ -194,27 +269,34 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const handleClaimPrize = async () => {
     try {
       await claimPrize(gameId);
-      //alert('Prize Claimed!'); 
+      // After claiming, update state to remove the claim button.
+      setPrizeClaimed(true);
+      // Optionally, refetch game data here.
       const updatedGame = await getGame(gameId);
       if (updatedGame) {
-        // Optionally update state after claiming prize.
-         // Construct and open the URL
-        const winnerProfile = `https://warpcast.com/~/profiles/${boardPositions[winningTicket || 0 ]?.owner}`
-        const matchSummary = `Hey ${winnerProfile} won the Score Score \n${gameId} please verify and send the money`;
-        const encodedSummary = encodeURIComponent(matchSummary);
-        const url = `https://warpcast.com/~/inbox/create/${420564}?text=${encodedSummary}`;
-        console.log(context);
-        if (context === undefined) {
-          window.open(url, '_blank');
-        } else {
-          frameSdk.actions.openUrl(url);
-        }
+        // Optionally update other state variables
+        setBoardPositions(updatedGame.boardPositions || []);
+        setGameState(updatedGame.gameState);
       }
     } catch (error) {
       console.error('Error claiming prize:', error);
     }
   };
-
+  
+  const handleAttestPrizePaid = async () => {
+    try {
+      await attestPrizePaid(gameId);
+      // After attestation, update local state (optionally refetch game data)
+      setPrizePaid(true);
+      const updatedGame = await getGame(gameId);
+      if (updatedGame) {
+        setPrizePaid(updatedGame.prizePaid || false);
+      }
+    } catch (error) {
+      console.error("Error attesting prize paid:", error);
+    }
+  };
+  
   const getPotTotal = () => {
     const purchasedCount = tickets.filter(t => t.owner !== null).length;
     return purchasedCount * costPerTicket;
@@ -228,6 +310,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
             <p className="text-sm text-center text-lightPurple mb-4">
               No Score Square games have been deployed for this match.
             </p>
+            {/* governing who may deploy for now */}
             {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
               <ContestScoreSquareCreate home={homeTeam} away={awayTeam} refereeId={user.farcaster.fid || 4163} />
               ) : (
@@ -256,7 +339,18 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                   {homeTeam} vs {awayTeam}
                 </h1>
                 <span className="text-sm text-lightPurple">
-                  Referee: {user?.farcaster?.displayName || 'anon'}
+                  Referee: 
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      // You can now directly use the already-fetched refereeFcData if needed
+                      console.log('Referee Fan Data and refereeId:', refereeFcData, refereeId);
+                      await frameSdk.actions.viewProfile({ fid: refereeId });
+                    }}
+                    className="text-lightPurple underline cursor-pointer ml-1"
+                  >
+                    {refereeFcData ? refereeFcData.USER_DATA_TYPE_DISPLAY[0] : refereeId || 'anon'}
+                  </button>
                 </span>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -313,10 +407,9 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
 
             {gameState === 'playing' && (
               <div className="mb-3 text-left text-sm text-fontRed">
-                <p>
-                  <span className="font-bold">Step 2:</span> The referee is {refereeId}. They will enter the final scores for each team. The winning ticket is determined by the grid cell corresponding to these scores.
-                </p>
-              </div>
+                <span className="font-bold mr-1">Step 2:</span> 
+                The referee enters the final scores for each team. The winning ticket is determined by the grid cell corresponding to these scores.
+            </div>
             )}
 
             {gameState === 'completed' && (
@@ -326,155 +419,16 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
             )}
   
             <div className="flex mb-4">
- {/*              <div className="flex items-center justify-center">
-                <span
-                  className={`rotate-[-90deg] text-xs font-bold whitespace-nowrap ${
-                    awayScore < 4
-                      ? rowHeaders[0] === awayScore.toString() && awayScore.toString() === rowHeaders[0]
-                        ? 'text-limeGreenOpacity'
-                        : 'text-notWhite'
-                      : rowHeaders[0] === '4+' ? 'text-limeGreenOpacity' : 'text-notWhite'
-                  }`}
-                >
-                <div className="mb-1 mb-4 text-center font-bold text-notWhite text-xs">
-                  {awayTeam} Score
-                </div>
-                </span>
-              </div>
-              <div>
-                <div className="mb-1 mb-4 text-center font-bold text-notWhite text-xs">
-                  {homeTeam} Score
-                </div>
-                <div
-                  className="grid gap-1 mb-4"
-                  style={{
-                    gridTemplateColumns: gameState === 'buying' ? 'repeat(5, 45px)' : '1px repeat(5, 45px)',
-                  }}
-                >
-                  {gameState !== 'buying' && (
-                    <>
-                      <div></div>
-                      {colHeaders.map((header, colIdx) => {
-                        // Highlight the header if it matches homeScore.
-                        const isHomeScoreHighlight =
-                          homeScore < 4 ? header === homeScore.toString() : header === '4+';
-                        return (
-                          <div
-                            key={`col-${colIdx}`}
-                            className={`flex items-center justify-center text-center font-bold text-xs ${
-                              isHomeScoreHighlight ? 'text-limeGreenOpacity' : 'text-notWhite'
-                            }`}
-                          >
-                            {header}
-                          </div>
-                        );
-                      })}
-                    </>
-                  )} */}
-{/*                   {Array.from({ length: 5 }, (_, rowIdx) => (
-                    <React.Fragment key={`row-${rowIdx}`}>
-                      {gameState !== 'buying' && (
-                        <div
-                          className={`flex items-center justify-center text-center font-bold text-xs ${
-                            (awayScore < 4
-                              ? rowHeaders[rowIdx] === awayScore.toString()
-                              : rowHeaders[rowIdx] === '4+') 
-                              ? 'text-limeGreenOpacity'
-                              : 'text-notWhite'
-                          }`}
-                        >
-                          {rowHeaders[rowIdx]}
-                        </div>
-                      )}
-                      {Array.from({ length: 5 }, (_, colIdx) => {
-                        const ticketIndex = rowIdx * 5 + colIdx;
-                        const currentTicket =
-                          gameState === 'buying' ? tickets[ticketIndex] : boardPositions[ticketIndex];
-
-                        // Convert header values to numbers (treat "4+" as 4)
-                        const rowVal = rowHeaders[rowIdx] === '4+' ? 4 : parseInt(rowHeaders[rowIdx]);
-                        const colVal = colHeaders[colIdx] === '4+' ? 4 : parseInt(colHeaders[colIdx]);
-
-                        // Determine if this cell should be highlighted based on score
-                        const shouldHighlight = rowVal < awayScore || colVal < homeScore;
-                        const isScoreMatch =
-                          (homeScore < 4
-                            ? colHeaders[colIdx] === homeScore.toString()
-                            : colHeaders[colIdx] === '4+') &&
-                          (awayScore < 4
-                            ? rowHeaders[rowIdx] === awayScore.toString()
-                            : rowHeaders[rowIdx] === '4+');
-
-                        // Only apply score styles when the game is not in the "buying" state.
-                        const applyScoreStyles = gameState !== 'buying';
-                        const cellBgClass = applyScoreStyles && isScoreMatch ? 'bg-limeGreenOpacity' : '';
-                        const imgBorderClass = applyScoreStyles && shouldHighlight ? 'border border-2 border-fontRed' : '';
-
-                        if (!currentTicket) {
-                          return (
-                            <div
-                              key={ticketIndex}
-                              className={`aspect-square rounded p-1 flex items-center justify-center bg-darkPurple border border-lightPurple ${cellBgClass}`}
-                            />
-                          );
-                        }
-
-                        return gameState === 'buying' ? (
-                          <div
-                            key={ticketIndex}
-                            className="aspect-square rounded p-1 flex items-center justify-center bg-darkPurple transition-all duration-200 border border-lightPurple"
-                          >
-                            {currentTicket.owner && (
-                              <a
-                                href={`https://warpcast.com/~/profiles/${currentTicket.owner}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={currentTicket.pfp}
-                                  alt="Ticket Owner"
-                                  className="w-8 h-8 rounded-full"
-                                />
-                              </a>
-                            )}
-                          </div>
-                        ) : (
-                          <div
-                            key={ticketIndex}
-                            className={`aspect-square rounded p-1 flex flex-col items-center justify-center border border-lightPurple transition-all duration-200 
-                              ${cellBgClass} ${currentTicket.owner ? 'text-lightPurple' : 'bg-gray-100'} 
-                              ${winningTicket === ticketIndex && gameState === 'completed' ? 'ring-2 ring-limeGreenOpacity' : ''}
-                              ${gameState === 'placing' ? 'animate-pulse' : ''}`}
-                          >
-                            {currentTicket.owner && (
-                              <a
-                                href={`https://warpcast.com/~/profiles/${currentTicket.owner}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={currentTicket.pfp}
-                                  alt="Ticket Owner"
-                                  className={`w-8 h-8 rounded-full ${imgBorderClass}`}
-                                />
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))} */}
-                  
-                  <ScoreGrid
-                      homeScore={homeScore}
-                      awayScore={awayScore}
-                      homeTeam={homeTeam}
-                      awayTeam={awayTeam}
-                      tickets={tickets}
-                      boardPositions={boardPositions}
-                      gameState={gameState}
-                      winningTicket={winningTicket}
-                      />
+              <ScoreGrid
+                  homeScore={homeScore}
+                  awayScore={awayScore}
+                  homeTeam={homeTeam}
+                  awayTeam={awayTeam}
+                  tickets={tickets}
+                  boardPositions={boardPositions}
+                  gameState={gameState}
+                  winningTicket={winningTicket}
+              />
             </div>
 
             {gameState === 'placing' && (
@@ -516,6 +470,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                     </select>
                   </div>
                 </div>
+
                 {gameState === 'playing' && user?.farcaster?.fid === refereeId && (
                   <button
                     onClick={handleSubmitScore}
@@ -527,49 +482,134 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
               </div>
             )}
 
-            {gameState === 'playing' && user?.farcaster?.username !== 'kmacb.eth' && (
+            {gameState === 'playing' && user?.farcaster?.fid !== refereeId && (
               <div className="bg-darkPurple p-3 rounded-lg text-center text-xs text-lightPurple">
                 Final score submission is only available to the referee. Please contact {refereeId}
               </div>
             )}
 
-            {gameState === 'completed' && winningTicket !== null && (
-              <div className="bg-darkPurple p-3 rounded-lg border border-limeGreenOpacity">
-                <h2 className="text-base font-semibold text-notWhite mb-2">
-                  Final Score: {team1Score} - {team2Score}
+            <div ref={cardRef}>
+              {gameState === 'completed' && winningTicket !== null && (
+              
+              <div
+                className="p-6 rounded-3xl border-4 border-double shadow-2xl"
+                style={{
+                  backgroundColor: '#010513', // purplePanel
+                  borderColor: '#FEA282', // notWhite
+                  fontFamily: '"VT323", monospace',
+                }}
+              >
+              {/* Home & Away Teams */}
+              <div className="mb-4 text-center">
+                <h3
+                  className="text-2xl font-bold uppercase tracking-wide"
+                  style={{ color: '#FEA282' }} // notWhite
+                >
+                  {homeTeam} <span className="mx-2" style={{ color: '#EC017C' }}>vs</span> {awayTeam}
+                </h3>
+              </div>
+              
+              {/* Final Score Header */}
+              <div className="mb-4 text-center">
+                <h2 className="text-3xl font-extrabold drop-shadow-xl" style={{ color: '#FEA282' }}>
+                  {team1Score} - {team2Score}
                 </h2>
-                <div className="flex flex-col items-center my-2">
-                  <span className="text-xs text-lightPurple font-bold">Winner:</span>
-                  <a
-                    href={`https://warpcast.com/~/profiles/${boardPositions[winningTicket]?.owner}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      src={boardPositions[winningTicket]?.pfp || '/defifa_spinner.gif'}
-                      alt="Ticket Owner"
-                      className="mt-1 w-20 h-20 rounded-full border-2 border-white shadow-lg"
-                    />
-                  </a>
+              </div>
+              
+              {/* Winner Info */}
+              <div className="flex flex-col items-center space-y-3">
+                <span className="text-lg font-bold uppercase tracking-widest" style={{ color: 'rgba(162, 230, 52, 0.7)' }}>
+                  Game Winner
+                </span>
+                <a
+                  href={`https://warpcast.com/~/profiles/${boardPositions[winningTicket]?.owner}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative"
+                >
+                  <img
+                    src={boardPositions[winningTicket]?.pfp || '/defifa_spinner.gif'}
+                    alt="Ticket Owner"
+                    className="w-24 h-24 rounded-full border-4 shadow-lg"
+                    style={{ borderColor: '#FEA282' }}
+                  />
+                  <div className="absolute inset-0 rounded-full border-2 border-dotted opacity-50" style={{ borderColor: '#FEA282' }}></div>
+                </a>
+                <div className="mt-2 text-xl font-semibold" style={{ color: '#FEA282' }}>
+                  {winnerFcData ? winnerFcData.USER_DATA_TYPE_DISPLAY[0] : boardPositions[winningTicket]?.owner}
                 </div>
-                <p className="text-m text-lightPurple">
-                  Pot size: <span className="font-bold">${getPotTotal()}</span>
-                </p>
-                <p className="text-m text-lightPurple">
-                  Service fee: <span className="font-bold">{serviceFee * 100}%</span>
-                </p>
-                <p className="text-m text-lightPurple">
-                  Payout: <span className="font-bold">${getPotTotal() * (1 - serviceFee)}</span>
-                </p>
-                {boardPositions[winningTicket]?.owner === playerFid && (
+              </div>
+              
+              {/* Game Stats */}
+              <div className="mt-6 grid grid-cols-3 gap-4 text-center" style={{ color: '#FEA282' }}>
+                <div>
+                  <p className="font-bold text-2xl">${getPotTotal()}</p>
+                  <p className="text-sm uppercase tracking-wide">Pot Size</p>
+                </div>
+                <div>
+                  <p className="text-lg">${serviceFee * 100}%</p>
+                  <p className="text-xs uppercase tracking-wide">Fee</p>
+                </div>
+                <div>
+                  <p className="font-bold text-2xl">${getPotTotal() * (1 - serviceFee)}</p>
+                  <p className="text-sm uppercase tracking-wide">Payout</p>
+                </div>
+              </div>
+              
+              {/* Status Display */}
+              <div className="mt-6 text-center">
+                <div className="text-lg font-bold" style={{ color: '#EC017C' }}>
+                  Status: {!prizeClaimed ? 'Not Claimed' : prizeClaimed && !prizePaid ? 'Not Paid' : 'Paid'}
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="mt-6 flex flex-col space-y-3">
+                
+                {/* Claim Prize Button - Only shows if prize is NOT claimed and NOT paid */}
+                {boardPositions[winningTicket]?.owner === playerFid && gameState === 'completed' && !prizeClaimed && (
                   <button
                     onClick={handleClaimPrize}
-                    className="mt-4 w-full bg-deepPink text-white text-xs py-1 h-10 rounded hover:bg-fontRed transition"
+                    className="w-full py-3 rounded-xl font-bold transform hover:scale-105 transition duration-300"
+                    style={{ backgroundColor: '#BD195D', color: '#FEA282' }} // deepPink
                   >
-                    Claim Prize
+                    CLAIM YOUR GLORY
                   </button>
                 )}
+
+
+                {/* Attest Prize Paid Button - Only shows if prize is claimed but NOT paid */}
+                {prizeClaimed && !prizePaid && user?.farcaster?.fid === refereeId && (
+                  <button
+                    onClick={handleAttestPrizePaid}
+                    className="w-full py-3 rounded-xl font-bold transform hover:scale-105 transition duration-300"
+                    style={{ backgroundColor: '#32CD32', color: '#181424' }} // limeGreen
+                  >
+                    ATTEST PRIZE PAID
+                  </button>
+                )}
+
+                {/* Status Message When Prize is Paid */}
+                {prizePaid && (
+                  <div className="font-extrabold text-xl text-center" style={{ color: 'rgba(162, 230, 52, 0.7)' }}>
+                    🎉 CONGRATS 🎉
+                  </div>
+                )}
               </div>
+            </div>
+            )}
+          </div>
+
+            {/* Render Download Button ONLY if Prize is Claimed */}
+            {prizeClaimed && (
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={handleDownloadImage}
+                      className="bg-deepPink hover:bg-EC017C text-white py-2 px-4 rounded-xl  transition"
+                    >
+                      Collect Card (soon)<sup>™</sup>
+                    </button>
+                  </div>
             )}
           </>
         )}
