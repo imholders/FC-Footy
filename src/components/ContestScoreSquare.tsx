@@ -31,11 +31,11 @@ interface AppProps {
 }
 
 interface FanUserData {
-  USER_DATA_TYPE_DISPLAY?: string[]; // Adjust based on actual structure
-  fid: number;
+  fid?: number; // Make it optional
+  USER_DATA_TYPE_DISPLAY?: string[];
   username?: string;
   pfp?: string;
-  [key: string]: unknown; // If there are additional unknown fields
+  [key: string]: unknown; // Allow additional properties
 }
 
 export type ViewProfileOptions = {
@@ -91,11 +91,16 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   useEffect(() => {
     async function getRefereeData() {
       try {
-        const profileData = await fetchFanUserData(refereeId); // Ensure fetchFanUserData returns the correct type
+        const profileData = await fetchFanUserData(refereeId);
+  
         const formattedData: FanUserData = {
-          ...profileData, // Spread existing properties
-          USER_DATA_TYPE_DISPLAY: profileData.USER_DATA_TYPE_DISPLAY || [], // Ensure it's always an array
+          fid: refereeId, // Ensure fid is set
+          USER_DATA_TYPE_DISPLAY: profileData.USER_DATA_TYPE_DISPLAY || [],
+          username: profileData.username || "Unknown",
+          pfp: profileData.pfp || "/default-avatar.png",
+          ...profileData, // Spread remaining properties
         };
+  
         setRefereeFcData(formattedData);
       } catch (error) {
         console.error("Error fetching referee data:", error);
@@ -106,6 +111,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
       getRefereeData();
     }
   }, [refereeId]);
+  
   
   useEffect(() => {
     const loadContext = async () => {
