@@ -31,7 +31,7 @@ interface AppProps {
 }
 
 interface FanUserData {
-  USER_DATA_TYPE_DISPLAY: string[]; // Adjust based on actual structure
+  USER_DATA_TYPE_DISPLAY?: string[]; // Adjust based on actual structure
   fid: number;
   username?: string;
   pfp?: string;
@@ -91,18 +91,22 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   useEffect(() => {
     async function getRefereeData() {
       try {
-        const profileData = await fetchFanUserData(refereeId);
-        setRefereeFcData(profileData);
+        const profileData = await fetchFanUserData(refereeId); // Ensure fetchFanUserData returns the correct type
+        const formattedData: FanUserData = {
+          ...profileData, // Spread existing properties
+          USER_DATA_TYPE_DISPLAY: profileData.USER_DATA_TYPE_DISPLAY || [], // Ensure it's always an array
+        };
+        setRefereeFcData(formattedData);
       } catch (error) {
         console.error("Error fetching referee data:", error);
       }
     }
-    // Only fetch if we have a refereeId
+  
     if (refereeId) {
       getRefereeData();
     }
   }, [refereeId]);
-
+  
   useEffect(() => {
     const loadContext = async () => {
       try {
