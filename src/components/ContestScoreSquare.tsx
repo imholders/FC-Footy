@@ -356,7 +356,8 @@ const handleGameCreated = async (newGameId: string) => {
         console.log("Sending Warpcast direct cast:", warpcastUrl);
   
         // Open Warpcast intent in a new tab
-        window.open(warpcastUrl, "_blank");
+        frameSdk.actions.openUrl(warpcastUrl);
+        //window.open(warpcastUrl, "_blank");
       }
     } catch (error) {
       console.error("Error claiming prize:", error);
@@ -390,7 +391,8 @@ const handleGameCreated = async (newGameId: string) => {
         console.log("Sending Warpcast direct cast:", warpcastUrl);
   
         // Open Warpcast intent in a new tab
-        window.open(warpcastUrl, "_blank");
+        frameSdk.actions.openUrl(warpcastUrl);
+        //window.open(warpcastUrl, "_blank");
       }
     } catch (error) {
       console.error("Error attesting prize paid:", error);
