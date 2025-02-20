@@ -72,7 +72,17 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [matchFanAvatarsTeam1, setMatchFanAvatarsTeam1] = useState<Array<{ fid: number; pfp: string }>>([]);
   const [matchFanAvatarsTeam2, setMatchFanAvatarsTeam2] = useState<Array<{ fid: number; pfp: string }>>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [isLoadingFans, setIsLoadingFans] = useState(false);
+  const [loadingDots, setLoadingDots] = useState('');
   const elementRef = useRef<HTMLDivElement | null>(null);
+
+  // Animate three dots every 500ms
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch team logos (which include league information) on mount.
   useEffect(() => {
@@ -186,6 +196,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   // Fetch team fan avatars.
   useEffect(() => {
     const fetchTeamFanAvatars = async () => {
+      setIsLoadingFans(true);
       const team1 = event.competitions[0]?.competitors[0]?.team;
       const team2 = event.competitions[0]?.competitors[1]?.team;
       if (team1 && team2) {
@@ -224,9 +235,12 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
           setMatchFanAvatarsTeam2(validFans2);
         } catch (error) {
           console.error("Error fetching match fan avatars:", error);
+        } finally {
+          setIsLoadingFans(false);
         }
       } else {
         console.error("Match teams not defined.");
+        setIsLoadingFans(false);
       }
     };
 
@@ -336,20 +350,24 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               Following ({combinedFanAvatars.length})
             </h3>
             <div className="flex space-x-1 overflow-x-auto">
-              {combinedFanAvatars.length > 0 ? (
-                combinedFanAvatars.map((fan) => (
-                  <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
-                    <Image
-                      src={fan.pfp}
-                      alt={`Fan ${fan.fid}`}
-                      width={20}
-                      height={20}
-                      className="rounded-full"
-                    />
-                  </Link>
-                ))
+              {isLoadingFans ? (
+                <span className="text-sm text-gray-400">Loading{loadingDots}</span>
               ) : (
-                <span className="text-sm text-gray-400">No fans found.</span>
+                combinedFanAvatars.length > 0 ? (
+                  combinedFanAvatars.map((fan) => (
+                    <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
+                      <Image
+                        src={fan.pfp}
+                        alt={`Fan ${fan.fid}`}
+                        width={20}
+                        height={20}
+                        className="rounded-full"
+                      />
+                    </Link>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400">No fans found.</span>
+                )
               )}
             </div>
           </div>
@@ -392,7 +410,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               selectedMatch={selectedMatch}
               targetElement={elementRef.current}
             />
-            </div>
+          </div>
           <div className="mt-4">
             <ContestScoreSquare 
               home={event.competitions?.[0]?.competitors?.[0]?.team?.abbreviation || ''} 

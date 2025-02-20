@@ -89,6 +89,25 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
     }
   };
 
+  // Function to update state when a new game is created
+const handleGameCreated = async (newGameId: string) => {
+  setSelectedGameId(newGameId);
+  setCurrentGameId(newGameId);
+  
+  try {
+    const createdGame = await getGame(newGameId);
+    if (createdGame) {
+      setTickets(createdGame.tickets);
+      setBoardPositions(createdGame.boardPositions || []);
+      setGameState(createdGame.gameState);
+      setCostPerTicket(createdGame.costPerTicket);
+      setServiceFee(createdGame.serviceFee);
+    }
+  } catch (error) {
+    console.error('Error loading newly created game:', error);
+  }
+};
+
   useEffect(() => {
     const getRefereeData = async () => {
       if (!refereeId) return;
@@ -190,7 +209,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   }, [gameId, home, away, homeScore, awayScore]);
 
   useEffect(() => {
-    async function fetchWinnerData() {
+    const fetchWinnerData = async () => {
       if (winningTicket === null || !boardPositions[winningTicket]?.owner) {
         console.warn("Skipping winner fetch: No valid winning ticket or owner.");
         return;
@@ -200,9 +219,8 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
         console.log("Fetching winner profile for:", boardPositions[winningTicket]?.owner);
         const profileData = await fetchFanUserData(boardPositions[winningTicket].owner);
   
-        // Ensure type consistency and provide default values
         const formattedData: FanUserData = {
-          fid: boardPositions[winningTicket].owner, // Ensure `fid` is always a number
+          fid: boardPositions[winningTicket].owner,
           USER_DATA_TYPE_DISPLAY: Array.isArray(profileData.USER_DATA_TYPE_DISPLAY)
             ? profileData.USER_DATA_TYPE_DISPLAY
             : [],
@@ -210,7 +228,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
             ? profileData.username
             : profileData.USER_DATA_TYPE_DISPLAY?.[0] || "Unknown",
           pfp: typeof profileData.pfp === "string" ? profileData.pfp : "/default-avatar.png",
-          ...profileData, // Spread remaining properties safely
+          ...profileData,
         };
   
         setWinnerFcData(formattedData);
@@ -218,10 +236,12 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
       } catch (error) {
         console.error("Error fetching winner fan user data:", error);
       }
-    }
+    };
   
-    fetchWinnerData();
-  }, [winningTicket, boardPositions]);
+    if (gameState === 'completed' && winningTicket !== null) {
+      fetchWinnerData();
+    }
+  }, [winningTicket, boardPositions, gameState]);
   
   if (loading) {
     return <div className="p-4">Loading game data...</div>;
@@ -290,10 +310,16 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
     }
     try {
       await submitFinalScore(gameId, { home: Number(team1Score), away: Number(team2Score) }, refereeId);
+  
+      // Fetch the updated game data
       const updatedGame = await getGame(gameId);
+  
       if (updatedGame) {
         setWinningTicket(updatedGame.winningTicket || null);
-        setGameState(updatedGame.gameState);
+        setGameState('completed'); // Ensure state updates to 'completed'
+        setSelectedGameId(updatedGame.gameId);
+        setBoardPositions(updatedGame.boardPositions || []); // Ensure board is updated
+  
         if (updatedGame.finalScore) {
           setTeam1Score(updatedGame.finalScore.home);
           setTeam2Score(updatedGame.finalScore.away);
@@ -303,37 +329,74 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
       console.error('Error submitting final score:', error);
     }
   };
+  
 
   const handleClaimPrize = async () => {
     try {
       await claimPrize(gameId);
-      // After claiming, update state to remove the claim button.
       setPrizeClaimed(true);
-      // Optionally, refetch game data here.
+  
       const updatedGame = await getGame(gameId);
       if (updatedGame) {
-        // Optionally update other state variables
         setBoardPositions(updatedGame.boardPositions || []);
         setGameState(updatedGame.gameState);
       }
+  
+      // 🚀 Send Warpcast Direct Cast to Referee
+      if (refereeId && winnerFcData) {
+        const winnerUsername = winnerFcData?.username || `FID:${winnerFcData?.fid}`;
+  
+        const castText = `🏆 @${winnerUsername} has claimed their prize for ${homeTeam} vs ${awayTeam}! 
+  
+        Please attest that the payout has been settled. ⚡`;
+  
+        // 🔗 Warpcast Direct Message Format
+        const warpcastUrl = `https://warpcast.com/~/inbox/create/${refereeId}?text=${encodeURIComponent(castText)}`;
+  
+        console.log("Sending Warpcast direct cast:", warpcastUrl);
+  
+        // Open Warpcast intent in a new tab
+        window.open(warpcastUrl, "_blank");
+      }
     } catch (error) {
-      console.error('Error claiming prize:', error);
+      console.error("Error claiming prize:", error);
     }
   };
+  
   
   const handleAttestPrizePaid = async () => {
     try {
       await attestPrizePaid(gameId);
-      // After attestation, update local state (optionally refetch game data)
       setPrizePaid(true);
+  
       const updatedGame = await getGame(gameId);
       if (updatedGame) {
         setPrizePaid(updatedGame.prizePaid || false);
+      }
+  
+      // 🚀 Send Warpcast Direct Cast to Winner
+      if (winnerFcData && refereeFcData) {
+        const winnerFid = winnerFcData.fid;
+        const refereeUsername = refereeFcData.username || `FID:${refereeFcData.fid}`;
+        const winnerUsername = winnerFcData.username || `FID:${winnerFid}`;
+  
+        const castText = `💸 @${winnerUsername}, your payout for ${homeTeam} vs ${awayTeam} is confirmed! 
+  
+        Attested by @${refereeUsername} and transfered to your Warpcast wallet 🎉 Congrats!`;
+  
+        // 🔗 Warpcast Direct Message Format
+        const warpcastUrl = `https://warpcast.com/~/inbox/create/${winnerFid}?text=${encodeURIComponent(castText)}`;
+  
+        console.log("Sending Warpcast direct cast:", warpcastUrl);
+  
+        // Open Warpcast intent in a new tab
+        window.open(warpcastUrl, "_blank");
       }
     } catch (error) {
       console.error("Error attesting prize paid:", error);
     }
   };
+  
   
   const getPotTotal = () => {
     const purchasedCount = tickets.filter(t => t.owner !== null).length;
@@ -343,33 +406,32 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   return (
     <div className="mb-4 bg-purplePanel">
       <div className="max-w-4xl mx-auto">
-        {!selectedGameId ? (
-          <div className="bg-purplePanel rounded-xl shadow-xl mb-4">
-            <p className="text-sm text-center text-lightPurple mb-4">
-              No Score Square games have been deployed for this match.
-            </p>
-            {/* governing who may deploy for now */}
-            {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
-              <ContestScoreSquareCreate home={homeTeam} away={awayTeam} refereeId={user.farcaster.fid || 4163} />
-              ) : (
-              <WarpcastShareButton
-                selectedMatch={{
-                  competitorsLong: `${home} vs ${away}`,
-                  homeTeam: "ffs why can't I deploy a Score Square game?",
-                  awayTeam: "Thought kmac was a decentralization maxi?!",
-                  homeScore: 0,
-                  awayScore: 0,
-                  clock: "NOW! Get this deployed now! devs do something ",
-                  homeLogo: "",
-                  awayLogo: "",
-                  eventStarted: false,
-                  keyMoments: []
-                }}
-                buttonText="Deploy Game"
-              />
-            )}
-          </div>
-        ) : (
+      {!selectedGameId ? (
+        <div className="bg-purplePanel rounded-xl shadow-xl mb-4">
+          <p className="text-sm text-center text-lightPurple mb-4">
+            No Score Square games have been deployed for this match.
+          </p>
+          {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
+            <ContestScoreSquareCreate home={homeTeam} away={awayTeam} refereeId={user.farcaster.fid || 4163} onGameCreated={handleGameCreated} />
+          ) : (
+            <WarpcastShareButton
+              selectedMatch={{
+                competitorsLong: `${home} vs ${away}`,
+                homeTeam: "ffs why can't I deploy a Score Square game?",
+                awayTeam: "Thought kmac was a decentralization maxi?!",
+                homeScore: 0,
+                awayScore: 0,
+                clock: "NOW! Get this deployed now! devs do something ",
+                homeLogo: "",
+                awayLogo: "",
+                eventStarted: false,
+                keyMoments: []
+              }}
+              buttonText="Deploy Game"
+            />
+          )}
+        </div>
+      ) : (
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex flex-col gap-1">
