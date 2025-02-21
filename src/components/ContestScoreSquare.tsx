@@ -848,7 +848,12 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                     {winnerFcData ? (
                       <a href={`https://warpcast.com/~/profiles/${winnerFcData.fid}`} target="_blank" rel="noopener noreferrer" className="relative">
                         <img
-                        src={winnerFcData.USER_DATA_TYPE_PFP[0] || '/defifa_spinner.gif'}
+                        src={
+                          Array.isArray(winnerFcData.USER_DATA_TYPE_PFP) && winnerFcData.USER_DATA_TYPE_PFP.length > 0
+                            ? winnerFcData.USER_DATA_TYPE_PFP[0]
+                            : '/defifa_spinner.gif'
+                        }
+                        
                           onError={(e) => {
                             console.error("Broken image URL:", winnerFcData?.pfp);
                             e.currentTarget.src = '/defifa_spinner.gif';
@@ -865,7 +870,13 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                       </div>
                     )}
                     <div className="mt-2 text-xl font-semibold" style={{ color: '#FEA282' }}>
-                      {winnerFcData ? winnerFcData.USER_DATA_TYPE_DISPLAY[0] : <LoadingDots />}
+                    {winnerFcData ? (
+                      Array.isArray(winnerFcData.USER_DATA_TYPE_DISPLAY) && winnerFcData.USER_DATA_TYPE_DISPLAY.length > 0
+                        ? winnerFcData.USER_DATA_TYPE_DISPLAY[0]
+                        : 'Unknown User'
+                    ) : (
+                      <LoadingDots />
+                    )}
                     </div>
                   </div>
                   <div className="mt-6 grid grid-cols-3 gap-4 text-center" style={{ color: '#FEA282' }}>
