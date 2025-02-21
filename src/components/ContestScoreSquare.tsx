@@ -702,7 +702,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                     <img src={playerPfp} alt="Player Avatar" className="rounded-full w-10 h-10" />
                     <span className="font-semibold text-lg">{playerName}
                     <p className="text-sm text-limeGreenOpacity">
-                      games use USDC from your warcast wallet. Do you trust the referee?
+                      games use USDC. Do you trust the referee?
                     </p></span>
                   </div>
                 </div>

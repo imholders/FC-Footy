@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 //import { farcasterFrame } from '@farcaster/frame-wagmi-connector';
 import PrivyProvider  from '../components/providers/PrivyProvider';
 import { frameConnector } from '~/lib/connector';
-import { Session } from 'inspector/promises';
+import { Session } from 'next-auth'; // Correct import
 
 /**
  * 1. Configure chains and clients for Wagmi.
