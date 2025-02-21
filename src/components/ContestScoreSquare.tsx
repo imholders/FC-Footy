@@ -456,7 +456,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
       setTxHash(null);
       setTxType("buy");
       // Send the transaction with the encoded purchase call.
-      sendTransaction({ to: USDC_ADDRESS, data: purchaseData });
+      sendTransaction({ to: USDC_ADDRESS, data: purchaseData as `0x${string}` });
       console.log("USDC transaction initiated for ticket purchase");
     } catch (error: unknown) {
       if ((error as TransactionError).code) {
@@ -703,7 +703,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                     <img src={playerPfp} alt="Player Avatar" className="rounded-full w-10 h-10" />
                     <span className="font-semibold text-lg">{playerName}
                     <p className="text-sm text-limeGreenOpacity">
-                      games use USDC. Do you trust the referee?
+                      games use USDC on Base. You are trusting the referee!
                     </p></span>
                   </div>
                 </div>
