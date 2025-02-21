@@ -34,7 +34,7 @@ const ScoreGrid: React.FC<ScoreGridProps> = ({
 
       <div className="flex">
         {/* Away Team Label (Rotated) */}
-        <div className="flex items-center justify-center pr-2">
+        <div className="flex items-center justify-center pr-1">
           <span
             className="rotate-[-90deg] text-center font-bold text-xs text-notWhite whitespace-nowrap"
             style={{ height: '25px', width: '10px', padding: '0', margin: '-10px 0' }} // Ensure single line

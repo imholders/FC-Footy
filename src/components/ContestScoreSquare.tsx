@@ -1,10 +1,7 @@
-// App.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import frameSdk from "@farcaster/frame-sdk";
-// import { FrameContext } from '@farcaster/frame-node';
 import ScoreGrid from './ui/ScoreGrid';
 import { usePrivy } from '@privy-io/react-auth';
-// import GetBalance from './ui/Balance';
 import { Ticket } from 'lucide-react';
 import {
   getGame,
@@ -21,7 +18,15 @@ import {
 import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 import WarpcastShareButton from './ui/WarpcastShareButton';
 import { fetchFanUserData } from './utils/fetchFCProfile';
-import { toPng } from 'html-to-image';
+// import { toPng } from 'html-to-image';
+import { ethers } from 'ethers';
+import { useSendTransaction, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+// import GetBalance from './ui/Balance';
+
+const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const erc20ABI = [
+  "function transfer(address to, uint256 amount) public returns (bool)"
+];
 
 interface AppProps {
   home: string;
@@ -31,20 +36,63 @@ interface AppProps {
 }
 
 interface FanUserData {
-  fid: number; // Ensure it's always a number (remove optional `?`)
-  USER_DATA_TYPE_DISPLAY: string[]; // Keep as an array, remove optional `?` to ensure it always exists
-  username: string; // Ensure it's always a string (no `?`)
-  pfp: string; // Ensure it's always a string (no `?`)
-  [key: string]: unknown; // Allow additional properties
+  fid: number;
+  USER_DATA_TYPE_DISPLAY: string[];
+  username: string;
+  pfp: string;
+  [key: string]: unknown;
 }
 
+interface TransactionError extends Error {
+  code?: string; // Optional error code (if applicable)
+  reason?: string; // Specific reason for transaction failure
+  details?: string; // Additional details
+}
+
+interface DatabaseError extends Error {
+  code?: string;
+  details?: string;
+}
+
+interface PayoutError extends Error {
+  code?: string; // Optional error code for specific blockchain errors
+  reason?: string; // Human-readable reason for failure
+  details?: string; // Any additional technical details
+}
 
 export type ViewProfileOptions = {
   fid: string;
 };
 
+// Animated dots component.
+const LoadingDots: React.FC = () => {
+  return (
+    <span className="loading-dots inline-block">
+      <span className="dot">.</span>
+      <span className="dot">.</span>
+      <span className="dot">.</span>
+      <style jsx>{`
+        .loading-dots .dot {
+          opacity: 0;
+          animation: blink 1.4s infinite both;
+          margin: 0 2px;
+          font-weight: bold;
+        }
+        .loading-dots .dot:nth-child(1) { animation-delay: 0s; }
+        .loading-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 20%, 100% { opacity: 0; } 50% { opacity: 1; } }
+      `}</style>
+    </span>
+  );
+};
+
+// Utility function to truncate addresses/hashes.
+const truncateAddress = (address: string, len = 10): string =>
+  `${address.substring(0, len)}...${address.substring(address.length - len)}`;
+
 const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
-  // Local state for game data
+  // Game-related state.
   const [selectedGameId, setSelectedGameId] = useState<string>("");
   const [gameId, setCurrentGameId] = useState<string>(`${home}-${away}`);
   const [tickets, setTickets] = useState<TicketType[]>([]);
@@ -52,13 +100,12 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const [gameState, setGameState] = useState<GameState>('buying');
   const [costPerTicket, setCostPerTicket] = useState<number>(1);
   const [serviceFee, setServiceFee] = useState<number>(0.04);
-  const [refereeId, setRefereeId] = useState<number>(4163); // kmacb1.eth as default
+  const [refereeId, setRefereeId] = useState<number>(4163);
   const [homeTeam, setHomeTeam] = useState<string>("");
   const [awayTeam, setAwayTeam] = useState<string>("");
-  // const [context, setContext] = useState<FrameContext | undefined>(undefined);
-  const [isContextLoaded, setIsContextLoaded] = useState(false);
+  const [isContextLoaded, setIsContextLoaded] = useState<boolean>(false);
 
-  // Other local state
+  // Other game state.
   const [team1Score, setTeam1Score] = useState<number | null>(homeScore);
   const [team2Score, setTeam2Score] = useState<number | null>(awayScore);
   const [winningTicket, setWinningTicket] = useState<number | null>(null);
@@ -69,105 +116,213 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const [prizePaid, setPrizePaid] = useState<boolean>(false);
   const [winnerFcData, setWinnerFcData] = useState<FanUserData | null>(null);
 
+  // Transaction state.
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [txStatus, setTxStatus] = useState<string>("");
+  const [txStatusType, setTxStatusType] = useState<"failure" | "success" | "info">("info");
+  // "buy" for ticket purchase, "payout" for winner payout.
+  const [txType, setTxType] = useState<"buy" | "payout">("buy");
+
   const { user } = usePrivy();
+  const { address: walletAddress } = useAccount();
   const farcasterAccount = user?.linkedAccounts.find(account => account.type === 'farcaster');
   const playerName = farcasterAccount?.username || '';
   const playerPfp = farcasterAccount?.pfp || '/default-avatar.png';
   const playerFid = farcasterAccount?.fid || 0;
   const cardRef = useRef<HTMLDivElement>(null);
+  
+  // The payment address (recipient for ticket purchase) remains fixed.
+  const PAYMENT_ADDRESS = "0xDf087B724174A3E4eD2338C0798193932E851F1b";
 
-  const handleDownloadImage = async () => {
+  // Calculate USDC amount.
+  const TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true';
+  const effectiveCostPerTicket = TEST_MODE ? 1e-6 : costPerTicket;
+  const totalCostUSDC = cart.length * effectiveCostPerTicket;
+  const totalCostUSDCUnits = TEST_MODE
+    ? BigInt(1)
+    : BigInt(Math.floor(totalCostUSDC * 1e6));
+
+  // Create an ethers Interface to encode transfer calls.
+  const contractInterface = new ethers.Interface(erc20ABI);
+  // For ticket purchase.
+  const purchaseData = contractInterface.encodeFunctionData("transfer", [PAYMENT_ADDRESS, totalCostUSDCUnits]);
+
+  // Use useSendTransaction to send transactions.
+  const { sendTransaction, data: txData, error: txError, isLoading: isTxLoading } = useSendTransaction();
+  // Wait for transaction receipt.
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({ hash: txData as `0x${string}` });
+
+  // When a transaction is initiated.
+  useEffect(() => {
+    if (txData) {
+      setTxHash(txData as string);
+      setTxStatus(txType === "buy" ? "Transaction sent, waiting for confirmation..." : "Payout transaction sent, waiting for confirmation...");
+      setTxStatusType("info");
+    }
+  }, [txData, txType]);
+
+  // When the transaction is confirmed.
+  useEffect(() => {
+    if (txHash && isConfirmed) {
+      if (txType === "buy") {
+        (async () => {
+          try {
+            setTxStatus("Transaction confirmed! Updating tickets...");
+            setTxStatusType("info");
+            // Update tickets in KV DB with wallet address and tx hash.
+            await purchaseTickets(gameId, cart, playerFid, playerPfp, walletAddress, txHash);
+            const updatedGame = await getGame(gameId);
+            if (updatedGame) {
+              setTickets(updatedGame.tickets);
+              if (updatedGame.tickets.every(ticket => ticket.owner !== null)) {
+                await randomizeBoard(gameId);
+                const randomizedGame = await getGame(gameId);
+                if (randomizedGame) {
+                  setBoardPositions(randomizedGame.boardPositions || []);
+                  setGameState(randomizedGame.gameState);
+                  setTimeout(() => {
+                    setGameState('playing');
+                  }, 3000);
+                }
+              }
+            }
+            setCart([]);
+            setTxStatus("Purchase successful!");
+            setTxStatusType("success");
+            setTxHash(null);
+          } catch (dbError: unknown) {
+            if ((dbError as DatabaseError).code) {
+              const customError = dbError as DatabaseError;
+              console.error(`DB Error Code: ${customError.code}, Details: ${customError.details}`);
+            } else if (dbError instanceof Error) {
+              console.error("Standard DB Error:", dbError.message);
+            } else {
+              console.error("Unknown DB Error:", dbError);
+            }
+          }
+        })();
+      } else if (txType === "payout") {
+        (async () => {
+          try {
+            setTxStatus("Payout transaction confirmed! Marking prize as paid...");
+            setTxStatusType("info");
+            // Update the DB to mark the prize as paid.
+            await attestPrizePaid(gameId);
+            const updatedGame = await getGame(gameId);
+            if (updatedGame) {
+              setPrizePaid(updatedGame.prizePaid || false);
+            }
+            setTxStatus("Payout successful!");
+            setTxStatusType("success");
+            setTxHash(null);
+          } catch (dbError: unknown) {
+            if ((dbError as DatabaseError).code) {
+              const customError = dbError as DatabaseError;
+              console.error(`DB Error Code: ${customError.code}, Details: ${customError.details}`);
+              setTxStatus(`Database error: ${customError.details}`);
+              setTxStatusType("failure");
+            } else if (dbError instanceof Error) {
+              console.error("Standard Error during payout:", dbError.message);
+              setTxStatus("Payout failed: " + dbError.message);
+              setTxStatusType("failure");
+            } else {
+              console.error("Unknown Error Type:", dbError);
+              setTxStatus("An unknown error occurred during payout.");
+              setTxStatusType("failure");
+            }
+          }
+        })();
+      }
+    }
+  }, [txHash, isConfirmed, txType, gameId, cart, playerFid, playerPfp, walletAddress]);
+
+  // Handle transaction errors.
+  useEffect(() => {
+    if (txError) {
+      console.error("Transaction error:", txError);
+      setTxStatus("Transaction failed: " + txError.message);
+      setTxStatusType("failure");
+    }
+  }, [txError]);
+
+  // handleDownloadImage remains unchanged.
+/*   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
     try {
       const dataUrl = await toPng(cardRef.current);
-      // Option 1: Download the image immediately
-      // saveAs(dataUrl, 'winning-card.png');
       console.log('Image data URL:', dataUrl);
-      // Option 2: Or you can use the dataUrl in an <img> tag for preview/share
     } catch (error) {
       console.error('Failed to generate image', error);
     }
-  };
+  }; */
 
-  // Function to update state when a new game is created
-const handleGameCreated = async (newGameId: string) => {
-  setSelectedGameId(newGameId);
-  setCurrentGameId(newGameId);
-  
-  try {
-    const createdGame = await getGame(newGameId);
-    if (createdGame) {
-      setTickets(createdGame.tickets);
-      setBoardPositions(createdGame.boardPositions || []);
-      setGameState(createdGame.gameState);
-      setCostPerTicket(createdGame.costPerTicket);
-      setServiceFee(createdGame.serviceFee);
+  const handleGameCreated = async (newGameId: string) => {
+    setSelectedGameId(newGameId);
+    setCurrentGameId(newGameId);
+    try {
+      const createdGame = await getGame(newGameId);
+      if (createdGame) {
+        setTickets(createdGame.tickets);
+        setBoardPositions(createdGame.boardPositions || []);
+        setGameState(createdGame.gameState);
+        setCostPerTicket(createdGame.costPerTicket);
+        setServiceFee(createdGame.serviceFee);
+      }
+    } catch (error) {
+      console.error('Error loading newly created game:', error);
     }
-  } catch (error) {
-    console.error('Error loading newly created game:', error);
-  }
-};
+  };
 
   useEffect(() => {
     const getRefereeData = async () => {
       if (!refereeId) return;
-  
       try {
-        console.log("Fetching referee profile for ID:", refereeId);
         const profileData = await fetchFanUserData(refereeId);
-  
-        // Ensure all fields exist and have correct types
         const formattedData: FanUserData = {
-          fid: refereeId, // Always set `fid`
+          fid: refereeId,
           USER_DATA_TYPE_DISPLAY: Array.isArray(profileData.USER_DATA_TYPE_DISPLAY)
             ? profileData.USER_DATA_TYPE_DISPLAY
-            : [], // Ensure it's always an array
+            : [],
           username: typeof profileData.username === "string"
             ? profileData.username
-            : profileData.USER_DATA_TYPE_DISPLAY?.[0] || "Unknown", // Fallback to first display name
+            : profileData.USER_DATA_TYPE_DISPLAY?.[0] || "Unknown",
           pfp: typeof profileData.pfp === "string" ? profileData.pfp : "/default-avatar.png",
-          ...profileData, // Spread additional properties safely
+          ...profileData,
         };
-  
         setRefereeFcData(formattedData);
-        console.log("Referee data set:", formattedData);
       } catch (error) {
         console.error("Error fetching referee data:", error);
       }
     };
-  
     getRefereeData();
   }, [refereeId]);
-  
-  
+
   useEffect(() => {
     const loadContext = async () => {
       try {
         const ctx = await frameSdk.context;
+        console.log("Farcaster context loaded:",JSON.stringify(ctx, null, 2));
         if (!ctx) {
-          console.error("Farcaster context returned null or undefined.");
+          console.log("Farcaster context returned null or undefined.");
           return;
         }
-        setIsContextLoaded(true); // Just mark it as loaded
+        setIsContextLoaded(true);
       } catch (error) {
         console.error("Failed to load Farcaster context:", error);
       }
     };
-  
     if (!isContextLoaded) {
       loadContext();
     }
-  }, [isContextLoaded]);  
-  
-  // Load game data on mount.
+  }, [isContextLoaded]);
+
   useEffect(() => {
     async function loadGame() {
       try {
-        console.log('Loading games with prefix:', gameId);
         const games: GameData[] = await getGamesByPrefix(gameId);
-        console.log('Loaded games array:', games);
         if (games.length > 0) {
-          const game = games[0]; // TODO make it possible for more than one game to exist per match
+          const game = games[0];
           setCurrentGameId(game.gameId);
           setSelectedGameId(game.gameId);
           setTickets(game.tickets);
@@ -179,14 +334,11 @@ const handleGameCreated = async (newGameId: string) => {
           setHomeTeam(game.homeTeam);
           setAwayTeam(game.awayTeam);
           if (game.finalScore) {
-            setTeam1Score(Number(game.finalScore.home)); // Ensure it's a number
-            setTeam2Score(Number(game.finalScore.away)); // Ensure it's a number          
+            setTeam1Score(Number(game.finalScore.home));
+            setTeam2Score(Number(game.finalScore.away));
           }
           if (game.winningTicket !== undefined) {
-            setWinningTicket(Number(game.winningTicket)); // Ensure winning ticket is stored as a number 0-24
-          }
-          if (typeof game.prizeClaimed === 'boolean') {
-            setPrizeClaimed(game.prizeClaimed);
+            setWinningTicket(Number(game.winningTicket));
           }
           if (typeof game.prizeClaimed === 'boolean') {
             setPrizeClaimed(game.prizeClaimed);
@@ -195,7 +347,6 @@ const handleGameCreated = async (newGameId: string) => {
             setPrizePaid(game.prizePaid);
           }
         } else {
-          console.error('No games found for prefix:', home, away);
           setHomeTeam(home);
           setAwayTeam(away);
         }
@@ -227,7 +378,7 @@ const handleGameCreated = async (newGameId: string) => {
           username: typeof profileData.username === "string"
             ? profileData.username
             : profileData.USER_DATA_TYPE_DISPLAY?.[0] || "Unknown",
-          pfp: typeof profileData.pfp === "string" ? profileData.pfp : "/default-avatar.png",
+          pfp: typeof profileData.pfp === "string" ? profileData.pfp : "/defifa_spinner.png",
           ...profileData,
         };
   
@@ -242,16 +393,40 @@ const handleGameCreated = async (newGameId: string) => {
       fetchWinnerData();
     }
   }, [winningTicket, boardPositions, gameState]);
+
+  const TransactionMessages = () => (
+    <>
+      {txStatus && (
+        <TransactionStatus
+          status={txStatus}
+          txHash={txHash}
+          statusType={txStatusType}
+          onClear={clearTxStatus}
+        />
+      )}
+  
+      {isTxLoading && (
+        <p className="text-lightPurple text-center my-2">
+          ⚽️ Warming up on the sidelines... your transaction is about to score!
+        </p>
+      )}
+
+      {isConfirming && (
+        <p className="text-lightPurple text-center my-2">
+          🧐 VAR is checking the on-chain replay... hold tight for confirmation!
+        </p>
+      )}
+    </>
+  );
   
   if (loading) {
     return <div className="p-4">Loading game data...</div>;
   }
 
-  // Ticket selection logic.
   const incrementCart = () => {
     for (let i = 0; i < tickets.length; i++) {
       if (!tickets[i].owner && !cart.includes(i)) {
-        setCart((prevCart) => [...prevCart, i]);
+        setCart(prevCart => [...prevCart, i]);
         break;
       }
     }
@@ -265,6 +440,7 @@ const handleGameCreated = async (newGameId: string) => {
     }
   };
 
+  // Ticket purchase: send USDC transaction.
   const finalizePurchase = async () => {
     if (!playerName) {
       alert('Please login with Farcaster first');
@@ -275,28 +451,74 @@ const handleGameCreated = async (newGameId: string) => {
       return;
     }
     try {
-      await purchaseTickets(gameId, cart, playerFid, playerPfp);
-      const updatedGame = await getGame(gameId);
-      if (updatedGame) {
-        setTickets(updatedGame.tickets);
-        if (updatedGame.tickets.every(ticket => ticket.owner !== null)) {
-          console.log('All tickets purchased. Randomizing board...');
-          await randomizeBoard(gameId);
-          const randomizedGame = await getGame(gameId);
-          console.log('Randomized game:', randomizedGame);
-          if (randomizedGame) {
-            setBoardPositions(randomizedGame.boardPositions || []);
-            setGameState(randomizedGame.gameState);
-            setTimeout(() => {
-              setGameState('playing');
-            }, 3000);
-          }
-        }
+      setTxStatus("");
+      setTxHash(null);
+      setTxType("buy");
+      // Send the transaction with the encoded purchase call.
+      sendTransaction({ to: USDC_ADDRESS, data: purchaseData });
+      console.log("USDC transaction initiated for ticket purchase");
+    } catch (error: unknown) {
+      if ((error as TransactionError).code) {
+        const txError = error as TransactionError;
+        console.error(`Transaction Error Code: ${txError.code}, Reason: ${txError.reason}, Details: ${txError.details}`);
+        setTxStatus(`Transaction failed: ${txError.reason || txError.message}`);
+        setTxStatusType("failure");
+      } else if (error instanceof Error) {
+        console.error("Transaction error:", error.message);
+        setTxStatus("Transaction failed: " + error.message);
+        setTxStatusType("failure");
+      } else {
+        console.error("Unknown transaction error:", error);
+        setTxStatus("An unknown error occurred during the transaction.");
+        setTxStatusType("failure");
       }
-      setCart([]);
-    } catch (error) {
-      console.error('Error finalizing purchase:', error);
+    }    
+  };
+
+  // Payout: Trigger a USDC transfer to the winner's wallet.
+  const handlePayout = async () => {
+    if (user?.farcaster?.fid !== refereeId) {
+      alert('Only the referee can perform the payout.');
+      return;
     }
+    const winningTicketData = boardPositions[winningTicket || 0];
+    if (!winningTicketData?.walletAddress) {
+      alert('No winning ticket wallet address found.');
+      return;
+    }
+    const pot = getPotTotal();
+    const payoutAmount = pot * (1 - serviceFee); // Calculate payout as pot * (1 - fee)
+    const payoutAmountUnits = BigInt(Math.floor(payoutAmount * 1e6));
+    const winnerWallet = winningTicketData.walletAddress;
+    const payoutData = contractInterface
+    .encodeFunctionData("transfer", [winnerWallet, payoutAmountUnits]) as `0x${string}`;
+  
+  
+    try {
+      setTxStatus("");
+      setTxHash(null);
+      setTxType("payout");
+      // Send the payout transaction. This will trigger a wallet popup for the referee.
+      sendTransaction({ to: USDC_ADDRESS, data: payoutData });
+      console.log("USDC payout transaction initiated");
+    } catch (error: unknown) {
+      if ((error as PayoutError).code) {
+        const payoutError = error as PayoutError;
+        console.error(
+          `Payout Error Code: ${payoutError.code}, Reason: ${payoutError.reason}, Details: ${payoutError.details}`
+        );
+        setTxStatus(`Payout failed: ${payoutError.reason || payoutError.message}`);
+        setTxStatusType("failure");
+      } else if (error instanceof Error) {
+        console.error("Payout transaction error:", error.message);
+        setTxStatus("Payout transaction failed: " + error.message);
+        setTxStatusType("failure");
+      } else {
+        console.error("Unknown payout error:", error);
+        setTxStatus("An unknown error occurred during the payout transaction.");
+        setTxStatusType("failure");
+      }
+    }    
   };
 
   const handleSubmitScore = async () => {
@@ -310,16 +532,12 @@ const handleGameCreated = async (newGameId: string) => {
     }
     try {
       await submitFinalScore(gameId, { home: Number(team1Score), away: Number(team2Score) }, refereeId);
-  
-      // Fetch the updated game data
       const updatedGame = await getGame(gameId);
-  
       if (updatedGame) {
         setWinningTicket(updatedGame.winningTicket || null);
-        setGameState('completed'); // Ensure state updates to 'completed'
+        setGameState('completed');
         setSelectedGameId(updatedGame.gameId);
-        setBoardPositions(updatedGame.boardPositions || []); // Ensure board is updated
-  
+        setBoardPositions(updatedGame.boardPositions || []);
         if (updatedGame.finalScore) {
           setTeam1Score(updatedGame.finalScore.home);
           setTeam2Score(updatedGame.finalScore.away);
@@ -329,111 +547,124 @@ const handleGameCreated = async (newGameId: string) => {
       console.error('Error submitting final score:', error);
     }
   };
-  
 
   const handleClaimPrize = async () => {
     try {
       await claimPrize(gameId);
       setPrizeClaimed(true);
-  
       const updatedGame = await getGame(gameId);
       if (updatedGame) {
         setBoardPositions(updatedGame.boardPositions || []);
         setGameState(updatedGame.gameState);
       }
-  
-      // 🚀 Send Warpcast Direct Cast to Referee
       if (refereeId && winnerFcData) {
         const winnerUsername = winnerFcData?.username || `FID:${winnerFcData?.fid}`;
-  
-        const castText = `🏆 @${winnerUsername} has claimed their prize for ${homeTeam} vs ${awayTeam}! 
-  
-        Please attest that the payout has been settled. ⚡`;
-  
-        // 🔗 Warpcast Direct Message Format
+        const castText = `🏆 @${winnerUsername} has claimed their prize for ${homeTeam} vs ${awayTeam}!
+        Please settle the payout in https://warpcast.com/~/frames/launch?domain=fc-footy.vercel.app ⚡`;
         const warpcastUrl = `https://warpcast.com/~/inbox/create/${refereeId}?text=${encodeURIComponent(castText)}`;
-  
-        console.log("Sending Warpcast direct cast:", warpcastUrl);
-  
-        // Open Warpcast intent in a new tab
         frameSdk.actions.openUrl(warpcastUrl);
-        //window.open(warpcastUrl, "_blank");
       }
     } catch (error) {
       console.error("Error claiming prize:", error);
     }
   };
-  
-  
-  const handleAttestPrizePaid = async () => {
-    try {
-      await attestPrizePaid(gameId);
-      setPrizePaid(true);
-  
-      const updatedGame = await getGame(gameId);
-      if (updatedGame) {
-        setPrizePaid(updatedGame.prizePaid || false);
-      }
-  
-      // 🚀 Send Warpcast Direct Cast to Winner
-      if (winnerFcData && refereeFcData) {
-        const winnerFid = winnerFcData.fid;
-        const refereeUsername = refereeFcData.username || `FID:${refereeFcData.fid}`;
-        const winnerUsername = winnerFcData.username || `FID:${winnerFid}`;
-  
-        const castText = `💸 @${winnerUsername}, your payout for ${homeTeam} vs ${awayTeam} is confirmed! 
-  
-        Attested by @${refereeUsername} and transfered to your Warpcast wallet 🎉 Congrats!`;
-  
-        // 🔗 Warpcast Direct Message Format
-        const warpcastUrl = `https://warpcast.com/~/inbox/create/${winnerFid}?text=${encodeURIComponent(castText)}`;
-  
-        console.log("Sending Warpcast direct cast:", warpcastUrl);
-  
-        // Open Warpcast intent in a new tab
-        frameSdk.actions.openUrl(warpcastUrl);
-        //window.open(warpcastUrl, "_blank");
-      }
-    } catch (error) {
-      console.error("Error attesting prize paid:", error);
-    }
-  };
-  
-  
+
   const getPotTotal = () => {
     const purchasedCount = tickets.filter(t => t.owner !== null).length;
     return purchasedCount * costPerTicket;
   };
 
+  const TransactionStatus: React.FC<{
+    status: string;
+    txHash: string | null;
+    statusType: "failure" | "success" | "info";
+    onClear: () => void;
+  }> = ({ status, txHash, statusType, onClear }) => {
+    let textColorClass = "";
+    if (statusType === "failure") {
+      textColorClass = "text-fontRed";
+    } else if (statusType === "success") {
+      textColorClass = "text-limeGreen";
+    } else if (statusType === "info") {
+      textColorClass = "text-notWhite";
+    }
+    return (
+      txStatus && (
+        <div className={`mb-4 p-2 bg-darkPurple ${textColorClass} text-sm flex items-center justify-between`}>
+          <div className="flex-1 overflow-hidden">
+            <span
+              className="truncate block max-w-full"
+              title={status} // Tooltip with full message on hover
+            >
+              {status}{" "}
+              {txHash && (
+                <span>
+                  (Tx Hash: {truncateAddress(txHash)})
+                </span>
+              )}
+            </span>
+          </div>
+    
+          {/* Buttons Side by Side */}
+          <div className="flex items-center gap-2 ml-2">
+            {txHash && (
+              <button
+                onClick={() => window.open(`https://basescan.org/tx/${txHash}`, "_blank")}
+                className="text-limeGreen underline"
+              >
+                View on BaseScan
+              </button>
+            )}
+            <button onClick={onClear} className="text-blue-600 underline">
+              Clear
+            </button>
+          </div>
+        </div>
+      )
+    );
+    
+         
+  };
+
+  const clearTxStatus = () => {
+    setTxStatus("");
+    setTxHash(null);
+  };
+
   return (
     <div className="mb-4 bg-purplePanel">
       <div className="max-w-4xl mx-auto">
-      {!selectedGameId ? (
-        <div className="bg-purplePanel rounded-xl shadow-xl mb-4">
-          <p className="text-sm text-center text-lightPurple mb-4">
-            No Score Square games have been deployed for this match.
-          </p>
-          {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
-            <ContestScoreSquareCreate home={homeTeam} away={awayTeam} refereeId={user.farcaster.fid || 4163} onGameCreated={handleGameCreated} />
-          ) : (
-            <WarpcastShareButton
-              selectedMatch={{
-                competitorsLong: `${home} vs ${away}`,
-                homeTeam: "ffs why can't I deploy a Score Square game?",
-                awayTeam: "Thought kmac was a decentralization maxi?!",
-                homeScore: 0,
-                awayScore: 0,
-                clock: "NOW! Get this deployed now! devs do something ",
-                homeLogo: "",
-                awayLogo: "",
-                eventStarted: false,
-                keyMoments: []
-              }}
-              buttonText="Deploy Game"
-            />
-          )}
-        </div>
-      ) : (
+        {!selectedGameId ? (
+          <div className="bg-purplePanel rounded-xl shadow-xl mb-4">
+            <p className="text-sm text-center text-lightPurple mb-4">
+              No Score Square games have been deployed for this match.
+            </p>
+            {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
+              <ContestScoreSquareCreate
+                home={homeTeam}
+                away={awayTeam}
+                refereeId={user.farcaster.fid || 4163}
+                onGameCreated={handleGameCreated}
+              />
+            ) : (
+              <WarpcastShareButton
+                selectedMatch={{
+                  competitorsLong: `${home} vs ${away}`,
+                  homeTeam: "ffs why can't I deploy a Score Square game?",
+                  awayTeam: "Thought kmac was a decentralization maxi?!",
+                  homeScore: 0,
+                  awayScore: 0,
+                  clock: "NOW! Get this deployed now! devs do something ",
+                  homeLogo: "",
+                  awayLogo: "",
+                  eventStarted: false,
+                  keyMoments: []
+                }}
+                buttonText="Deploy Game"
+              />
+            )}
+          </div>
+        ) : (
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex flex-col gap-1">
@@ -445,15 +676,13 @@ const handleGameCreated = async (newGameId: string) => {
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
-                      // You can now directly use the already-fetched refereeFcData if needed
-                      console.log('Referee Fan Data and refereeId:', refereeFcData, refereeId);
                       await frameSdk.actions.viewProfile({ fid: refereeId });
                     }}
                     className="text-lightPurple underline cursor-pointer ml-1"
                   >
-                    {refereeFcData && refereeFcData.USER_DATA_TYPE_DISPLAY
+                    {refereeFcData
                       ? refereeFcData.USER_DATA_TYPE_DISPLAY[0]
-                      : refereeId || 'anon'}
+                      : <LoadingDots />}
                   </button>
                 </span>
               </div>
@@ -466,19 +695,18 @@ const handleGameCreated = async (newGameId: string) => {
                 </span>
               </div>
             </div>
-
             {gameState === 'buying' && (
               <>
                 <div className="mb-4 flex items-center gap-4">
                   <div className="flex items-center gap-3 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <img src={playerPfp} alt="Player Avatar" className="rounded-full w-10 h-10" />
-                    <span className="font-semibold text-lg">{playerName}</span>
-                    {/* <GetBalance /> */}
-                    <p className="text-sm text-lightPurple">
-                      Test Match. No money involved.
-                    </p>
+                    <span className="font-semibold text-lg">{playerName}
+                    <p className="text-sm text-limeGreenOpacity">
+                      games use USDC from your warcast wallet. Do you trust the referee?
+                    </p></span>
                   </div>
                 </div>
+
                 <div className="mb-3 text-left text-md text-lightPurple">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mr-2">
@@ -486,72 +714,86 @@ const handleGameCreated = async (newGameId: string) => {
                     </div>
                     <div>
                       <p>
-                        <span className="font-bold">Step 1: Purchase a ticket.</span> Once all tickets are sold, the board will be randomized and revealed. Ticket with final score wins the pot!
+                        <span className="font-bold">Step 1: Grab your ticket!</span> Once every square is claimed, the board will shuffle and reveal its final layout. The ticket matching the final score takes home the pot!
                       </p>
                       <p className="text-fontRed mt-2">
-                        <span className="text-fontRed font-bold">Note:</span> A service fee of {serviceFee * 100}% will be applied at payout.
+                        <span className="text-fontRed font-bold">Heads up:</span> there’s a {serviceFee * 100}% service fee on payouts. Gotta keep the lights on!
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="mb-4 flex items-center justify-center gap-3">
-                  <button onClick={decrementCart} className="px-2 py-1 bg-deepPink rounded hover:bg-fontRed transition">
-                    –
-                  </button>
-                  <span className="text-lg font-bold">{cart.length}</span>
-                  <button onClick={incrementCart} className="px-2 py-1 bg-deepPink rounded hover:bg-fontRed transition">
-                    +
-                  </button>
-                  <button onClick={finalizePurchase} className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
-                    Buy Tickets
-                  </button>
-                </div>
+
+                <div className="mb-4 flex flex-col items-center gap-4">
+  {/* Ticket Counter Display */}
+  <div className="flex items-center gap-4 bg-darkPurple p-3 rounded-lg shadow-lg">
+    <button
+      onClick={decrementCart}
+      className="w-10 h-10 bg-deepPink rounded-full flex items-center justify-center text-xl text-white hover:bg-fontRed transition"
+    >
+      –
+    </button>
+    <span className="text-2xl font-extrabold text-notWhite w-12 text-center">
+      {cart.length}
+    </span>
+    <button
+      onClick={incrementCart}
+      className="w-10 h-10 bg-deepPink rounded-full flex items-center justify-center text-xl text-white hover:bg-fontRed transition"
+    >
+      +
+    </button>
+  </div>
+
+  {/* Purchase Button */}
+  <button
+    onClick={finalizePurchase}
+    className="w-full max-w-xs py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg text-lg font-bold"
+  >
+    Buy Tickets
+  </button>
+</div>
+
+
+                {/* Transaction status and loading messages */}
+                <TransactionMessages />
               </>
             )}
+
 
             {gameState === 'playing' && (
               <div className="mb-3 text-left text-sm text-fontRed">
                 <span className="font-bold mr-1">Step 2:</span> 
                 The referee enters the final scores for each team. The winning ticket is determined by the grid cell corresponding to these scores.
-            </div>
+              </div>
             )}
-
             {gameState === 'completed' && (
               <div className="mb-3 text-center text-xs text-fontRed">
                 <p>Game Complete! The highlighted ticket is the winner.</p>
               </div>
             )}
-  
             <div className="flex mb-4">
               <ScoreGrid
-                  homeScore={homeScore}
-                  awayScore={awayScore}
-                  homeTeam={homeTeam}
-                  awayTeam={awayTeam}
-                  tickets={tickets}
-                  boardPositions={boardPositions}
-                  gameState={gameState}
-                  winningTicket={winningTicket}
+                homeScore={homeScore}
+                awayScore={awayScore}
+                homeTeam={homeTeam}
+                awayTeam={awayTeam}
+                tickets={tickets}
+                boardPositions={boardPositions}
+                gameState={gameState}
+                winningTicket={winningTicket}
               />
             </div>
-
             {gameState === 'placing' && (
               <div className="text-center text-base font-semibold text-fontRed animate-pulse">
                 Randomly placing tickets on the board...
               </div>
             )}
-
             {gameState === 'playing' && (
               <div className="bg-darkPurple p-3 rounded-lg">
                 <h2 className="text-base text-notWhite font-semibold mb-3">Referee submits Final Score</h2>
                 <div className="flex gap-3 mb-3">
                   <div className="flex-1">
                     <label className="block text-xs font-medium text-lightPurple mb-1">Home Team</label>
-                    <select
-                      className="w-full px-2 py-1 border bg-darkPurple rounded text-xs"
-                      value={team1Score || 0} 
-                      onChange={(e) => setTeam1Score(Number(e.target.value))} // Convert to number
-                      >
+                    <select className="w-full px-2 py-1 border bg-darkPurple rounded text-xs" value={team1Score || 0} onChange={(e) => setTeam1Score(Number(e.target.value))}>
                       <option value="0">0</option>
                       <option value="1">1</option>
                       <option value="2">2</option>
@@ -561,11 +803,7 @@ const handleGameCreated = async (newGameId: string) => {
                   </div>
                   <div className="flex-1">
                     <label className="block text-xs font-medium text-lightPurple mb-1">Away Team</label>
-                    <select
-                      className="w-full px-2 py-1 border bg-darkPurple rounded text-xs"
-                      value={team2Score || 0} 
-                      onChange={(e) => setTeam2Score(Number(e.target.value))} // Convert to number
-                      >
+                    <select className="w-full px-2 py-1 border bg-darkPurple rounded text-xs" value={team2Score || 0} onChange={(e) => setTeam2Score(Number(e.target.value))}>
                       <option value="0">0</option>
                       <option value="1">1</option>
                       <option value="2">2</option>
@@ -574,148 +812,104 @@ const handleGameCreated = async (newGameId: string) => {
                     </select>
                   </div>
                 </div>
-
-                {gameState === 'playing' && user?.farcaster?.fid === refereeId && (
-                  <button
-                    onClick={handleSubmitScore}
-                    className="w-full bg-deepPink text-white py-2 p-4 rounded-lg hover:bg-fontRed transition text-s"
-                  >
-                    Submit Final Score
-                  </button>
-                )}
+                  {gameState === 'playing' && user?.farcaster?.fid === refereeId && (
+                    <button
+                      onClick={handleSubmitScore}
+                      className="w-full bg-deepPink text-white py-2 p-4 rounded-lg hover:bg-fontRed transition text-s"
+                    >
+                      Submit Final Score
+                    </button>
+                  )}
               </div>
             )}
-
             {gameState === 'playing' && user?.farcaster?.fid !== refereeId && (
               <div className="bg-darkPurple p-3 rounded-lg text-center text-xs text-lightPurple">
                 Final score submission is only available to the referee. Please contact {refereeId}
               </div>
             )}
-
             <div ref={cardRef}>
               {gameState === 'completed' && winningTicket !== null && (
-              
-              <div
-                className="p-6 rounded-3xl border-4 border-double shadow-2xl"
-                style={{
-                  backgroundColor: '#010513', // purplePanel
-                  borderColor: '#FEA282', // notWhite
-                  fontFamily: '"VT323", monospace',
-                }}
-              >
-              {/* Home & Away Teams */}
-              <div className="mb-4 text-center">
-                <h3
-                  className="text-2xl font-bold uppercase tracking-wide"
-                  style={{ color: '#FEA282' }} // notWhite
-                >
-                  {homeTeam} <span className="mx-2" style={{ color: '#EC017C' }}>vs</span> {awayTeam}
-                </h3>
-              </div>
-              
-              {/* Final Score Header */}
-              <div className="mb-4 text-center">
-                <h2 className="text-3xl font-extrabold drop-shadow-xl" style={{ color: '#FEA282' }}>
-                  {team1Score} - {team2Score}
-                </h2>
-              </div>
-              
-              {/* Winner Info */}
-              <div className="flex flex-col items-center space-y-3">
-                <span className="text-lg font-bold uppercase tracking-widest" style={{ color: 'rgba(162, 230, 52, 0.7)' }}>
-                  Game Winner
-                </span>
-                <a
-                  href={`https://warpcast.com/~/profiles/${boardPositions[winningTicket]?.owner}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative"
-                >
-                  <img
-                    src={boardPositions[winningTicket]?.pfp || '/defifa_spinner.gif'}
-                    alt="Ticket Owner"
-                    className="w-24 h-24 rounded-full border-4 shadow-lg"
-                    style={{ borderColor: '#FEA282' }}
-                  />
-                  <div className="absolute inset-0 rounded-full border-2 border-dotted opacity-50" style={{ borderColor: '#FEA282' }}></div>
-                </a>
-                <div className="mt-2 text-xl font-semibold" style={{ color: '#FEA282' }}>
-                  {winnerFcData?.USER_DATA_TYPE_DISPLAY && winnerFcData.USER_DATA_TYPE_DISPLAY.length > 0
-                    ? winnerFcData.USER_DATA_TYPE_DISPLAY[0]
-                    : boardPositions[winningTicket]?.owner}
-                </div>
-              </div>
-              
-              {/* Game Stats */}
-              <div className="mt-6 grid grid-cols-3 gap-4 text-center" style={{ color: '#FEA282' }}>
-                <div>
-                  <p className="font-bold text-2xl">${getPotTotal()}</p>
-                  <p className="text-sm uppercase tracking-wide">Pot Size</p>
-                </div>
-                <div>
-                  <p className="text-lg">${serviceFee * 100}%</p>
-                  <p className="text-xs uppercase tracking-wide">Fee</p>
-                </div>
-                <div>
-                  <p className="font-bold text-2xl">${getPotTotal() * (1 - serviceFee)}</p>
-                  <p className="text-sm uppercase tracking-wide">Payout</p>
-                </div>
-              </div>
-              
-              {/* Status Display */}
-              <div className="mt-6 text-center">
-                <div className="text-lg font-bold" style={{ color: '#EC017C' }}>
-                  Status: {!prizeClaimed ? 'Not Claimed' : prizeClaimed && !prizePaid ? 'Not Paid' : 'Paid'}
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="mt-6 flex flex-col space-y-3">
-                
-                {/* Claim Prize Button - Only shows if prize is NOT claimed and NOT paid */}
-                {boardPositions[winningTicket]?.owner === playerFid && gameState === 'completed' && !prizeClaimed && (
-                  <button
-                    onClick={handleClaimPrize}
-                    className="w-full py-3 rounded-xl font-bold transform hover:scale-105 transition duration-300"
-                    style={{ backgroundColor: '#BD195D', color: '#FEA282' }} // deepPink
-                  >
-                    CLAIM YOUR GLORY
-                  </button>
-                )}
-
-
-                {/* Attest Prize Paid Button - Only shows if prize is claimed but NOT paid */}
-                {prizeClaimed && !prizePaid && user?.farcaster?.fid === refereeId && (
-                  <button
-                    onClick={handleAttestPrizePaid}
-                    className="w-full py-3 rounded-xl font-bold transform hover:scale-105 transition duration-300"
-                    style={{ backgroundColor: '#32CD32', color: '#181424' }} // limeGreen
-                  >
-                    ATTEST PRIZE PAID
-                  </button>
-                )}
-
-                {/* Status Message When Prize is Paid */}
-                {prizePaid && (
-                  <div className="font-extrabold text-xl text-center" style={{ color: 'rgba(162, 230, 52, 0.7)' }}>
-                    🎉 CONGRATS 🎉
+                <div className="p-6 rounded-3xl border-4 border-double shadow-2xl" style={{ backgroundColor: '#010513', borderColor: '#FEA282', fontFamily: '"VT323", monospace' }}>
+                  <div className="mb-4 text-center">
+                    <h3 className="text-2xl font-bold uppercase tracking-wide" style={{ color: '#FEA282' }}>
+                      {homeTeam} <span className="mx-2" style={{ color: '#EC017C' }}>vs</span> {awayTeam}
+                    </h3>
                   </div>
-                )}
-              </div>
-            </div>
-            )}
-          </div>
-
-            {/* Render Download Button ONLY if Prize is Claimed */}
-            {prizeClaimed && (
+                  <div className="mb-4 text-center">
+                    <h2 className="text-3xl font-extrabold drop-shadow-xl" style={{ color: '#FEA282' }}>
+                      {team1Score} - {team2Score}
+                    </h2>
+                  </div>
+                  <div className="flex flex-col items-center space-y-3">
+                    <span className="text-lg font-bold uppercase tracking-widest" style={{ color: 'rgba(162, 230, 52, 0.7)' }}>
+                      Game Winner
+                    </span>
+                    {winnerFcData ? (
+                      <a href={`https://warpcast.com/~/profiles/${winnerFcData.fid}`} target="_blank" rel="noopener noreferrer" className="relative">
+                        <img
+                        src={winnerFcData.USER_DATA_TYPE_PFP[0] || '/defifa_spinner.gif'}
+                          onError={(e) => {
+                            console.error("Broken image URL:", winnerFcData?.pfp);
+                            e.currentTarget.src = '/defifa_spinner.gif';
+                          }}
+                          alt="Winner Profile Picture"
+                          className="w-24 h-24 rounded-full border-4 shadow-lg"
+                          style={{ borderColor: '#FEA282' }}
+                        />
+                        <div className="absolute inset-0 rounded-full border-2 border-dotted opacity-50" style={{ borderColor: '#FEA282' }}></div>
+                      </a>
+                    ) : (
+                      <div className="w-24 h-24 flex items-center justify-center">
+                        <LoadingDots />
+                      </div>
+                    )}
+                    <div className="mt-2 text-xl font-semibold" style={{ color: '#FEA282' }}>
+                      {winnerFcData ? winnerFcData.USER_DATA_TYPE_DISPLAY[0] : <LoadingDots />}
+                    </div>
+                  </div>
+                  <div className="mt-6 grid grid-cols-3 gap-4 text-center" style={{ color: '#FEA282' }}>
+                    <div>
+                      <p className="font-bold text-2xl">${getPotTotal()}</p>
+                      <p className="text-sm uppercase tracking-wide">Pot Size</p>
+                    </div>
+                    <div>
+                      <p className="text-lg">${serviceFee * 100}%</p>
+                      <p className="text-xs uppercase tracking-wide">Fee</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-2xl">${getPotTotal() * (1 - serviceFee)}</p>
+                      <p className="text-sm uppercase tracking-wide">Payout</p>
+                    </div>
+                  </div>
                   <div className="mt-6 text-center">
-                    <button
-                      onClick={handleDownloadImage}
-                      className="bg-deepPink hover:bg-EC017C text-white py-2 px-4 rounded-xl  transition"
-                    >
-                      Collect Card (soon)<sup>™</sup>
-                    </button>
+                    <div className="text-lg font-bold" style={{ color: '#EC017C' }}>
+                      Status: {!prizeClaimed ? 'Not Claimed' : prizeClaimed && !prizePaid ? 'Not Paid' : 'Paid'}
+                    </div>
                   </div>
+                  <div className="mt-6 flex flex-col space-y-3">
+                    {boardPositions[winningTicket]?.owner === playerFid && gameState === 'completed' && !prizeClaimed && (
+                      <button onClick={handleClaimPrize} className="w-full py-3 rounded-xl font-bold transform hover:scale-105 transition duration-300" style={{ backgroundColor: '#BD195D', color: '#FEA282' }}>
+                        CLAIM YOUR GLORY
+                      </button>
+                    )}
+                  </div>
+                    {gameState === 'completed' && prizeClaimed && !prizePaid && user?.farcaster?.fid === refereeId && (
+                      <button
+                        onClick={handlePayout}
+                        className="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-800 transition"
+                      >
+                        Referee - Pay Winner
+                      </button>
+                    )}
+                </div>
+              )}
+            </div>
+            {prizeClaimed && (
+              <div className="mt-6 text-center">
+{/*                 <button onClick={handleDownloadImage} className="bg-deepPink hover:bg-EC017C text-white py-2 px-4 rounded-xl transition">
+                  Collect Card (soon)<sup>™</sup>
+                </button> */}
+              </div>
             )}
           </>
         )}

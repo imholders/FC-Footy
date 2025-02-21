@@ -26,7 +26,7 @@ export async function fetchFanUserData(fanFid: number): Promise<Record<string, s
   try {
     const response = await fetch(`https://hub.pinata.cloud/v1/userDataByFid?fid=${fanFid}`);
     const data: PinataResponse = await response.json();
-
+    console.log("Data for fid:", fanFid, data);
     if (!data.messages || data.messages.length === 0) {
       return {};
     }

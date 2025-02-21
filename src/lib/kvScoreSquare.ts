@@ -12,7 +12,10 @@ export type TicketType = {
   boughtRCPreShuffle: string;
   owner: number | null;
   pfp?: string;
+  walletAddress?: string; // New field for the buyer's wallet address
+  txHash?: string;        // New field for the transaction hash
 };
+
 
 export interface GameData {
   gameId: string;
@@ -103,31 +106,37 @@ export async function updateGameState(gameId: string, newState: GameState): Prom
 }
 
 export async function purchaseTickets(
-    gameId: string,
-    purchasedIndices: number[],
-    buyerFid: number,
-    buyerPfp: string
-  ): Promise<void> {
-    // Retrieve the existing game
-    const game = await getGame(gameId);
-    if (!game) {
-      throw new Error(`Game with id ${gameId} not found`);
-    }
-  
-    // Update each specified ticket if it hasn't been bought already
-    purchasedIndices.forEach(index => {
-      if (!game.tickets[index].owner) {
-        game.tickets[index].pfp = buyerPfp;
-        game.tickets[index].owner = buyerFid;
-      }
-    });
-  
-    // Update the updatedAt timestamp
-    game.updatedAt = new Date().toISOString();
-  
-    // Store the updated game data in KV
-    await redis.set(getGameKey(gameId), JSON.stringify(game));
+  gameId: string,
+  purchasedIndices: number[],
+  buyerFid: number,
+  buyerPfp: string,
+  buyerWalletAddress?: string,
+  transactionHash?: string
+): Promise<void> {
+  // Retrieve the existing game.
+  const game = await getGame(gameId);
+  if (!game) {
+    throw new Error(`Game with id ${gameId} not found`);
   }
+
+  // Update each specified ticket if it hasn't been bought already.
+  purchasedIndices.forEach(index => {
+    if (!game.tickets[index].owner) {
+      game.tickets[index].pfp = buyerPfp;
+      game.tickets[index].owner = buyerFid;
+      // Record additional info.
+      game.tickets[index].walletAddress = buyerWalletAddress;
+      game.tickets[index].txHash = transactionHash;
+    }
+  });
+
+  // Update the updatedAt timestamp.
+  game.updatedAt = new Date().toISOString();
+
+  // Store the updated game data in KV.
+  await redis.set(getGameKey(gameId), JSON.stringify(game));
+}
+
   
 export async function randomizeBoard(gameId: string): Promise<void> {
   const game = await getGame(gameId);
