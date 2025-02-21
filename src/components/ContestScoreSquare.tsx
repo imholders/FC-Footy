@@ -146,14 +146,15 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const contractInterface = new ethers.Interface(erc20ABI);
   // For ticket purchase.
   const purchaseData = contractInterface.encodeFunctionData("transfer", [PAYMENT_ADDRESS, totalCostUSDCUnits]);
-
   // Use useSendTransaction to send transactions.
-  const { sendTransaction, data: txData, error: txError, isLoading: isTxLoading } = useSendTransaction();
+  const { sendTransaction, data: txData, error: txError, status } = useSendTransaction();
+  // Wait for transaction receipt.
+  const isTxLoading = status === 'pending';
   // Wait for transaction receipt.
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash: txData as `0x${string}` });
-
+  useWaitForTransactionReceipt({ hash: txData as `0x${string}` });
   // When a transaction is initiated.
+
   useEffect(() => {
     if (txData) {
       setTxHash(txData as string);
