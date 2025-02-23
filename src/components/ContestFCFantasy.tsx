@@ -37,7 +37,7 @@ const ContestFCFantasy = () => {
   const [fantasyData, setFantasyData] = useState<FantasyEntry[]>([]);
   const [loadingFantasy, setLoadingFantasy] = useState(false);
   const [errorFantasy, setErrorFantasy] = useState<string | null>(null);
-  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [selectedEntry, setSelectedEntry] = useState<FantasyEntry | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | JSX.Element>('');
   // const [setMintingInProgress] = useState(false);
   // const [txHash, setTxHash] = useState(null);
@@ -170,14 +170,17 @@ const ContestFCFantasy = () => {
     };
     
   
-  const handleRowSelect = async (selected: React.SetStateAction<null>) => {
-    setSelectedEntry(selected);
-    setStatusMessage(''); // Clear previous message
-    setRenderKey((prev) => prev + 1); // Force a re-render
-  
-    await forceDOMUpdate(); // Wait for DOM updates  
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    const handleRowSelect = async (selected: FantasyEntry) => {
+      setSelectedEntry(selected);
+      setStatusMessage(''); // Clear previous message
+      setRenderKey((prev) => prev + 1); // Force a re-render
+    
+      await forceDOMUpdate(); // Wait for DOM updates
+      await waitForImagesToLoad(cardRef); // Wait for images to load
+    
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    
   
 /*   const uploadMetadataToIPFS = async (imageCid: any, cardEntry: { manager: any; rank: any; total: any; } | undefined) => {
     try {
@@ -405,11 +408,15 @@ const ContestFCFantasy = () => {
                   setSharingInProgress(false); // ✅ Start sharing
 
                   setStatusMessage('🚀 Shared on Warpcast! (check popup blocker)');
-              } catch (error) {
-                console.error('❌ Sharing failed:', error);
-                setStatusMessage(`❌ Sharing failed: ${error.message}`);
-                setSharingInProgress(false); // ✅ Reset sharing flag
-              }
+                } catch (error) {
+                  console.error('❌ Sharing failed:', error);
+                  if (error instanceof Error) {
+                    setStatusMessage(`❌ Sharing failed: ${error.message}`);
+                  } else {
+                    setStatusMessage('❌ Sharing failed: An unknown error occurred.');
+                  }
+                  setSharingInProgress(false); // ✅ Reset sharing flag
+                }
             }}
             disabled={sharingInProgress || !cardEntry}
             className={`w-full max-w-xs py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg text-lg font-bold ${
