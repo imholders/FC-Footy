@@ -60,6 +60,7 @@ const ContestFCFantasy = () => {
     location: string | null;
     fid: number | null;
   }
+  
   const cardRef = useRef(null);
   const { user } = usePrivy();
 

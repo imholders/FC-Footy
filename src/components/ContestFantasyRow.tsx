@@ -5,8 +5,8 @@ import frameSdk from "@farcaster/frame-sdk";
 // import { BASE_URL } from '~/lib/config';
 import { FrameContext } from '@farcaster/frame-node';
 
-interface FantasyEntry {
-  rank: number | null;  // Allow null for rank if needed
+export interface FantasyEntry {
+  rank: number;
   pfp: string | null;
   team: {
     name: string | null;
@@ -17,9 +17,10 @@ interface FantasyEntry {
   last_name: string | null;
   fav_team: number | null;
   total: number | null;
-  location: string | null;  // location can be string or null
+  location: string | null;
   fid: number | null;
 }
+
 
 interface FantasyRowProps {
   entry: FantasyEntry;  // Consistent FantasyEntry type
