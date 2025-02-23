@@ -34,7 +34,7 @@ import { useWaitForTransactionReceipt } from 'wagmi';
 ];
  */
 const ContestFCFantasy = () => {
-  const [fantasyData, setFantasyData] = useState([]);
+  const [fantasyData, setFantasyData] = useState<FantasyEntry[]>([]);
   const [loadingFantasy, setLoadingFantasy] = useState(false);
   const [errorFantasy, setErrorFantasy] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -44,7 +44,21 @@ const ContestFCFantasy = () => {
   const [isContextLoaded, setIsContextLoaded] = useState<boolean>(false);
   const [sharingInProgress, setSharingInProgress] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
-
+  interface FantasyEntry {
+    rank: number;
+    pfp: string | null;
+    team: {
+      name: string | null;
+      logo: string | null;
+    };
+    manager: string;
+    entry_name: string | null;
+    last_name: string | null;
+    fav_team: number | null;
+    total: number | null;
+    location: string | null;
+    fid: number | null;
+  }
   const cardRef = useRef(null);
   const { user } = usePrivy();
 
