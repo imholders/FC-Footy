@@ -29,7 +29,7 @@ const ScoutDefenders: React.FC<ScoutDefendersProps> = ({ playersIn }) => {
     }.\n\nThe ExGC is calculated as 5x expected goal involvement (xGI) per 90 minutes minus expected goals conceded (xGC) per 90 minutes. Higher numbers are better. \n\nCheck out the full list of top defenders in the FC Footy app cc @gabedev.eth @kmacb.eth`;
 
     const encodedSummary = encodeURIComponent(summary);
-    const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${BASE_URL}&embeds[]=https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.photo.replace(/\.[^/.]+$/, '.png')}`;
+    const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${BASE_URL}/?tab=scout%20Players&embeds[]=https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.photo.replace(/\.[^/.]+$/, '.png')}`;
     console.log(url);
     sdk.actions.openUrl(url); // Use the Farcaster SDK to open the URL
   };
