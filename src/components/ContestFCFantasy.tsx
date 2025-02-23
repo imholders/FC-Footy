@@ -386,9 +386,13 @@ const ContestFCFantasy = () => {
                   const imageCid = result.ipfsHash;
                   console.log('✅ Image uploaded to IPFS for sharing:', imageCid);
 
-                  // Create Cast text based on user stats
-                  const castText = `🏆 Fantasy Football Card for @${cardEntry.manager}!\n📊 Rank: ${cardEntry.rank}\n⚽ Points: ${cardEntry.total}\nCheck out the latest dickbutt FC Fantasy League manager cards. \nThe dickbutt FC Fantasy League is moving on @base 🚀 rsn`;
+                  if (!cardEntry) {
+                    setStatusMessage('❌ No card selected for sharing.');
+                    return;
+                  }
                   
+                  // Create Cast text based on user stats
+                  const castText = `🏆 Fantasy Football Card for @${cardEntry.manager}!\n📊 Rank: ${cardEntry.rank}\n⚽ Points: ${cardEntry.total}\nCheck out the latest dickbutt FC Fantasy League manager cards. \nThe dickbutt FC Fantasy League is moving on @base 🚀 rsn`; 
                   // Encode cast texthttps://warpcast.com/~/frames/launch?url=https://fc-footy.vercel.app
                   const encodedText = encodeURIComponent(castText);
                   const encodedEmbed1 = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${imageCid}`);
