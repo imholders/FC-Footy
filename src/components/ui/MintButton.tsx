@@ -1,4 +1,4 @@
-import React from 'react';
+/* import React from 'react';
 import { useMintNFT } from '../../hooks/useMintNft';
 
 const MintButton = ({ metadataCID }) => {
@@ -31,3 +31,4 @@ const MintButton = ({ metadataCID }) => {
 };
 
 export default MintButton;
+ */
