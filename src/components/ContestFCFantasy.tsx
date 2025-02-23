@@ -6,7 +6,7 @@ import { fetchFantasyData } from './utils/fetchFantasyData';
 import { usePrivy } from '@privy-io/react-auth';
 import { toPng } from 'html-to-image';
 import dayjs from 'dayjs';
-import { useWaitForTransactionReceipt } from 'wagmi';
+// import { useWaitForTransactionReceipt } from 'wagmi';
 // import { ethers } from 'ethers';
 // import MintButton from './ui/MintButton';
 // const testing = true; // Toggle this for testing - will not mint NFTs
@@ -36,14 +36,15 @@ import { useWaitForTransactionReceipt } from 'wagmi';
 const ContestFCFantasy = () => {
   const [fantasyData, setFantasyData] = useState<FantasyEntry[]>([]);
   const [loadingFantasy, setLoadingFantasy] = useState(false);
-  const [errorFantasy, setErrorFantasy] = useState(null);
+  const [errorFantasy, setErrorFantasy] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [statusMessage, setStatusMessage] = useState<string | JSX.Element>('');
-  const [setMintingInProgress] = useState(false);
-  const [txHash, setTxHash] = useState(null);
+  // const [setMintingInProgress] = useState(false);
+  // const [txHash, setTxHash] = useState(null);
   const [isContextLoaded, setIsContextLoaded] = useState<boolean>(false);
   const [sharingInProgress, setSharingInProgress] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
+
   interface FantasyEntry {
     rank: number;
     pfp: string | null;
@@ -107,7 +108,7 @@ const ContestFCFantasy = () => {
     fetchData();
   }, []);
 
-  useWaitForTransactionReceipt({
+/*   useWaitForTransactionReceipt({
     hash: txHash,
     onSuccess: (receipt) => {
       console.log('✅ NFT Minted:', receipt);
@@ -120,15 +121,16 @@ const ContestFCFantasy = () => {
       setStatusMessage('❌ Transaction failed. Try again.');
       setMintingInProgress(false); // ✅ Reset minting flag
     },
-  });
+  }); */
 
-  const forceDOMUpdate = () => {
-    return new Promise((resolve) => {
+  const forceDOMUpdate = (): Promise<void> => {
+    return new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
-        resolve();
+        resolve(); // Resolves with no value (undefined), which satisfies void
       });
     });
   };
+  
   
   const defaultCardEntry = farcasterAccount
     ? fantasyData.find((entry) =>
@@ -159,15 +161,16 @@ const ContestFCFantasy = () => {
     
     
   
-  const waitForDOMUpdate = () => {
-    return new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        resolve();
+    const waitForDOMUpdate = (): Promise<void> => {
+      return new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(); // Explicitly resolves the Promise with 'void'
+        });
       });
-    });
-  };
+    };
+    
   
-  const handleRowSelect = async (selected) => {
+  const handleRowSelect = async (selected: React.SetStateAction<null>) => {
     setSelectedEntry(selected);
     setStatusMessage(''); // Clear previous message
     setRenderKey((prev) => prev + 1); // Force a re-render
