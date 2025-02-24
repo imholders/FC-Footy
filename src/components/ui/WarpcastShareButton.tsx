@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from "next/navigation";
 import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
 import { FrameContext } from '@farcaster/frame-node';
@@ -25,6 +26,7 @@ interface WarpcastShareButtonProps {
 export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShareButtonProps) {
   const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const loadContext = async () => {
@@ -61,7 +63,17 @@ export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShare
         ? `\n\nKey Moments:\n${keyMoments.join('\n')}`
         : "";
 
-      const matchSummary = `${competitorsLong}\n${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}\n${eventStarted ? `Clock: ${clock}` : `Kickoff: ${clock}`}${keyMomentsText}\n\nUsing the FC Footy mini-app warpcast.com/~/frames/launch?domain=${frameUrl.replace(/^https?:\/\//, "")} cc @gabedev.eth @kmacb.eth`;
+      // Use useSearchParams to get the current query string
+      const currentQuery = searchParams?.toString() ? `?${searchParams.toString()}` : "";
+
+      // Append the query string to the mini‑app URL
+      const miniAppUrl = `warpcast.com/~/frames/launch?domain=${frameUrl.replace(/^https?:\/\//, "")}${currentQuery}`;
+
+      const matchSummary = `${competitorsLong}
+${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}
+${eventStarted ? `Clock: ${clock}` : `Kickoff: ${clock}`}${keyMomentsText}
+
+Using the FC Footy mini-app ${miniAppUrl} cc @gabedev.eth @kmacb.eth`;
 
       const encodedSummary = encodeURIComponent(matchSummary);
       const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
@@ -72,7 +84,7 @@ export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShare
         frameSdk.actions.openUrl(url);
       }
     }
-  }, [selectedMatch, context]);
+  }, [selectedMatch, context, searchParams]);
 
   return (
     <button
