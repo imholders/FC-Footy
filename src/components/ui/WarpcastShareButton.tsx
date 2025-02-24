@@ -65,9 +65,9 @@ export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShare
 
       // Use useSearchParams to get the current query string
       const currentQuery = searchParams?.toString() ? `?${searchParams.toString()}` : "";
-
+      console.log(currentQuery);
       // Append the query string to the mini‑app URL
-      const miniAppUrl = `warpcast.com/~/frames/launch?domain=${frameUrl.replace(/^https?:\/\//, "")}${currentQuery}`;
+      const miniAppUrl = `https://warpcast.com/~/frames/launch?url=${frameUrl}${currentQuery}`;
 
       const matchSummary = `${competitorsLong}
 ${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}
