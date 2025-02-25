@@ -9,6 +9,8 @@ const redis = new Redis({
   token: process.env.NEXT_PUBLIC_KV_REST_API_TOKEN,
 });
 
+const ADMIN_FIDS = [420564, 4163];
+
 export async function POST(request: NextRequest) {
   // Validate API key from headers
   const apiKey = request.headers.get("x-api-key");
@@ -18,21 +20,29 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   }
-  const { title, body, targetURL } = await request.json();
+  
+  const { title, body, targetURL, adminOnly = false } = await request.json();
 
-  // Scan Redis to fetch all user notification keys
-  const userKeys = await redis.keys("fc-footy:user:*");
+  let targetFids: number[];
+  
+  if (adminOnly) {
+    targetFids = ADMIN_FIDS;
+  } else {
+    // Scan Redis to fetch all user notification keys
+    const userKeys = await redis.keys("fc-footy:user:*");
+    targetFids = userKeys.map(key => parseInt(key.split(":").pop()!));
+  }
+
   const notificationResults: Array<{ fid: number; result: any }> = [];
   const chunkSize = 35;
 
   // Process keys in batches of 35
-  for (let i = 0; i < userKeys.length; i += chunkSize) {
-    const batch = userKeys.slice(i, i + chunkSize);
+  for (let i = 0; i < targetFids.length; i += chunkSize) {
+    const batch = targetFids.slice(i, i + chunkSize);
 
     // Process the current batch concurrently
     const batchResults = await Promise.all(
-      batch.map(async (key) => {
-        const fid = parseInt(key.split(":").pop()!); // Extract FID from the key
+      batch.map(async (fid) => {
         try {
           const notificationDetails = await getUserNotificationDetails(fid);
           if (notificationDetails) {
@@ -54,6 +64,8 @@ export async function POST(request: NextRequest) {
   return Response.json({
     success: true,
     notificationResults,
+    sentTo: adminOnly ? "admins only" : "all users",
+    totalSent: notificationResults.length
   });
 }
 

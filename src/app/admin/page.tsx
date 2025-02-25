@@ -14,7 +14,8 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [category, setCategory] = useState("matches"); // Default category
+  const [category, setCategory] = useState("matches");
+  const [adminOnly, setAdminOnly] = useState(false); // New state for admin-only toggle
   const [responseMessage, setResponseMessage] = useState("");
   const [totalNumberOfUsers, setTotalNumberOfUsers] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -66,15 +67,18 @@ export default function AdminPage() {
         body: JSON.stringify({ 
           title, 
           body,
-          targetURL 
+          targetURL,
+          adminOnly
         }),
       });
 
       if (response.ok) {
-        setResponseMessage("Notification sent successfully!");
+        const data = await response.json();
+        setResponseMessage(`Notification sent successfully to ${data.sentTo}! (${data.totalSent} users)`);
         setTitle("");
         setBody("");
         setCategory("matches");
+        setAdminOnly(false);
       } else {
         const errorData = await response.json();
         setResponseMessage(`Error: ${errorData.error || "Failed to send notification"}`);
@@ -168,6 +172,18 @@ export default function AdminPage() {
               ))}
             </select>
           </div>
+          <div className="flex items-center space-x-3">
+            <label htmlFor="adminOnly" className="text-sm font-medium text-gray-700">
+              Send to Admins Only (FIDs: 4163, 420564)
+            </label>
+            <input
+              id="adminOnly"
+              type="checkbox"
+              checked={adminOnly}
+              onChange={(e) => setAdminOnly(e.target.checked)}
+              className="h-5 w-5 text-deepPink focus:ring-deepPink border-gray-300 rounded"
+            />
+          </div>
           <button
             type="submit"
             className="w-full bg-deepPink text-white p-3 rounded-lg hover:bg-darkPurple flex items-center justify-center transform transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -195,7 +211,7 @@ export default function AdminPage() {
                 />
               </svg>
             ) : (
-              "Send Notification"
+              `Send to ${adminOnly ? "Admins" : "All Users"}`
             )}
           </button>
         </form>
