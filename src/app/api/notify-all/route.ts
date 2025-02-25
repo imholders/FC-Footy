@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   }
-  const { title, body } = await request.json();
+  const { title, body, targetURL } = await request.json();
 
   // Scan Redis to fetch all user notification keys
   const userKeys = await redis.keys("fc-footy:user:*");
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         try {
           const notificationDetails = await getUserNotificationDetails(fid);
           if (notificationDetails) {
-            const result = await sendFrameNotification({ fid, title, body });
+            const result = await sendFrameNotification({ fid, title, body, targetURL });
             return { fid, result };
           } else {
             console.warn(`No notification details found for FID: ${fid}`);

@@ -20,10 +20,12 @@ type SendFrameNotificationResult =
     fid,
     title,
     body,
+    targetURL
   }: {
     fid: number;
     title: string;
     body: string;
+    targetURL?: string;
   }): Promise<SendFrameNotificationResult> {
     // Fetch user notification details
     const notificationDetails = await getUserNotificationDetails(fid);
@@ -51,7 +53,7 @@ type SendFrameNotificationResult =
         notificationId: crypto.randomUUID(),
         title,
         body,
-        targetUrl: appUrl,
+        targetUrl: targetURL || appUrl,
         tokens: [notificationDetails.token],
       } satisfies SendNotificationRequest),
     });

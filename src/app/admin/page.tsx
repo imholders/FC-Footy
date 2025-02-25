@@ -12,25 +12,31 @@ const redis = new Redis({
 export default function AdminPage() {
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
-
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [category, setCategory] = useState("matches"); // Default category
   const [responseMessage, setResponseMessage] = useState("");
   const [totalNumberOfUsers, setTotalNumberOfUsers] = useState(0);
-
   const [loading, setLoading] = useState(false);
 
-async function getTotalNumberOfUsers(): Promise<number> {
-  const keys = await redis.keys("fc-footy:user:*");
+  const categories = [
+    { value: "matches", label: "Matches" },
+    { value: "contests", label: "Contests" },
+    { value: "scoutplayers", label: "Scout Players" },
+    { value: "extratime", label: "Extra Time" },
+    { value: "settings", label: "Settings" },
+  ];
 
-  return keys.length;
-}
+  async function getTotalNumberOfUsers(): Promise<number> {
+    const keys = await redis.keys("fc-footy:user:*");
+    return keys.length;
+  }
+
   const fetchTotalNumberOfUsers = async () => {
-    
     const totalNumber = await getTotalNumberOfUsers();
     setTotalNumberOfUsers(totalNumber);
-  }
-  
+  };
+
   useEffect(() => {
     fetchTotalNumberOfUsers();
   }, []);
@@ -45,8 +51,11 @@ async function getTotalNumberOfUsers(): Promise<number> {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setResponseMessage(""); // Clear previous response message
-    setLoading(true); // Start loading
+    setResponseMessage("");
+    setLoading(true);
+    
+    const targetURL = `${process.env.NEXT_PUBLIC_BASE_URL}?tab=${category}`;
+    
     try {
       const response = await fetch("/api/notify-all", {
         method: "POST",
@@ -54,14 +63,18 @@ async function getTotalNumberOfUsers(): Promise<number> {
           "Content-Type": "application/json",
           "x-api-key": process.env.NEXT_PUBLIC_NOTIFICATION_API_KEY || "",
         },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({ 
+          title, 
+          body,
+          targetURL 
+        }),
       });
 
       if (response.ok) {
         setResponseMessage("Notification sent successfully!");
         setTitle("");
         setBody("");
-        
+        setCategory("matches");
       } else {
         const errorData = await response.json();
         setResponseMessage(`Error: ${errorData.error || "Failed to send notification"}`);
@@ -69,16 +82,15 @@ async function getTotalNumberOfUsers(): Promise<number> {
     } catch (error: any) {
       setResponseMessage(`Error: ${error.message}`);
     } finally {
-        setLoading(false); // Stop loading
-      }
-
+      setLoading(false);
+    }
   };
 
   if (!authenticated) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700 text-center mb-4">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
             Admin Login
           </h2>
           <input
@@ -86,11 +98,11 @@ async function getTotalNumberOfUsers(): Promise<number> {
             placeholder="Enter Pass Key"
             value={apiKeyInput}
             onChange={(e) => setApiKeyInput(e.target.value)}
-            className="w-full text-black p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-darkPurple"
+            className="w-full p-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-deepPink transition-all duration-200"
           />
           <button
             onClick={handleAuthenticate}
-            className="w-full mt-4 bg-deepPink text-white p-2 rounded-md hover:bg-darkPurple"
+            className="w-full mt-6 bg-deepPink text-white p-3 rounded-lg hover:bg-darkPurple transform transition-all duration-200 hover:scale-105"
           >
             Authenticate
           </button>
@@ -100,22 +112,21 @@ async function getTotalNumberOfUsers(): Promise<number> {
   }
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="w-full max-w-lg p-8 bg-white rounded-lg shadow-md">
-
-        <div className="mb-6 p-4 bg-blue-100 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-black">Dashboard Analytics</h3>
-          <div className="mt-2">
-            <p className="text-sm text-black">Total Number of Users: {totalNumberOfUsers}</p>
-          </div>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300">
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
+          <h3 className="text-lg font-semibold text-gray-800">Dashboard Analytics</h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Total Number of Users: <span className="font-medium">{totalNumberOfUsers}</span>
+          </p>
         </div>
 
-        <h2 className="text-2xl font-semibold text-black text-center mb-6">
-          Send Notification to All Users
+        <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
+          Send Notification
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-black">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Notification Title
             </label>
             <input
@@ -124,11 +135,11 @@ async function getTotalNumberOfUsers(): Promise<number> {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full p-2 border text-black rounded-md focus:outline-none focus:ring-2 focus:bg-gray-200"
+              className="w-full p-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-deepPink focus:bg-gray-50 transition-all duration-200"
             />
           </div>
           <div>
-            <label htmlFor="body" className="block text-sm font-medium text-black">
+            <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-1">
               Notification Body
             </label>
             <textarea
@@ -137,12 +148,29 @@ async function getTotalNumberOfUsers(): Promise<number> {
               onChange={(e) => setBody(e.target.value)}
               required
               rows={4}
-              className="w-full p-2 border text-black rounded-md focus:outline-none focus:ring-2 focus:bg-gray-200"
-            ></textarea>
+              className="w-full p-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-deepPink focus:bg-gray-50 transition-all duration-200"
+            />
+          </div>
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+              Target Category
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-deepPink bg-white transition-all duration-200"
+            >
+              {categories.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             type="submit"
-            className="w-full bg-deepPink text-white p-2 rounded-md hover:bg-darkPurple flex items-center justify-center"
+            className="w-full bg-deepPink text-white p-3 rounded-lg hover:bg-darkPurple flex items-center justify-center transform transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (
@@ -159,12 +187,12 @@ async function getTotalNumberOfUsers(): Promise<number> {
                   r="10"
                   stroke="currentColor"
                   strokeWidth="4"
-                ></circle>
+                />
                 <path
                   className="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                />
               </svg>
             ) : (
               "Send Notification"
@@ -173,10 +201,10 @@ async function getTotalNumberOfUsers(): Promise<number> {
         </form>
         {responseMessage && (
           <div
-            className={`mt-4 text-center p-2 rounded-md ${
+            className={`mt-6 text-center p-3 rounded-lg transition-all duration-200 ${
               responseMessage.startsWith("Error")
-                ? "bg-red-100 text-red-600"
-                : "bg-green-100 text-green-600"
+                ? "bg-red-50 text-red-600"
+                : "bg-green-50 text-green-600"
             }`}
           >
             {responseMessage}
