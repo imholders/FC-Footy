@@ -54,7 +54,7 @@ export default function AdminPage() {
     setResponseMessage("");
     setLoading(true);
     
-    const targetURL = `${process.env.NEXT_PUBLIC_BASE_URL}?tab=${category}`;
+    const targetURL = `${process.env.NEXT_PUBLIC_URL}?tab=${category}`;
     
     try {
       const response = await fetch("/api/notify-all", {
