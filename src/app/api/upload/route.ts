@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     // Upload the file to Pinata IPFS
     const result = await pinata.upload.file(file);
-
+    console.log('IPFS Upload Success:', result);
     return NextResponse.json({ ipfsHash: result.IpfsHash });
   } catch (error) {
     console.error('IPFS Upload Failed:', error);
