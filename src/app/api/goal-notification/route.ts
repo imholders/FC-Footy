@@ -12,17 +12,18 @@ const redis = new Redis({
 });
 
 export async function POST(request: NextRequest) {
-  const scoreboardUrl = "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard";
+  const scoreboardUrl =
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard";
 
-  let liveEvents;
+  let events;
   const leagueId = "eng.1";
   try {
     const response = await axios.get(scoreboardUrl);
     if (!response.data.events) {
       throw new Error("No events data returned from API");
     }
-    liveEvents = response.data.events;
-    console.log(`Found ${liveEvents.length} event(s).`);
+    events = response.data.events;
+    console.log(`Found ${events.length} event(s).`);
   } catch (error) {
     console.error("Error fetching scoreboard:", error);
     return new NextResponse(
@@ -33,116 +34,201 @@ export async function POST(request: NextRequest) {
 
   const notifications: string[] = [];
 
-  for (const event of liveEvents) {
+  for (const event of events) {
     const matchId = event.id;
     const competition = event.competitions?.[0];
-    if (!competition) continue;
+    if (!competition) {
+      console.warn(`No competition data for match ${matchId}. Skipping.`);
+      continue;
+    }
 
     const homeTeam = competition.competitors?.find((c: any) => c.homeAway === "home");
     const awayTeam = competition.competitors?.find((c: any) => c.homeAway === "away");
-    if (!homeTeam || !awayTeam) continue;
+    if (!homeTeam || !awayTeam) {
+      console.warn(`Missing team data for match ${matchId}. Skipping.`);
+      continue;
+    }
 
-    const homeScore = parseInt(homeTeam.score, 10) || 0;
-    const awayScore = parseInt(awayTeam.score, 10) || 0;
-    const currentStatus = competition.status?.type?.state || "unknown";
-    const period = competition.status?.period || 0;
-    const statusType = competition.status?.type?.name || "unknown";
+    const homeScore = parseInt(homeTeam.score, 10);
+    const awayScore = parseInt(awayTeam.score, 10);
+    const matchState = competition.status?.type?.state; // "pre", "in", "post"
+    const statusName = competition.status?.type?.name; // e.g., "STATUS_HALF_TIME"
+    const isCompleted = competition.status?.type?.completed;
 
-    // Fetch previous state and event history from Redis
-    let previousState: any = {};
-    let eventHistory: any = {};
+    // Fetch previous match data from Redis
+    let previousMatchData: any;
     try {
-      previousState = (await redis.hgetall(`fc-footy:match:${matchId}`)) || {};
-      eventHistory = (await redis.hgetall(`fc-footy:match:${matchId}:events`)) || {};
+      previousMatchData = await redis.hgetall(`fc-footy:match:${matchId}`) || {};
     } catch (err) {
       console.error(`Error fetching Redis data for match ${matchId}`, err);
       continue;
     }
 
     // Initialize match in Redis if not found
-    if (!previousState || Object.keys(previousState).length === 0) {
+    if (!previousMatchData || Object.keys(previousMatchData).length === 0) {
       console.log(`Initializing Redis for match ${matchId}`);
       await redis.hset(`fc-footy:match:${matchId}`, {
-        status: currentStatus,
-        period: period.toString(), // Store as string to avoid null issues
-        homeScore: homeScore.toString(),
-        awayScore: awayScore.toString(),
+        homeScore: homeScore,
+        awayScore: awayScore,
+        matchState: matchState,
+        startDate: event.date,
+        kickoffNotified: "false",
+        halftimeNotified: "false",
+        fulltimeNotified: "false",
+        yellowCardEvents: JSON.stringify([]), // Array to store yellow card events
+        redCardEvents: JSON.stringify([]),   // Array to store red card events
       });
-      continue;
+      continue; // Skip notifications on initialization
     }
 
-    let notificationMessage = "";
+    const homeTeamName = homeTeam.team?.shortDisplayName || homeTeam.team?.displayName;
+    const awayTeamName = awayTeam.team?.shortDisplayName || awayTeam.team?.displayName;
+    const matchSummary = `${homeTeamName} ${homeScore} - ${awayScore} ${awayTeamName}`;
 
-    // 1. Kickoff Notification
-    if (
-      currentStatus === "in" &&
-      previousState.status !== "in" &&
-      !eventHistory.kickoff
-    ) {
-      notificationMessage = `Kickoff! ${homeTeam.team.shortDisplayName} vs ${awayTeam.team.shortDisplayName}`;
-      await redis.hset(`fc-footy:match:${matchId}:events`, { kickoff: true });
+    // Fetch fans for both teams
+    const homeTeamId = `${leagueId}-${homeTeam.team?.abbreviation}`;
+    const awayTeamId = `${leagueId}-${awayTeam.team?.abbreviation}`;
+    let homeFans: number[] = [];
+    let awayFans: number[] = [];
+    try {
+      homeFans = await getFansForTeams([homeTeamId.toLowerCase()]);
+      awayFans = await getFansForTeams([awayTeamId.toLowerCase()]);
+    } catch (err) {
+      console.error(`Error fetching fans for match ${matchId}`, err);
     }
+    const uniqueFansToNotify = new Set([...homeFans, ...awayFans]);
+    const userKeys = await redis.keys("fc-footy:user:*");
+    const fidsToNotify = Array.from(uniqueFansToNotify).filter((fid) =>
+      userKeys.some((key) => key.endsWith(`:${fid}`))
+    );
 
-    // 2. Halftime Notification
-    if (
-      currentStatus === "in" &&
-      period === 2 &&
-      Number(previousState.period) < 2 &&
-      !eventHistory.halftime
-    ) {
-      notificationMessage = `Halftime: ${homeTeam.team.shortDisplayName} ${homeScore} - ${awayScore} ${awayTeam.team.shortDisplayName}`;
-      await redis.hset(`fc-footy:match:${matchId}:events`, { halftime: true });
-    }
-
-    // 3. Fulltime Notification
-    if (
-      statusType === "STATUS_FINAL" &&
-      previousState.status !== "fulltime" &&
-      !eventHistory.fulltime
-    ) {
-      notificationMessage = `Fulltime: ${homeTeam.team.shortDisplayName} ${homeScore} - ${awayScore} ${awayTeam.team.shortDisplayName}`;
-      await redis.hset(`fc-footy:match:${matchId}:events`, { fulltime: true });
-    }
-
-    if (notificationMessage) {
-      console.log(`Notification for match ${matchId}: ${notificationMessage}`);
-      notifications.push(notificationMessage);
-
-      const homeTeamId = `${leagueId}-${homeTeam.team?.abbreviation}`;
-      const awayTeamId = `${leagueId}-${awayTeam.team?.abbreviation}`;
-      let homeFans: number[] = [];
-      let awayFans: number[] = [];
-      try {
-        homeFans = await getFansForTeams([homeTeamId.toLowerCase()]);
-        awayFans = await getFansForTeams([awayTeamId.toLowerCase()]);
-      } catch (err) {
-        console.error(`Error fetching fans for match ${matchId}`, err);
-      }
-
-      const uniqueFansToNotify = new Set([...homeFans, ...awayFans]);
+    // Helper function to send notifications
+    const notifyFans = async (title: string, body: string) => {
       const batchSize = 40;
-      for (let i = 0; i < uniqueFansToNotify.size; i += batchSize) {
-        const batch = Array.from(uniqueFansToNotify).slice(i, i + batchSize);
-        const notificationPromises = batch.map(async (fid) => {
-          try {
-            await sendFrameNotification({
-              fid,
-              title: "Match Update",
-              body: notificationMessage,
-            });
-          } catch (error) {
-            console.error(`Failed to send notification to FID: ${fid}`, error);
-          }
-        });
+      for (let i = 0; i < fidsToNotify.length; i += batchSize) {
+        const batch = fidsToNotify.slice(i, i + batchSize);
+        const notificationPromises = batch.map((fid) =>
+          sendFrameNotification({ fid, title, body }).catch((error) =>
+            console.error(`Failed to send notification to FID: ${fid}`, error)
+          )
+        );
         await Promise.all(notificationPromises);
       }
+      notifications.push(body);
+      console.log(`Notified ${fidsToNotify.length} fans: ${body}`);
+    };
+
+    // Kickoff Notification
+    if (
+      previousMatchData.matchState === "pre" &&
+      matchState === "in" &&
+      previousMatchData.kickoffNotified === "false"
+    ) {
+      await notifyFans("Match Kickoff!", `${matchSummary} has started!`);
+      await redis.hset(`fc-footy:match:${matchId}`, { kickoffNotified: "true" });
     }
 
+    // Halftime Notification
+    if (
+      statusName === "STATUS_HALF_TIME" &&
+      previousMatchData.halftimeNotified === "false"
+    ) {
+      await notifyFans("Halftime!", `${matchSummary} - Halftime`);
+      await redis.hset(`fc-footy:match:${matchId}`, { halftimeNotified: "true" });
+    }
+
+    // Fulltime Notification
+    if (
+      (matchState === "post" || isCompleted) &&
+      previousMatchData.fulltimeNotified === "false"
+    ) {
+      await notifyFans("Fulltime!", `${matchSummary} - Match Ended`);
+      await redis.hset(`fc-footy:match:${matchId}`, { fulltimeNotified: "true" });
+    }
+
+    // Goal Notification
+    if (
+      Number(previousMatchData.homeScore) !== homeScore ||
+      Number(previousMatchData.awayScore) !== awayScore
+    ) {
+      let scoringPlayer = "Baller";
+      let clockTime = "00:00";
+      if (competition.details?.length > 0) {
+        const latestMoment = competition.details.sort((a: any, b: any) => {
+          const timeA = a.clock?.displayValue || "00:00";
+          const timeB = b.clock?.displayValue || "00:00";
+          const secondsA = timeA.split(":").reduce((acc: number, val: string) => acc * 60 + parseInt(val, 10), 0);
+          const secondsB = timeB.split(":").reduce((acc: number, val: string) => acc * 60 + parseInt(val, 10), 0);
+          return secondsA - secondsB;
+        }).pop();
+        if (latestMoment.type?.text === "Goal") {
+          scoringPlayer = latestMoment.athletesInvolved?.[0]?.displayName || scoringPlayer;
+          clockTime = latestMoment.clock?.displayValue || clockTime;
+        }
+      }
+      const goalMessage = `${matchSummary} | ${scoringPlayer} scored at ${clockTime}`;
+      await notifyFans("Goal! Goal! Goal!", goalMessage);
+    }
+
+    // Yellow and Red Card Notifications
+    if (competition.details?.length > 0) {
+      const previousYellowCards = JSON.parse(previousMatchData.yellowCardEvents || "[]");
+      const previousRedCards = JSON.parse(previousMatchData.redCardEvents || "[]");
+
+      const currentYellowCards: { player: string; time: string }[] = [];
+      const currentRedCards: { player: string; time: string }[] = [];
+
+      // Extract card events from details
+      competition.details.forEach((detail: any) => {
+        const player = detail.athletesInvolved?.[0]?.displayName || "Unknown Player";
+        const time = detail.clock?.displayValue || "00:00";
+        if (detail.type?.text === "Yellow Card") {
+          currentYellowCards.push({ player, time });
+        } else if (detail.type?.text === "Red Card") {
+          currentRedCards.push({ player, time });
+        }
+      });
+
+      // Detect new yellow cards
+      const newYellowCards = currentYellowCards.filter(
+        (card) =>
+          !previousYellowCards.some(
+            (prev: any) => prev.player === card.player && prev.time === card.time
+          )
+      );
+      for (const card of newYellowCards) {
+        await notifyFans(
+          "Yellow Card!",
+          `${matchSummary} | ${card.player} booked at ${card.time}`
+        );
+      }
+
+      // Detect new red cards
+      const newRedCards = currentRedCards.filter(
+        (card) =>
+          !previousRedCards.some(
+            (prev: any) => prev.player === card.player && prev.time === card.time
+          )
+      );
+      for (const card of newRedCards) {
+        await notifyFans(
+          "Red Card!",
+          `${matchSummary} | ${card.player} sent off at ${card.time}`
+        );
+      }
+
+      // Update Redis with current card events
+      await redis.hset(`fc-footy:match:${matchId}`, {
+        yellowCardEvents: JSON.stringify(currentYellowCards),
+        redCardEvents: JSON.stringify(currentRedCards),
+      });
+    }
+
+    // Update match data in Redis
     await redis.hset(`fc-footy:match:${matchId}`, {
-      status: currentStatus,
-      period: period.toString(),
-      homeScore: homeScore.toString(),
-      awayScore: awayScore.toString(),
+      homeScore: homeScore,
+      awayScore: awayScore,
+      matchState: matchState,
     });
   }
 
