@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
         kickoffNotified: "false",
         halftimeNotified: "false",
         fulltimeNotified: "false",
-        yellowCardEvents: JSON.stringify([]), // Array to store yellow card events
-        redCardEvents: JSON.stringify([]),   // Array to store red card events
+        yellowCardEvents: JSON.stringify([]),
+        redCardEvents: JSON.stringify([]),
       });
       continue; // Skip notifications on initialization
     }
@@ -172,8 +172,25 @@ export async function POST(request: NextRequest) {
 
     // Yellow and Red Card Notifications
     if (competition.details?.length > 0) {
-      const previousYellowCards = JSON.parse(previousMatchData.yellowCardEvents || "[]");
-      const previousRedCards = JSON.parse(previousMatchData.redCardEvents || "[]");
+      // Safely parse previous card events with a fallback
+      let previousYellowCards: { player: string; time: string }[] = [];
+      let previousRedCards: { player: string; time: string }[] = [];
+      try {
+        previousYellowCards = previousMatchData.yellowCardEvents
+          ? JSON.parse(previousMatchData.yellowCardEvents)
+          : [];
+      } catch (err) {
+        console.error(`Invalid yellowCardEvents for match ${matchId}: ${previousMatchData.yellowCardEvents}`, err);
+        previousYellowCards = [];
+      }
+      try {
+        previousRedCards = previousMatchData.redCardEvents
+          ? JSON.parse(previousMatchData.redCardEvents)
+          : [];
+      } catch (err) {
+        console.error(`Invalid redCardEvents for match ${matchId}: ${previousMatchData.redCardEvents}`, err);
+        previousRedCards = [];
+      }
 
       const currentYellowCards: { player: string; time: string }[] = [];
       const currentRedCards: { player: string; time: string }[] = [];
@@ -193,7 +210,7 @@ export async function POST(request: NextRequest) {
       const newYellowCards = currentYellowCards.filter(
         (card) =>
           !previousYellowCards.some(
-            (prev: any) => prev.player === card.player && prev.time === card.time
+            (prev) => prev.player === card.player && prev.time === card.time
           )
       );
       for (const card of newYellowCards) {
@@ -207,7 +224,7 @@ export async function POST(request: NextRequest) {
       const newRedCards = currentRedCards.filter(
         (card) =>
           !previousRedCards.some(
-            (prev: any) => prev.player === card.player && prev.time === card.time
+            (prev) => prev.player === card.player && prev.time === card.time
           )
       );
       for (const card of newRedCards) {
