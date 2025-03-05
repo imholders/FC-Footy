@@ -14,12 +14,12 @@ const redis = new Redis({
 });
 
 export async function POST(request: NextRequest) {
-  // ESPN Scoreboard endpoint for laliga
+  // ESPN Scoreboard endpoint for English Premier League
   const scoreboardUrl =
-    "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard";
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard";
 
   let liveEvents;
-  const leagueId = "esp.1";
+  const leagueId = "usa.1";
   try {
     const response = await axios.get(scoreboardUrl);
     if (!response.data.events) {
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Fetch previous scores from Redis
     let previousScore;
     try {
-      previousScore = await redis.hgetall(`fc-footy:esp:match:${matchId}`);
+      previousScore = await redis.hgetall(`fc-footy:mls:match:${matchId}`);
     } catch (err) {
       console.error(`Error fetching Redis data for match ${matchId}`, err);
       continue;
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       console.log(
         `Initializing Redis for match ${matchId} with scores: ${homeScore}-${awayScore}`
       );
-      await redis.hset(`fc-footy:esp:match:${matchId}`, { homeScore, awayScore });
+      await redis.hset(`fc-footy:mls:match:${matchId}`, { homeScore, awayScore });
       continue; // Skip notification on first data record
     }
 
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update Redis with the new scores after sending notifications
-    await redis.hset(`fc-footy:esp:match:${matchId}`, { homeScore, awayScore });
+    await redis.hset(`fc-footy:mls:match:${matchId}`, { homeScore, awayScore });
   }
 
   return new NextResponse(

@@ -91,3 +91,32 @@ export async function getFansForTeams(uniqueTeamIds: string[]): Promise<number[]
 
   return Array.from(fanFidsSet);
 }
+// List of supported leagues (add more as needed)
+const SUPPORTED_LEAGUES = ["eng.1", "eng.2", "uefa.champions", "usa.1", "esp.1", "ger.1", "ita.1", "fra.1", "eng.league_cup", "uefa.europa", "eng.fa"];
+
+/**
+ * Fetches fans for a team using its abbreviation, checking all supported leagues.
+ * @param teamAbbr - Team abbreviation (e.g., "ars" for Arsenal)
+ * @returns Array of unique fan FIDs
+ */
+export async function getFansForTeamAbbr(teamAbbr: string): Promise<number[]> {
+  const fanFidsSet = new Set<number>();
+  
+  // Generate all possible team IDs for the abbreviation across supported leagues
+  const possibleTeamIds = SUPPORTED_LEAGUES.map((leagueId) => `${leagueId}-${teamAbbr.toLowerCase()}`);
+  
+  console.log(`Fetching fans for team abbreviation "${teamAbbr}" across leagues: ${possibleTeamIds}`);
+
+  for (const teamId of possibleTeamIds) {
+    try {
+      const teamFans = await redis.smembers<number[]>(`fc-footy:team-fans:${teamId}`);
+      teamFans.forEach((fid) => fanFidsSet.add(fid));
+    } catch (err) {
+      console.error(`Error fetching fans for ${teamId}:`, err);
+    }
+  }
+
+  const fanFids = Array.from(fanFidsSet);
+  console.log(`Found ${fanFids.length} unique fans for "${teamAbbr}"`);
+  return fanFids;
+}
