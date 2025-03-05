@@ -400,7 +400,7 @@ const ContestFCFantasy = () => {
                   // Encode cast texthttps://warpcast.com/~/frames/launch?url=https://fc-footy.vercel.app
                   const encodedText = encodeURIComponent(castText);
                   const encodedEmbed1 = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${imageCid}`);
-                  const encodedEmbed2 = encodeURIComponent(`https://fc-footy.vercel.app`);
+                  const encodedEmbed2 = encodeURIComponent(`https://fc-footy.vercel.app?tab=contests`);
                   // Generate Warpcast URL with embed and cast text
                   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}&channelKey=football&embeds[]=${encodedEmbed1}&embeds[]=${encodedEmbed2}`;
 
