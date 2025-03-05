@@ -29,6 +29,32 @@ const teamsByLeague: { [league: string]: { team: string; abbr: string }[] } = {
     { team: "West Ham", abbr: "whu" },
     { team: "Wolves", abbr: "wol" }
   ],
+  "eng.2": [
+  { team: "Burnley", abbr: "bur" },
+  { team: "Luton Town", abbr: "lut" },
+  { team: "Sheffield United", abbr: "shu" },
+  { team: "Sunderland", abbr: "sun" },
+  { team: "West Bromwich Albion", abbr: "wba" },
+  { team: "Leeds United", abbr: "lee" },
+  { team: "Norwich City", abbr: "nor" },
+  { team: "Middlesbrough", abbr: "mid" },
+  { team: "Coventry City", abbr: "cov" },
+  { team: "Hull City", abbr: "hul" },
+  { team: "Preston North End", abbr: "pre" },
+  { team: "Stoke City", abbr: "sto" },
+  { team: "Queens Park Rangers", abbr: "qpr" },
+  { team: "Swansea City", abbr: "swa" },
+  { team: "Blackburn Rovers", abbr: "bla" },
+  { team: "Bristol City", abbr: "bri" },
+  { team: "Watford", abbr: "wat" },
+  { team: "Cardiff City", abbr: "car" },
+  { team: "Millwall", abbr: "mil" },
+  { team: "Plymouth Argyle", abbr: "ply" },
+  { team: "Sheffield Wednesday", abbr: "shw" },
+  { team: "Derby County", abbr: "der" },
+  { team: "Oxford United", abbr: "oxf" },
+  { team: "Portsmouth", abbr: "por" }
+],
   "esp.1": [
     { team: "Athletic Bilbao", abbr: "ath" },
     { team: "Atlético de Madrid", abbr: "atm" },
@@ -154,6 +180,7 @@ export const fetchTeamLogos = async (): Promise<Team[]> => {
     for (const [league, teams] of Object.entries(teamsByLeague)) {
       teams.forEach(({ team, abbr }) => {
         // Construct the logo URL using the league as part of the path.
+        
         const logoUrl = `https://tjftzpjqfqnbtvodsigk.supabase.co/storage/v1/object/public/d33m_images/teams/leagues/${league}/${abbr.toLowerCase()}.png`;
         // Push the team data, including the league.
         teamData.push({ name: team, abbreviation: abbr, league, logoUrl });

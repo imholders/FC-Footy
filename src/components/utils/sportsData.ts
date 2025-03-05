@@ -51,6 +51,12 @@ const sportsData = [
       sportId: 'usa.1',
       url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
     },
+    {
+      name: 'ENG Championship',
+      sportId: 'eng.2',
+      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard',
+    },
+
   ];
   
   export default sportsData;

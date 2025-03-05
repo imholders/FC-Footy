@@ -4,29 +4,35 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import axios from "axios";
 import { sendFrameNotification } from "~/lib/notifications";
-import { getFansForTeamAbbr } from "~/lib/kvPerferences"; // Import the new function
+import { getFansForTeams } from "~/lib/kvPerferences";
 
+// Ensure that your environment variables are correctly set.
+// Consider renaming them if they are meant for server-only usage.
 const redis = new Redis({
   url: process.env.NEXT_PUBLIC_KV_REST_API_URL,
   token: process.env.NEXT_PUBLIC_KV_REST_API_TOKEN,
 });
 
 export async function POST(request: NextRequest) {
+  // ESPN Scoreboard endpoint for English Premier League
   const scoreboardUrl =
-    "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard";
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard";
 
   let liveEvents;
+  const leagueId = "usa.1";
   try {
     const response = await axios.get(scoreboardUrl);
     if (!response.data.events) {
       throw new Error("No events data returned from API");
     }
+    // Filter events for live matches (state === "in")
     liveEvents = response.data.events.filter(
-      (event: any) => event.competitions?.[0]?.status?.type?.state === "in"
+      (event: any) =>
+        event.competitions?.[0]?.status?.type?.state === "in"
     );
-    console.log(`Found ${liveEvents.length} live event(s) in UCL.`);
+    console.log(`Found ${liveEvents.length} live event(s).`);
   } catch (error) {
-    console.error("Error fetching UCL scoreboard:", error);
+    console.error("Error fetching scoreboard:", error);
     return new NextResponse(
       JSON.stringify({ success: false, error: "Failed to fetch scoreboard" }),
       { status: 500 }
@@ -35,6 +41,7 @@ export async function POST(request: NextRequest) {
 
   const goalNotifications: string[] = [];
 
+  // Loop through each live event
   for (const event of liveEvents) {
     const matchId = event.id;
     const competition = event.competitions?.[0];
@@ -43,6 +50,7 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
+    // Extract home and away teams
     const homeTeam = competition.competitors?.find(
       (c: any) => c.homeAway === "home"
     );
@@ -56,22 +64,25 @@ export async function POST(request: NextRequest) {
     const homeScore = parseInt(homeTeam.score, 10);
     const awayScore = parseInt(awayTeam.score, 10);
 
+    // Fetch previous scores from Redis
     let previousScore;
     try {
-      previousScore = await redis.hgetall(`fc-footy:ucl:match:${matchId}`);
+      previousScore = await redis.hgetall(`fc-footy:match:${matchId}`);
     } catch (err) {
-      console.error(`Error fetching Redis data for UCL match ${matchId}`, err);
+      console.error(`Error fetching Redis data for match ${matchId}`, err);
       continue;
     }
 
+    // Initialize match in Redis if not found
     if (!previousScore || Object.keys(previousScore).length === 0) {
       console.log(
-        `Initializing Redis for UCL match ${matchId} with scores: ${homeScore}-${awayScore}`
+        `Initializing Redis for match ${matchId} with scores: ${homeScore}-${awayScore}`
       );
-      await redis.hset(`fc-footy:ucl:match:${matchId}`, { homeScore, awayScore });
-      continue;
+      await redis.hset(`fc-footy:match:${matchId}`, { homeScore, awayScore });
+      continue; // Skip notification on first data record
     }
 
+    // If scores have not changed, skip notification
     if (
       Number(previousScore.homeScore) === homeScore &&
       Number(previousScore.awayScore) === awayScore
@@ -79,9 +90,11 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
+    // Extract goal details if available
     let scoringPlayer = "Baller";
     let clockTime = "00:00";
     if (competition.details && Array.isArray(competition.details)) {
+      // Sort details by clock time (converted to seconds)
       const keyMoments = competition.details.sort((a: any, b: any) => {
         const timeA = a.clock?.displayValue || "00:00";
         const timeB = b.clock?.displayValue || "00:00";
@@ -105,35 +118,50 @@ export async function POST(request: NextRequest) {
           latestMoment.athletesInvolved?.[0]?.displayName || scoringPlayer;
         clockTime = latestMoment.clock?.displayValue || clockTime;
       }
+    } else {
+      console.warn(`No detailed moments found for match ${matchId}.`);
     }
 
-    const homeTeamAbbr = homeTeam.team?.abbreviation?.toLowerCase();
-    const awayTeamAbbr = awayTeam.team?.abbreviation?.toLowerCase();
-
+    // Create a notification message
     const message = `${
       homeTeam.team?.shortDisplayName || homeTeam.team?.displayName
     } ${homeScore} - ${awayScore} ${
       awayTeam.team?.shortDisplayName || awayTeam.team?.displayName
-    } | ${scoringPlayer} scored at ${clockTime} (UCL)`;
+    } | ${scoringPlayer} scored at ${clockTime}`;
     goalNotifications.push(message);
-    console.log(`Goal detected in UCL match ${matchId}: ${message}`);
+    console.log(`Goal detected in match ${matchId}: ${message}`);
 
-    // Fetch fans using team abbreviations
+    // Fetch fans for both teams
     let homeFans: number[] = [];
     let awayFans: number[] = [];
+    const homeTeamId =  `${leagueId}-${homeTeam.team?.abbreviation}`;
+    const awayTeamId =  `${leagueId}-${awayTeam.team?.abbreviation}`;
+
+    console.log(`Fetching fans for teams: ${homeTeamId}, ${awayTeamId}`);
+
     try {
-      homeFans = await getFansForTeamAbbr(homeTeamAbbr);
-      awayFans = await getFansForTeamAbbr(awayTeamAbbr);
-      console.log(`Fans for ${homeTeamAbbr}: ${homeFans.length}, ${awayTeamAbbr}: ${awayFans.length}`);
+      homeFans = await getFansForTeams([(homeTeamId).toLowerCase()]);
+      awayFans = await getFansForTeams([(awayTeamId).toLowerCase()]);
+      console.log(homeFans, awayFans);
     } catch (err) {
-      console.error(`Error fetching fans for UCL match ${matchId}`, err);
+      console.error(`Error fetching fans for match ${matchId}`, err);
     }
-
     const uniqueFansToNotify = new Set([...homeFans, ...awayFans]);
-    const fidsToNotify = Array.from(uniqueFansToNotify);
 
-    console.log(`Notifying ${fidsToNotify.length} fans for UCL match ${matchId}`);
+    // Get all subscribed user keys from Redis
+    let userKeys: string[] = [];
+    try {
+      userKeys = await redis.keys("fc-footy:user:*");
+    } catch (err) {
+      console.error("Error fetching user keys from Redis", err);
+    }
+    // Filter fans to notify based on user key patterns
+    const fidsToNotify = Array.from(uniqueFansToNotify).filter((fid) =>
+      userKeys.some((key) => key.endsWith(`:${fid}`))
+    );
+    console.log(`Notifying ${fidsToNotify.length} fans for match ${matchId}`);
 
+    // Send notifications in batches
     const batchSize = 40;
     for (let i = 0; i < fidsToNotify.length; i += batchSize) {
       const batch = fidsToNotify.slice(i, i + batchSize);
@@ -141,17 +169,18 @@ export async function POST(request: NextRequest) {
         try {
           await sendFrameNotification({
             fid,
-            title: "Goal! Goal! Goal! (UCL)",
+            title: "Goal! Goal! Goal!",
             body: message,
           });
         } catch (error) {
-          console.error(`Failed to send UCL notification to FID: ${fid}`, error);
+          console.error(`Failed to send notification to FID: ${fid}`, error);
         }
       });
       await Promise.all(notificationPromises);
     }
 
-    await redis.hset(`fc-footy:ucl:match:${matchId}`, { homeScore, awayScore });
+    // Update Redis with the new scores after sending notifications
+    await redis.hset(`fc-footy:match:${matchId}`, { homeScore, awayScore });
   }
 
   return new NextResponse(

@@ -13,6 +13,8 @@ interface Team {
   league: string;
   logoUrl: string;
 }
+const appUrl = process.env.NEXT_PUBLIC_URL;
+const altImage =`${appUrl}/512.png`
 
 // Helper function to generate a unique ID for each team.
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
@@ -111,7 +113,7 @@ const Settings = () => {
           Favorite Team: {favTeamObj ? favTeamObj.name : favTeams[0]}{" "}
           {favTeamObj && (
             <Image
-              src={favTeamObj.logoUrl}
+              src={favTeamObj.logoUrl || altImage}
               alt={favTeamObj.name}
               width={30}
               height={30}
@@ -190,7 +192,7 @@ const Settings = () => {
                       />
                     ) : (
                       <Image
-                        src={team.logoUrl}
+                        src={team.logoUrl || altImage}
                         alt={team.name}
                         width={30}
                         height={30}
