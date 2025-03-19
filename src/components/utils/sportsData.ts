@@ -31,6 +31,26 @@ const sportsData = [
         url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard',
     },
     {
+      name: 'WC Qualifiers - European',
+      sportId: 'fifa.worldq.uefa',
+      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.uefa/scoreboard',
+  },
+    {
+      name: 'WC Qualifiers - African',
+      sportId: 'fifa.worldq.caf',
+      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.caf/scoreboard',
+  },
+  {
+    name: 'WC Qualifiers - American',
+    sportId: 'fifa.worldq.conmebol',
+    url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.conmebol/scoreboard',
+},
+{
+  name: 'WC Qualifiers - Asian',
+  sportId: 'fifa.worldq.afc',
+  url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.afc/scoreboard',
+},
+    {
       name: 'EFL Cup',
       sportId: 'eng.league_cup',
       url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard',
