@@ -139,15 +139,10 @@ const BlockchainScoreSquare: React.FC<BlockchainScoreSquareProps> = ({
         const homeCompetitor = competitors.find((c: any) => c?.homeAway === "home");
         const awayCompetitor = competitors.find((c: any) => c?.homeAway === "away");
   
-        // ✅ Console log the final score for each match
-        if (homeCompetitor && awayCompetitor) {
-          console.log(`🏆 Final Score: ${homeCompetitor.team.displayName} ${homeCompetitor.score} - ${awayCompetitor.score} ${awayCompetitor.team.displayName}`);
-        }
-  
         return {
           id: event.id,
-          homeTeam: homeCompetitor?.team.displayName || "Home",
-          awayTeam: awayCompetitor?.team.displayName || "Away",
+          homeTeam: homeCompetitor?.team.abbreviation || "Home",
+          awayTeam: awayCompetitor?.team.abbreviation || "Away",
           homeTeamLogo: homeCompetitor?.team.logo || "",
           awayTeamLogo: awayCompetitor?.team.logo || "",
           date: event.date,
