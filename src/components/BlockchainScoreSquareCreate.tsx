@@ -6,7 +6,6 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth";
 import Image from "next/image";
 import BlockchainScoreSquare from "./BlockchainScoreSquare";
-import BlockchainScoreSquareBrowser from "./BlockchainScoreSquareBrowser";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const BASE_CHAIN_ID = 8453;
@@ -154,15 +153,7 @@ const BlockchainScoreSquareCreate: React.FC = () => {
       )}
 
       {/* Main Content */}
-      {activeTab === "create" ? (
         <BlockchainScoreSquare home="" away="" sportId="eng.1" onGameCreated={() => {}} />
-      ) : (
-        <BlockchainScoreSquareBrowser
-          setActiveTab={setActiveTab}
-          latestCreatedGameId={latestCreatedGameId}
-          latestCreatedEventId={latestCreatedEventId}
-        />
-      )}
 
       <div className="mt-6 text-center text-xs text-gray-400">
         <p>All games are stored on the Base blockchain.</p>

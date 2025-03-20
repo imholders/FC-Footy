@@ -30,6 +30,34 @@ export const useGameContext = () => {
   return context;
 };
 
+interface Match {
+  id: string;
+  date: string;
+  venue: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  homeLogo: string;
+  awayLogo: string;
+  matchClock: string;
+  matchStatus: string;
+  matchCompleted: boolean;
+  matchEvents: any[];
+  matchSummary: string;
+  tvBroadcasts?: {
+    network: string;
+    region: string;
+    language: string;
+  }[];
+  bettingOdds?: {
+    provider: string;
+    homeOdds: number;
+    awayOdds: number;
+    drawOdds: number;
+  }[];
+}
+
 export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = ({ children, eventId }) => {
   const [gameDataState, setGameDataState] = useState<GameData | null>(null);
   const [homeScore, setHomeScore] = useState<string | number>('-');
@@ -65,7 +93,10 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
     matchCompleted: event.competitions?.[0]?.status?.type?.completed ?? false,
     matchEvents: event.competitions?.[0]?.details || [],
     matchSummary: event.competitions?.[0]?.headlines?.[0]?.description || "",
+    tvBroadcasts: event.competitions?.[0]?.geoBroadcasts || [],
+    bettingOdds: event.competitions?.[0]?.odds || [],          // Ensure it exists
   }));
+  
 
   // Find the Closest Match
   const closestMatch = useFindClosestMatch(eventId, formattedMatches);
