@@ -82,7 +82,7 @@ const SquareGrid: React.FC<SquareGridProps> = ({
           const profile = await fetchFarcasterProfileByAddress(address);
           profileUpdates[address] = {
             username: profile?.username || "Anon",
-            pfp: profile?.pfp ?? "/defifa_spinner.gif",
+            pfp: typeof profile?.pfp === "string" ? profile.pfp : profile?.pfp?.url ?? "/defifa_spinner.gif",
           };
         }
       }
