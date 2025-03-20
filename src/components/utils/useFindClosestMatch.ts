@@ -57,7 +57,7 @@ const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null =>
 
     console.log("🔍 Processing matches for eventId:", eventId);
 
-    let bestMatch: Match | null = null;
+    let bestMatch: Match | null = matches.length > 0 ? matches[0] : null;
     let highestScore = 0;
 
     // ✅ Extract teams from eventId (expected format: league_game_Home_Away_Timestamp)
