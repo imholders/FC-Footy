@@ -43,7 +43,7 @@ const BlockchainScoreSquareCreate: React.FC = () => {
    */
   const findFarcasterPfp = useCallback((): string => {
     const farcasterAccount = user?.linkedAccounts?.find((account) => account.type === "farcaster");
-    return farcasterAccount?.profile?.pfp ?? "/defifa_spinner.gif";
+    return farcasterAccount?.pfp ?? "/defifa_spinner.gif";
   }, [user]);
 
   /**
