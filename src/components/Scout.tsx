@@ -66,7 +66,7 @@ const Scout: React.FC = () => {
     <>
       <div className="mb-4">
         {/* Horizontal Scrollable Menu for Tabs */}
-        <h2 className="font-2xl text-notWhite font-bold mb-4">Scout Players</h2>
+        <h2 className="font-2xl text-notWhite font-bold mb-4">Fantasy Player Rankings</h2>
         <div className="flex overflow-x-auto space-x-4 mb-4">
           {/* Tab Buttons */}
           <button

@@ -1,7 +1,10 @@
+/* eslint-disable */
 import { useEffect, useState } from 'react';
 import sportsData from './sportsData';  // Import the sportsData array
 
 interface Event {
+  links: any;
+  venue: any;
   id: string;
   shortName: string;
   name: string;
@@ -13,8 +16,13 @@ interface Event {
     };
   };
   competitions: {
+    odds: any;
+    geoBroadcasts: any;
+    headlines: any;
+    status: any;
     competitors: {
       team: {
+        abbreviation: string;
         logo: string;
         id: string;
       };
@@ -46,21 +54,24 @@ function useEventsData(selectedSport: string) {
     async function fetchEventsData() {
       setLoading(true);
       setError(null);
-
+      console.log("Fetching events data for selected sport:", selectedSport);
+      
       try {
         const sport = sportsData.find(s => s.sportId === selectedSport);
         if (!sport) {
           throw new Error("Invalid sport selected");
         }
-
-        const response = await fetch(sport.url); // Fetch data using the URL from sportsData
+    
+        const response = await fetch(sport.url);
         if (!response.ok) {
           throw new Error(`Failed to fetch data for ${sport.name}`);
         }
-
+    
+        // ✅ FIX: Call response.json() only once and store it in a variable
         const data = await response.json();
-        setEvents(data.events || []); // Set events data
-
+        console.log("✅ Response received:", data); // Log the parsed data, not response.json()
+        
+        setEvents(data.events || []);
       } catch (error) {
         setError('Failed to load events data');
         console.error(error);
@@ -68,6 +79,7 @@ function useEventsData(selectedSport: string) {
         setLoading(false);
       }
     }
+    
 
     if (selectedSport) {
       fetchEventsData();

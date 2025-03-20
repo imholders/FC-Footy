@@ -34,48 +34,48 @@ const sportsData = [
       name: 'WC Qualifiers - European',
       sportId: 'fifa.worldq.uefa',
       url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.uefa/scoreboard',
-  },
-    {
-      name: 'WC Qualifiers - African',
-      sportId: 'fifa.worldq.caf',
-      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.caf/scoreboard',
-  },
-  {
-    name: 'WC Qualifiers - American',
-    sportId: 'fifa.worldq.conmebol',
-    url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.conmebol/scoreboard',
-},
-{
-  name: 'WC Qualifiers - Asian',
-  sportId: 'fifa.worldq.afc',
-  url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.afc/scoreboard',
-},
-    {
-      name: 'EFL Cup',
-      sportId: 'eng.league_cup',
-      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard',
+      },
+      {
+        name: 'WC Qualifiers - African',
+        sportId: 'fifa.worldq.caf',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.caf/scoreboard',
+      },
+      {
+        name: 'WC Qualifiers - American',
+        sportId: 'fifa.worldq.conmebol',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.conmebol/scoreboard',
+      },
+      {
+        name: 'WC Qualifiers - Asian',
+        sportId: 'fifa.worldq.afc',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldq.afc/scoreboard',
+      },
+      {
+        name: 'EFL Cup',
+        sportId: 'eng.league_cup',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.league_cup/scoreboard',
 
-    },
-    {
-      name: 'UEL',
-      sportId: 'uefa.europa',
-      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',
-    },
-    {
-      name: 'FA Cup',
-      sportId: 'eng.fa',
-      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.fa/scoreboard',
-    },
-    {
-      name: 'MLS',
-      sportId: 'usa.1',
-      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
-    },
-    {
-      name: 'ENG Championship',
-      sportId: 'eng.2',
-      url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard',
-    },
+      },
+      {
+        name: 'UEL',
+        sportId: 'uefa.europa',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard',
+      },
+      {
+        name: 'FA Cup',
+        sportId: 'eng.fa',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.fa/scoreboard',
+      },
+      {
+        name: 'MLS',
+        sportId: 'usa.1',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard',
+      },
+      {
+        name: 'ENG Championship',
+        sportId: 'eng.2',
+        url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard',
+      },
 
   ];
   

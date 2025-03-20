@@ -3,6 +3,7 @@ import { useSearchParams } from "next/navigation";
 import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
 import { FrameContext } from '@farcaster/frame-node';
+// import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 
 interface SelectedMatch {
   competitorsLong: string;

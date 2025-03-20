@@ -1,0 +1,15 @@
+  // Add a polling mechanism to periodically refresh game data
+  useEffect(() => {
+    if (!eventId) return;
+    console.log("[DEBUG] Setting up polling for game data updates");
+    const refreshInterval = setInterval(() => {
+      console.log("[DEBUG] Polling: Triggering game data refresh");
+      setLoading(true);
+    }, 15000);
+    return () => {
+      console.log("[DEBUG] Cleaning up polling interval");
+    return () => {
+      console.log("[DEBUG] Cleaning up polling interval");
+      clearInterval(refreshInterval);
+    };
+  }, [eventId]);

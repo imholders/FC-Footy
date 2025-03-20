@@ -9,6 +9,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PrivyProvider  from '../components/providers/PrivyProvider';
 import { frameConnector } from '~/lib/connector';
 import { Session } from 'next-auth'; // Correct import
+import { ApolloProvider } from '@apollo/client';
+import { apolloClient } from '../lib/apollo-client';
 
 /**
  * 1. Configure chains and clients for Wagmi.
@@ -38,6 +40,7 @@ export const config = createConfig({
  *    - <SessionProvider> for NextAuth
  *    - <WagmiProvider> for Wagmi (with our config)
  *    - <QueryClientProvider> for React Query
+ *    - <ApolloProvider> for GraphQL queries to our subgraph
  *    - <PrivyProvider> for Privy Auth
  */
 export function Providers({
@@ -52,9 +55,11 @@ export function Providers({
     <SessionProvider session={session}>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <PrivyProvider>
-            {children}
-          </PrivyProvider>
+          <ApolloProvider client={apolloClient}>
+            <PrivyProvider>
+              {children}
+            </PrivyProvider>
+          </ApolloProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </SessionProvider>

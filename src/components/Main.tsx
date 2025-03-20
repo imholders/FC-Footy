@@ -10,6 +10,7 @@ import Contests from "./Contests";
 import ContentTab from "./ContentTab";
 import Scout from "./Scout";
 import Settings from "./Settings";
+import MoneyGames from "./MoneyGames";
 import { tabDisplayMap } from "../lib/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
@@ -26,18 +27,18 @@ export default function Main() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const selectedTab = searchParams.get("tab") || "matches";
-  const selectedLeague = searchParams.get("league") || "eng.1";
+  const selectedTab = searchParams?.get("tab") || "matches";
+  const selectedLeague = searchParams?.get("league") || "eng.1";
 
 // Now handleTabChange matches React.Dispatch<SetStateAction<string>>
 const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
   const newTab =
     typeof value === "function" ? value(selectedTab) : value;
-  const league = searchParams.get("league") || "eng.1";
+  const league = searchParams?.get("league") || "eng.1";
   router.push(`/?tab=${newTab}&league=${league}`);
 };
   const handleLeagueChange = (league: string) => {
-    const tab = searchParams.get("tab") || "matches";
+    const tab = searchParams?.get("tab") || "matches";
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
@@ -162,9 +163,10 @@ const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
           )}
           {selectedTab === "contests" && <Contests  />}
           {selectedTab === "scoutPlayers" && <Scout />}
+          {selectedTab === "moneyGames" && <MoneyGames />}
           {selectedTab === "extraTime" && <ContentTab />}
           {selectedTab === "settings" && <Settings />}
-          {!["matches", "contests", "scoutPlayers", "extraTime", "settings"].includes(selectedTab) && (
+          {!["matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"].includes(selectedTab) && (
             <div className="text-center text-lg text-fontRed">Coming soon...</div>
           )}
       </div>

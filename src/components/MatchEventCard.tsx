@@ -6,7 +6,7 @@ import { WarpcastShareButton } from './ui/WarpcastShareButton';
 import { getFansForTeam } from '../lib/kvPerferences';
 import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchTeamLogos } from './utils/fetchTeamLogos';
-import ContestScoreSquare from './ContestScoreSquare';
+// import ContestScoreSquare from './ContestScoreSquare';
 // import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 
 interface Detail {
@@ -414,14 +414,14 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               targetElement={elementRef.current}
             />
           </div>
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <ContestScoreSquare 
               home={event.competitions?.[0]?.competitors?.[0]?.team?.abbreviation || ''} 
               away={event.competitions?.[0]?.competitors?.[1]?.team?.abbreviation || ''}
               homeScore={homeScore}
               awayScore={awayScore} 
             />
-          </div>
+          </div> */}
           {gameContext && (
             <div className="mt-4 text-lightPurple bg-purplePanel">
               <h2 className="font-2xl text-notWhite font-bold mb-4">
