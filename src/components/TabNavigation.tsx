@@ -15,10 +15,10 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   tabDisplayMap,
 }) => {
   // Use keys without spaces here
-  const tabs = ["matches", "contests", "scoutPlayers", "extraTime", "settings"];
+  const tabs = ["matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"];
 
   return (
-    <div className="ml-4 flex overflow-x-auto space-x-4 mb-4 sticky top-0 z-12 bg-darkPurple">
+    <div className="flex overflow-x-auto overflow-y-hidden space-x-4 mb-4 sticky top-0 z-50 bg-darkPurple py-2 shadow-md w-full">
       {tabs.map((tab) => (
         <div
           key={tab}

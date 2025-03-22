@@ -15,17 +15,28 @@ import {
   TicketType,
   GameData,
 } from '../lib/kvScoreSquare';
-import ContestScoreSquareCreate from './ContestScoreSquareCreate';
+// import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 import WarpcastShareButton from './ui/WarpcastShareButton';
 import { fetchFanUserData } from './utils/fetchFCProfile';
 // import { toPng } from 'html-to-image';
-import { ethers } from 'ethers';
+import { encodeFunctionData } from 'viem';
 import { useSendTransaction, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 // import GetBalance from './ui/Balance';
+import BlockchainScoreSquare from './BlockchainScoreSquareCreateDetails';
+// import ScoreSquareBlockchain from './ScoreSquareBlockchain';
 
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const erc20ABI = [
-  "function transfer(address to, uint256 amount) public returns (bool)"
+  {
+    name: "transfer",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" }
+    ],
+    outputs: [{ name: "", type: "bool" }]
+  }
 ];
 
 interface AppProps {
@@ -33,6 +44,7 @@ interface AppProps {
   away: string;
   homeScore: number;
   awayScore: number;
+  eventId?: string; // Optional event ID from the data feed
 }
 
 interface FanUserData {
@@ -91,10 +103,10 @@ const LoadingDots: React.FC = () => {
 const truncateAddress = (address: string, len = 10): string =>
   `${address.substring(0, len)}...${address.substring(address.length - len)}`;
 
-const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
+const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore, eventId }) => {
   // Game-related state.
   const [selectedGameId, setSelectedGameId] = useState<string>("");
-  const [gameId, setCurrentGameId] = useState<string>(`${home}-${away}`);
+  const [gameId, setCurrentGameId] = useState<string>(eventId ? `${eventId}` : `${home}-${away}`);
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [boardPositions, setBoardPositions] = useState<TicketType[]>([]);
   const [gameState, setGameState] = useState<GameState>('buying');
@@ -104,6 +116,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const [homeTeam, setHomeTeam] = useState<string>("");
   const [awayTeam, setAwayTeam] = useState<string>("");
   const [isContextLoaded, setIsContextLoaded] = useState<boolean>(false);
+  const sportId = "usa_1"; // Default to USA sports
 
   // Other game state.
   const [team1Score, setTeam1Score] = useState<number | null>(homeScore);
@@ -131,7 +144,6 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
   const playerFid = farcasterAccount?.fid || 0;
   const cardRef = useRef<HTMLDivElement>(null);
   
-  // The payment address (recipient for ticket purchase) remains fixed.
   const PAYMENT_ADDRESS = "0xDf087B724174A3E4eD2338C0798193932E851F1b";
 
   // Calculate USDC amount.
@@ -142,10 +154,13 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
     ? BigInt(1)
     : BigInt(Math.floor(totalCostUSDC * 1e6));
 
-  // Create an ethers Interface to encode transfer calls.
-  const contractInterface = new ethers.Interface(erc20ABI);
-  // For ticket purchase.
-  const purchaseData = contractInterface.encodeFunctionData("transfer", [PAYMENT_ADDRESS, totalCostUSDCUnits]);
+  // Create function data for transfer using viem
+  const purchaseData = encodeFunctionData({
+    abi: erc20ABI,
+    functionName: "transfer",
+    args: [PAYMENT_ADDRESS, totalCostUSDCUnits]
+  });
+  
   // Use useSendTransaction to send transactions.
   const { sendTransaction, data: txData, error: txError, status } = useSendTransaction();
   // Wait for transaction receipt.
@@ -455,8 +470,18 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
       setTxStatus("");
       setTxHash(null);
       setTxType("buy");
+      
+      // Ensure purchaseData is properly typed as a hex string
+      if (!purchaseData) {
+        throw new Error("Failed to encode transaction data");
+      }
+      
       // Send the transaction with the encoded purchase call.
-      sendTransaction({ to: USDC_ADDRESS, data: purchaseData as `0x${string}` });
+      sendTransaction({ 
+        to: USDC_ADDRESS, 
+        data: purchaseData 
+      });
+      
       console.log("USDC transaction initiated for ticket purchase");
     } catch (error: unknown) {
       if ((error as TransactionError).code) {
@@ -473,7 +498,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
         setTxStatus("An unknown error occurred during the transaction.");
         setTxStatusType("failure");
       }
-    }    
+    }
   };
 
   // Payout: Trigger a USDC transfer to the winner's wallet.
@@ -491,8 +516,11 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
     const payoutAmount = pot * (1 - serviceFee); // Calculate payout as pot * (1 - fee)
     const payoutAmountUnits = BigInt(Math.floor(payoutAmount * 1e6));
     const winnerWallet = winningTicketData.walletAddress;
-    const payoutData = contractInterface
-    .encodeFunctionData("transfer", [winnerWallet, payoutAmountUnits]) as `0x${string}`;
+    const payoutData = encodeFunctionData({
+      abi: erc20ABI,
+      functionName: "transfer",
+      args: [winnerWallet, payoutAmountUnits]
+    });
   
   
     try {
@@ -500,7 +528,7 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
       setTxHash(null);
       setTxType("payout");
       // Send the payout transaction. This will trigger a wallet popup for the referee.
-      sendTransaction({ to: USDC_ADDRESS, data: payoutData });
+      sendTransaction({ to: USDC_ADDRESS, data: payoutData as `0x${string}` });
       console.log("USDC payout transaction initiated");
     } catch (error: unknown) {
       if ((error as PayoutError).code) {
@@ -641,17 +669,36 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
               No Score Square games have been deployed for this match.
             </p>
             {user?.farcaster?.username === 'kmacb.eth' || user?.farcaster?.username === 'gabedev.eth' ? (
-              <ContestScoreSquareCreate
-                home={homeTeam}
-                away={awayTeam}
-                refereeId={user.farcaster.fid || 4163}
-                onGameCreated={handleGameCreated}
-              />
+              <div>
+                <h2 className="text-lg font-semibold mb-4 text-notWhite">Create Score Square Game</h2>
+                
+                {/* Blockchain Score Square Creation */}
+                <div className="p-4 rounded">
+                  <BlockchainScoreSquare
+                    home={homeTeam}
+                    away={awayTeam}
+                    sportId={sportId}
+                    onGameCreated={handleGameCreated}
+                  />
+                  
+                  <div className="mt-4 text-center">
+                    <p className="text-lightPurple mb-2">
+                      Want to browse all blockchain games or create games for other matches?
+                    </p>
+                    <a 
+                      href="/blockchain-score-square" 
+                      className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                      Go to Blockchain Score Square
+                    </a>
+                  </div>
+                </div>
+              </div>
             ) : (
               <WarpcastShareButton
                 selectedMatch={{
                   competitorsLong: `${home} vs ${away}`,
-                  homeTeam: "ffs why can't I deploy a Score Square game?",
+                  homeTeam: "ffs why can&apos;t I deploy a Score Square game?",
                   awayTeam: "Thought kmac was a decentralization maxi?!",
                   homeScore: 0,
                   awayScore: 0,
@@ -718,8 +765,8 @@ const App: React.FC<AppProps> = ({ home, away, homeScore, awayScore }) => {
                         <span className="font-bold">Step 1: Grab your ticket!</span> Once every square is claimed, the board will shuffle and reveal its final layout. The ticket matching the final score takes home the pot!
                       </p>
                       <p className="text-fontRed mt-2">
-                        <span className="text-fontRed font-bold">Heads up:</span> there’s a {serviceFee * 100}% service fee on payouts. Gotta keep the lights on!
-                      </p>
+                         <span className="text-fontRed font-bold">Heads up:</span> there&apos;s a {serviceFee * 100}% service fee on payouts. Gotta keep the lights on!
+                        </p>
                     </div>
                   </div>
                 </div>
