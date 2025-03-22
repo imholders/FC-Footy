@@ -3,8 +3,7 @@
 import React from 'react';
 import { useGames } from '../hooks/useSubgraphData';
 import CompletedGameCard from './CompletedGameCard';
-
-import type { SubgraphGame } from './types';
+import type { SubgraphGame } from '../types/gameTypes';
 
 const CompletedGamesBrowser: React.FC = () => {
   const { data, loading, error } = useGames(100, 0);
@@ -12,7 +11,7 @@ const CompletedGamesBrowser: React.FC = () => {
   const completedGames = data?.games
     ? data.games
         .filter((g: SubgraphGame) => g.prizeClaimed || g.refunded)
-        .sort((a, b) => parseInt(b.createdAt) - parseInt(a.createdAt))
+        .sort((a: { createdAt: string; }, b: { createdAt: string; }) => parseInt(b.createdAt) - parseInt(a.createdAt))
     : [];
 
   if (loading) return <div className="p-4 text-gray-400">Loading completed games...</div>;
@@ -20,7 +19,7 @@ const CompletedGamesBrowser: React.FC = () => {
 
   return (
     <div className="p-4 flex flex-col gap-4 items-center">
-      {completedGames.map((game) => (
+      {completedGames.map((game: SubgraphGame) => (
         <CompletedGameCard key={game.id} game={game} />
       ))}
     </div>

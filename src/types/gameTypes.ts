@@ -1,39 +1,26 @@
 /* eslint-disable */
-// Game data type from the blockchain response
-// Game data type from the blockchain response
-export interface Winner {
-  address: any;
-  percentage: number;
-  squareIndex: number;
-}
 
+export type Address = string;
+
+// 🟩 Ticket buyer info
 export interface Ticket {
-  buyer: string;
+  buyer: Address;
   squareIndex: number;
   purchasedAt: string;
   id: string;
 }
 
-export interface GameData {
-  gameId: number;
-  referee: string;
-  squarePrice: number;
-  ticketsSold: number;
-  prizePool: number;
-  winningSquares?: number[];
-  winnerPercentages?: number[];
-  winners?: Winner[];
-  tickets?: Ticket[]; // ✅ Add tickets array
-  prizeClaimed: boolean;
-  eventId: string;
-  refunded: boolean;
-  active: boolean;
-  deployerFeePercent: number;
+// 🟩 Winner info from on-chain
+export interface Winner {
+  address: Address;
+  percentage: number;
+  squareIndex: number;
 }
-// Game status response type - this maps directly to the contract's `getGameStatus(uint256)` response
+
+// 🟩 Game status response from contract
 export interface GameStatusResponse {
   active: boolean;
-  referee: string;
+  referee: Address;
   squarePrice: bigint;
   ticketsSold: number;
   prizePool: bigint;
@@ -44,10 +31,28 @@ export interface GameStatusResponse {
   refunded: boolean;
 }
 
-// Game state type - derived from `GameStatusResponse`
+// 🟩 Enriched local game object
+export interface GameData {
+  gameId: number;
+  referee: Address;
+  squarePrice: number;
+  ticketsSold: number;
+  prizePool: number;
+  winningSquares?: number[];
+  winnerPercentages?: number[];
+  winners?: Winner[];
+  tickets?: Ticket[];
+  prizeClaimed: boolean;
+  eventId: string;
+  refunded: boolean;
+  active: boolean;
+  deployerFeePercent: number;
+}
+
+// 🟩 Status key derived from contract data
 export type GameState = 'waiting for VAR' | 'active' | 'completed' | 'loading' | 'cancelled';
 
-// User type for Privy authentication
+// 🟪 Farcaster / Privy integration
 export interface PrivyUser {
   id: string;
   linkedAccounts: Array<{
@@ -59,11 +64,35 @@ export interface PrivyUser {
     verified: boolean;
   };
   wallet?: {
-    address: string;
+    address: Address;
   };
   farcaster?: {
     displayName?: string;
     username?: string;
     pfp?: string;
   };
+}
+
+// 🟦 Subgraph types
+export interface SubgraphWinner {
+  id: string;
+  squareIndex: number;
+  percentage: number;
+  finalizedAt: string;
+}
+
+export interface SubgraphGame {
+  id: string;
+  gameId: string;
+  eventId: string;
+  deployer: Address;
+  squarePrice: string;
+  referee: Address;
+  deployerFeePercent: number;
+  ticketsSold: number;
+  prizePool: string;
+  prizeClaimed: boolean;
+  refunded: boolean;
+  createdAt: string;
+  winners?: SubgraphWinner[];
 }

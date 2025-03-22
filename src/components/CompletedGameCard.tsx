@@ -10,7 +10,7 @@ import FarcasterAvatar from './FarcasterAvatar';
 import Image from 'next/image';
 import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 
-import type { SubgraphGame, SubgraphWinner } from './types';
+import type { SubgraphGame, SubgraphWinner } from '../types/gameTypes';
 
 const SCORE_SQUARE_ABI = [
   {
