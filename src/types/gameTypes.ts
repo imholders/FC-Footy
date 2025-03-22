@@ -96,3 +96,16 @@ export interface SubgraphGame {
   createdAt: string;
   winners?: SubgraphWinner[];
 }
+
+export interface GameStatusResponse {
+  active: boolean;
+  referee: string;
+  squarePrice: bigint;
+  ticketsSold: number;
+  prizePool: bigint;
+  winningSquares: number[];
+  winnerPercentages: number[];
+  prizeClaimed: boolean;
+  eventId: string;
+  refunded: boolean;
+}

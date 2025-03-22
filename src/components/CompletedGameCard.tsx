@@ -10,7 +10,7 @@ import FarcasterAvatar from './FarcasterAvatar';
 import Image from 'next/image';
 import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 
-import type { SubgraphGame, SubgraphWinner } from '../types/gameTypes';
+import type { GameStatusResponse, SubgraphGame } from '../types/gameTypes';
 
 const SCORE_SQUARE_ABI = [
   {
@@ -23,11 +23,28 @@ const SCORE_SQUARE_ABI = [
       { name: 'owners', type: 'address[]' },
     ],
   },
+  {
+    name: 'getGameStatus',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'gameId', type: 'uint256' }],
+    outputs: [
+      { name: 'active', type: 'bool' },
+      { name: 'referee', type: 'address' },
+      { name: 'squarePrice', type: 'uint256' },
+      { name: 'ticketsSold', type: 'uint8' },
+      { name: 'prizePool', type: 'uint256' },
+      { name: 'winningSquares', type: 'uint8[]' },
+      { name: 'winnerPercentages', type: 'uint8[]' },
+      { name: 'prizeClaimed', type: 'bool' },
+      { name: 'eventId', type: 'string' },
+      { name: 'refunded', type: 'bool' },
+    ],
+  },
 ];
 
 const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
   const eventDetails = parseEventId(game.eventId);
-  const hasWinners = game.winners && game.winners.length > 0;
 
   const { data: onChainTickets } = useContractRead({
     address: SCORE_SQUARE_ADDRESS as `0x${string}`,
@@ -37,6 +54,16 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
     chainId: 8453,
   });
 
+  const { data } = useContractRead({
+    address: SCORE_SQUARE_ADDRESS as `0x${string}`,
+    abi: SCORE_SQUARE_ABI,
+    functionName: 'getGameStatus',
+    args: [BigInt(game.gameId)],
+    chainId: 8453,
+  });
+  
+  const gameStatusData = data as GameStatusResponse | undefined;
+
   const derivedPlayers = Array(25).fill(null);
   if (Array.isArray(onChainTickets) && onChainTickets.length === 2) {
     const [indexes, owners] = onChainTickets as [number[], string[]];
@@ -44,6 +71,10 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
       derivedPlayers[idx] = owners[i] || null;
     });
   }
+
+  const winnersExist =
+    Array.isArray(gameStatusData?.winningSquares) &&
+    gameStatusData.winningSquares.length > 0;
 
   return (
     <div className="w-full max-w-md bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-limeGreenOpacity transition-colors cursor-pointer flex flex-col justify-between">
@@ -104,17 +135,22 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
           <div className="bg-red-900 bg-opacity-40 px-2 py-1 rounded text-[11px] text-red-200">
             <strong>⚠️ Refunded:</strong> Not all squares filled.
           </div>
-        ) : hasWinners ? (
+        ) : winnersExist ? (
           <div className="px-2 py-1 rounded text-sm text-limeGreenOpacity">
             <p className="font-semibold text-notWhite text-[13px] mb-1">🏆 Winners</p>
             <div className="space-y-1">
-              {game.winners?.map((winner: SubgraphWinner) => (
-                <WinnerDisplay
-                  key={winner.id}
-                  winner={winner}
-                  address={derivedPlayers[winner.squareIndex] || undefined}
-                />
-              ))}
+              {gameStatusData.winningSquares.map((squareIndex: number, i: number) => {
+                const address = derivedPlayers[squareIndex] || undefined;
+                const percentage = gameStatusData.winnerPercentages[i] ?? 0;
+
+                return (
+                  <WinnerDisplay
+                    key={`${squareIndex}-${percentage}`}
+                    winner={{ squareIndex, percentage }}
+                    address={address}
+                  />
+                );
+              })}
             </div>
           </div>
         ) : (
