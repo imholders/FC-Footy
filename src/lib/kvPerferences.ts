@@ -15,7 +15,7 @@ function getTeamPreferencesKey(fid: number): string {
  */
 export async function getTeamPreferences(fid: number): Promise<string[] | null> {
   const res = await redis.get<string[]>(getTeamPreferencesKey(fid));
-  console.log("getTeamPreferences", res);
+  // console.log("getTeamPreferences", res);
   return res;
 }
 
@@ -24,7 +24,7 @@ export async function getTeamPreferences(fid: number): Promise<string[] | null> 
  * The teams array contains unique team IDs (e.g. "eng.1-ars").
  */
 export async function setTeamPreferences(fid: number, teams: string[]): Promise<void> {
-  console.log("setTeamPreferences", teams, fid);
+  // console.log("setTeamPreferences", teams, fid);
 
   // Remove the user from existing team-fans index first.
   const oldPreferences = await getTeamPreferences(fid);
@@ -56,9 +56,9 @@ export async function deleteTeamPreferences(fid: number): Promise<void> {
  * of FIDs for which the stored preferences include the given unique team ID.
  */
 export async function getFansForTeam(uniqueTeamId: string): Promise<number[]> {
-  console.log("Scanning keys for fans of team:", uniqueTeamId);
+  //console.log("Scanning keys for fans of team:", uniqueTeamId);
   const keys = await redis.keys("fc-footy:preference:*");
-  console.log("Found keys:", keys);
+  // console.log("Found keys:", keys);
   const matchingFids: number[] = [];
   for (const key of keys) {
     const preferences = await redis.get<string[]>(key);
@@ -72,7 +72,7 @@ export async function getFansForTeam(uniqueTeamId: string): Promise<number[]> {
       }
     }
   }
-  console.log("Matching fan FIDs for team", uniqueTeamId, matchingFids);
+  // console.log("Matching fan FIDs for team", uniqueTeamId, matchingFids);
   return matchingFids;
 }
 
@@ -105,7 +105,7 @@ export async function getFansForTeamAbbr(teamAbbr: string): Promise<number[]> {
   // Generate all possible team IDs for the abbreviation across supported leagues
   const possibleTeamIds = SUPPORTED_LEAGUES.map((leagueId) => `${leagueId}-${teamAbbr.toLowerCase()}`);
   
-  console.log(`Fetching fans for team abbreviation "${teamAbbr}" across leagues: ${possibleTeamIds}`);
+  // console.log(`Fetching fans for team abbreviation "${teamAbbr}" across leagues: ${possibleTeamIds}`);
 
   for (const teamId of possibleTeamIds) {
     try {
@@ -117,6 +117,6 @@ export async function getFansForTeamAbbr(teamAbbr: string): Promise<number[]> {
   }
 
   const fanFids = Array.from(fanFidsSet);
-  console.log(`Found ${fanFids.length} unique fans for "${teamAbbr}"`);
+  //console.log(`Found ${fanFids.length} unique fans for "${teamAbbr}"`);
   return fanFids;
 }
