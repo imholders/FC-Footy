@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import frameSdk from "@farcaster/frame-sdk";
 import { fetchFarcasterProfileByAddress, getDefaultProfilePicture } from '../utils/fetchFarcasterProfile';
+import { formatAddress } from '../utils/formatters';
 
 // Cache for Farcaster profiles to avoid redundant API calls
 const profileCache: Record<string, {
