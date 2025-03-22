@@ -24,7 +24,7 @@ const NetworkWarning: React.FC<NetworkWarningProps> = ({
   return (
     <div className="mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
       <h3 className="font-bold text-lg mb-2">Wrong Network Detected</h3>
-      <p className="mb-2">Score Square requires the Base or Base Sepolia network. Please switch your network:</p>
+      <p className="mb-2">Score Square requires the Base network. Please switch your Warpcast mobile.</p>
       <p className="mb-3 text-sm">Current network: <span className="font-semibold">{currentNetwork}</span></p>
       <div className="flex gap-2 mt-3">
         <button

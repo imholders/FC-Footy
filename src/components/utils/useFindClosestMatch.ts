@@ -1,5 +1,4 @@
 /* eslint-disable */
-
 import { useState, useEffect } from "react";
 
 // ✅ Define the Match interface based on the API response
@@ -47,17 +46,21 @@ const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null =>
   useEffect(() => {
     console.log("✅ Closest Match:", closestMatch);
   }, [closestMatch]);
-  
+
   useEffect(() => {
-    if (!eventId || matches.length === 0) {
-      console.warn("⚠️ useFindClosestMatch: No eventId or empty matches array.");
-      setClosestMatch(null);
+    if (!eventId) {
+      console.warn("⚠️ useFindClosestMatch: No eventId provided.");
+      return;
+    }
+
+    if (!matches || matches.length === 0) {
+      console.info("🟡 useFindClosestMatch: Waiting on matches to load for eventId:", eventId);
       return;
     }
 
     console.log("🔍 Processing matches for eventId:", eventId);
 
-    let bestMatch: Match | null = matches.length > 0 ? matches[0] : null;
+    let bestMatch: Match | null = matches[0];
     let highestScore = 0;
 
     // ✅ Extract teams from eventId (expected format: league_game_Home_Away_Timestamp)
@@ -75,15 +78,17 @@ const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null =>
       const awayAbbr = match.awayTeam.toUpperCase();
 
       if (!homeAbbr || !awayAbbr) {
-        console.warn("⚠️ Missing values in match data:", match);
+        console.warn("⚠️ Missing home or away team in match:", match);
         return;
       }
 
-      // ✅ Calculate Match Score
-      const score = (eventHome === homeAbbr ? 1 : 0) + (eventAway === awayAbbr ? 1 : 0);
+      const score =
+        (eventHome === homeAbbr ? 1 : 0) +
+        (eventAway === awayAbbr ? 1 : 0);
 
-      // 🔥 Tiebreaker: Prioritize the most recent match
-      if (score > highestScore || (score === highestScore && new Date(match.date) > new Date(bestMatch?.date || 0))) {
+      const isMoreRecent = new Date(match.date) > new Date(bestMatch?.date || 0);
+
+      if (score > highestScore || (score === highestScore && isMoreRecent)) {
         highestScore = score;
         bestMatch = match;
       }
@@ -91,7 +96,7 @@ const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null =>
 
     if (bestMatch && bestMatch.id !== closestMatch?.id) {
       console.log("✅ Found closest match:", bestMatch);
-      setClosestMatch(bestMatch); // ✅ Only update state if match actually changed
+      setClosestMatch(bestMatch);
     }
   }, [eventId, matches, closestMatch]);
 

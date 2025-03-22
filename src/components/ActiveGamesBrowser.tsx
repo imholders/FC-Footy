@@ -8,7 +8,7 @@ import { getTeamLogo, getLeagueCode, getLeagueDisplayName } from './utils/fetchT
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import UserInstructions from './UserInstructions';
-import RefereeDisplay from './RefereeDisplay';
+import FarcasterAvatar from './FarcasterAvatar';
 
 interface SubgraphGame {
   deployer: string;
@@ -111,13 +111,9 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
       <div className="p-2">
         {isLoadingGame && <p className="text-center mt-2">Loading game...</p>}
         <div className="flex justify-between items-center mb-2">
-          <button onClick={handleBack} className="px-4 py-2 text-lightPurple">
+          <button onClick={handleBack} className="px-4 py-2 text-notWhite">
             ← Active Games
           </button>
-        </div>
-        <div className="mb-4 p-3 bg-yellow-900 text-yellow-300 border border-yellow-500 rounded-md text-sm">
-          🚧 <strong>Super Alpha Warning!</strong> This software is still in **early public testing**. Bugs, missing features, and unexpected issues are likely. 
-          <span className="block mt-1">⚠️ Use at your own risk and dm @kmacb.eth —he’s to blame!</span>
         </div>
         {game && <BlockchainScoreSquareDisplay eventId={game.eventId} />}
       </div>
@@ -220,8 +216,8 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
   
                 <div className="flex flex-col items-end">
                   <span className="text-lightPurple text-sm">Referee</span>
-                  <RefereeDisplay gameId={game.gameId} fallbackReferee={game.deployer} />
-                </div>
+                  <FarcasterAvatar address={game.deployer} showName size={20} className="rounded-full" />
+                  </div>
               </div>
             </div>
           );

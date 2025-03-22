@@ -23,10 +23,10 @@ const CartSection: React.FC<CartSectionProps> = ({
   const totalPrice = squarePrice * BigInt(cart.length || 0);  // ✅ Ensure length check
 
   return (
-    <div className="bg-gray-800/70 rounded-lg shadow-lg p-4 border border-gray-700">
-      <h3 className="text-xl font-bold text-white mb-3 flex justify-between items-center">
+    <div className="bg-gray-800/70 rounded-lg shadow-lg p-4 border border-gray-700 mt-2">
+      <h3 className="text-xl font-bold text-notWhite mb-3 flex justify-between items-center">
         <span>Your Cart</span>
-        <span className="text-sm font-normal text-gray-400">
+        <span className="text-sm font-normal text-lightPurple">
           {cart.length} {cart.length === 1 ? 'square' : 'squares'}
         </span>
       </h3>
@@ -53,8 +53,8 @@ const CartSection: React.FC<CartSectionProps> = ({
           </div>
           
           <div className="flex justify-between items-center mb-4">
-            <span className="text-gray-300">Total:</span>
-            <span className="text-white font-bold">
+            <span className="text-notWhite">Total:</span>
+            <span className="text-limeGreenOpacity font-bold">
               {formatEther(totalPrice)} ETH
             </span>
           </div>
@@ -72,7 +72,7 @@ const CartSection: React.FC<CartSectionProps> = ({
               className={`flex-1 py-2 px-4 rounded transition-colors ${
                 isBuying
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-deepPink text-white hover:bg-fontRed'
               }`}
             >
               {isBuying ? 'Buying...' : 'Buy Squares'}
@@ -80,7 +80,7 @@ const CartSection: React.FC<CartSectionProps> = ({
           </div>
         </>
       ) : (
-        <div className="text-center text-gray-400 py-4">
+        <div className="text-center text-lightPurple py-4">
           <p>Your cart is empty</p>
           <p className="text-sm mt-2">Click on available squares to add them to your cart</p>
         </div>

@@ -22,7 +22,7 @@ import { fetchFanUserData } from './utils/fetchFCProfile';
 import { encodeFunctionData } from 'viem';
 import { useSendTransaction, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 // import GetBalance from './ui/Balance';
-import BlockchainScoreSquare from './BlockchainScoreSquare';
+import BlockchainScoreSquare from './BlockchainScoreSquareCreateDetails';
 // import ScoreSquareBlockchain from './ScoreSquareBlockchain';
 
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";

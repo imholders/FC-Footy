@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameProvider } from '../context/GameContext';
-import ActualBlockchainScoreSquareDisplay from './ActualBlockchainScoreSquareDisplay';
+import BlockchainScoreSquareDisplayWrapped from './BlockchainScoreSquareDisplayWrapped';
 
 interface BlockchainScoreSquareDisplayProps {
   eventId: string;
@@ -9,7 +9,7 @@ interface BlockchainScoreSquareDisplayProps {
 const BlockchainScoreSquareDisplay: React.FC<BlockchainScoreSquareDisplayProps> = ({ eventId }) => {
   return (
     <GameProvider eventId={eventId}>
-      <ActualBlockchainScoreSquareDisplay eventId={eventId} />
+      <BlockchainScoreSquareDisplayWrapped eventId={eventId} />
     </GameProvider>
   );
 };

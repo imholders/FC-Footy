@@ -65,8 +65,16 @@ const SCORE_SQUARE_ABI = [
 function createCompositeEventId(sportId: string, homeTeam: string, awayTeam: string): string {
   const homeAbbr = getTeamAbbreviation(homeTeam);
   const awayAbbr = getTeamAbbreviation(awayTeam);
-  const leaguePrefix = sportId.split('.')[0].toLowerCase(); // Use the selected sport ID
-  const gameNumber = sportId.split('.')[1] || "1";
+
+  const parts = sportId.split('.');
+  let leaguePrefix = "";
+
+  // Handle special cases like fifa.worldq.afc → fifa_worldq.afc
+  if (parts[0] === 'fifa' && parts.length > 2) {
+    leaguePrefix = parts.slice(0, 2).join('_') + '.' + parts.slice(2).join('.');
+  } else {
+    leaguePrefix = parts.join('_');
+  }
 
   const now = new Date();
   const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${
@@ -75,11 +83,11 @@ function createCompositeEventId(sportId: string, homeTeam: string, awayTeam: str
     now.getMinutes().toString().padStart(2, '0')}${
     now.getSeconds().toString().padStart(2, '0')}`;
 
-  return `${leaguePrefix}_${gameNumber}_${homeAbbr}_${awayAbbr}_${timestamp}`;
+  return `${leaguePrefix}_${homeAbbr}_${awayAbbr}_${timestamp}`;
 }
 
 
-interface BlockchainScoreSquareProps {
+interface BlockchainScoreSquareCreateDetailsProps {
   home: string;
   away: string;
   sportId?: string; // Add sportId from sportsData.ts
@@ -96,12 +104,13 @@ interface Match {
   status: string;
 }
 
-const BlockchainScoreSquare: React.FC<BlockchainScoreSquareProps> = ({ 
+const BlockchainScoreSquareCreateDetails: React.FC<BlockchainScoreSquareCreateDetailsProps> = ({ 
   home, 
   away, 
   sportId = "eng.1", // Default to EPL if not specified
   onGameCreated 
 }) => {
+  const [instructionsAcknowledged, setInstructionsAcknowledged] = useState<boolean>(false);
   const [homeTeam, setHomeTeam] = useState<string>(home);
   const [awayTeam, setAwayTeam] = useState<string>(away);
   const [squarePrice, setSquarePrice] = useState<string>("0.001");
@@ -491,7 +500,7 @@ const BlockchainScoreSquare: React.FC<BlockchainScoreSquareProps> = ({
             className="border border-limeGreenOpacity p-2 rounded w-full bg-darkPurple text-lightPurple" 
             required 
           />
-        </div>
+      </div>
         
         <div>
           <label className="block font-medium mb-1 text-notWhite">Deployer Fee (% of pot):</label>
@@ -517,10 +526,22 @@ const BlockchainScoreSquare: React.FC<BlockchainScoreSquareProps> = ({
         <div className="text-xs text-gray-400 mt-2">
           <p>Note: 4% community fee goes into treasury</p>
         </div>
-        
+        <div className="flex items-center gap-2 text-sm text-notWhite">
+  <input
+    type="checkbox"
+    id="acknowledge"
+    checked={instructionsAcknowledged}
+    onChange={(e) => setInstructionsAcknowledged(e.target.checked)}
+    className="accent-deepPink w-4 h-4"
+  />
+  <label htmlFor="acknowledge">
+    I’ve read and understand the game creation instructions and my role as the referee.
+  </label>
+</div>
+
         <button 
           type="submit" 
-          disabled={loading || isConfirming || !address || (!homeTeam && !awayTeam)} 
+          disabled={loading || isConfirming || !address || (!homeTeam && !awayTeam) || !instructionsAcknowledged}
           className={`w-full px-4 py-2 rounded ${
             loading || isConfirming || !address || (!homeTeam && !awayTeam)
               ? 'bg-gray-500 cursor-not-allowed' 
@@ -540,4 +561,4 @@ const BlockchainScoreSquare: React.FC<BlockchainScoreSquareProps> = ({
   );
 };
 
-export default BlockchainScoreSquare; 
+export default BlockchainScoreSquareCreateDetails; 

@@ -136,7 +136,14 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
   };
 
   useEffect(() => {
-    if (!eventId || !closestMatch) return;
+    if (!eventId) return;
+  
+    if (!closestMatch) {
+      console.warn("🟡 Skipping fetchGameData because no closest match found.");
+      setLoading(false); // 🧼 Important: avoid hanging loading state
+      return;
+    }
+  
 
     setLoading(true);
     setError(null);

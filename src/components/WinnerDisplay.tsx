@@ -4,6 +4,14 @@ import React from 'react';
 import FarcasterAvatar from './FarcasterAvatar';
 import { formatAddress } from '../utils/formatters';
 
+// Types
+interface SubgraphTicket {
+  id: string;
+  buyer: string;
+  squareIndex: number;
+  purchasedAt: string;
+}
+
 interface Winner {
   id: string;
   squareIndex: number;
@@ -13,6 +21,7 @@ interface Winner {
 
 interface WinnerDisplayProps {
   winner: Winner;
+  tickets: SubgraphTicket[];
   className?: string;
 }
 
@@ -21,21 +30,23 @@ interface WinnerDisplayProps {
  */
 const WinnerDisplay: React.FC<WinnerDisplayProps> = ({ 
   winner,
+  tickets,
   className = ''
 }) => {
-  // Extract the address from the winner ID (format: "gameId-address")
-  const address = winner.id.split('-')[1];
+  const ticket = tickets.find(t => t.squareIndex === winner.squareIndex);
+  const address = ticket?.buyer || '0x0000000000000000000000000000000000000000';
+
+  const home = Math.floor(winner.squareIndex / 5);
+  const away = winner.squareIndex % 5;
+  const formattedScore = `${home}-${away === 4 ? '4+' : away}`;
 
   return (
-    <div className={`flex items-center mb-1 ${className}`}>
-      <div className="w-5 h-5 mr-1">
-        <FarcasterAvatar address={address} size={20} />
-      </div>
-      <span>
-        {formatAddress(address)}: {winner.percentage}%
-      </span>
+    <div className={`flex items-center text-sm text-notWhite gap-2 ${className}`}>
+      <FarcasterAvatar address={address} size={20} showName fallbackName={formatAddress(address)} />
+      <span className="text-lime-400">{formattedScore}</span>
+      <span className="text-lime-400">{winner.percentage}%</span>
     </div>
   );
 };
 
-export default WinnerDisplay; 
+export default WinnerDisplay;

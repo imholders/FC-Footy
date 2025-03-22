@@ -8,9 +8,13 @@ import { FaTicketAlt, FaTrophy } from "react-icons/fa";
 import RefereeIcon from '../ui/RefereeIcon';
 import FarcasterAvatar from '../FarcasterAvatar';
 
-const GameMetadataCard: React.FC = () => {
-  const { gameDataState, homeScore, awayScore, gameClock, gameStatus, winnerProfiles } = useGameContext();
+interface GameMetadataCardProps {
+  derivedPlayers: (string | null)[];
+}
 
+const GameMetadataCard: React.FC<GameMetadataCardProps> = ({ derivedPlayers }) => {
+  const { gameDataState, homeScore, awayScore, gameClock, gameStatus, winnerProfiles } = useGameContext();
+  
   if (!gameDataState || !gameDataState.eventId) {
     return (
       <div className="p-6 bg-darkPurple rounded-lg text-notWhite text-center border border-gray-700 shadow-md">
@@ -23,8 +27,7 @@ const GameMetadataCard: React.FC = () => {
   const leagueId = eventDetails?.leagueId || 'default.league';
   const homeTeam = eventDetails?.homeTeam || 'UNK';
   const awayTeam = eventDetails?.awayTeam || 'UNK';
-
-  const { ticketsSold, prizeClaimed, refunded, winners, squarePrice, tickets } = gameDataState;
+  const { ticketsSold, prizeClaimed, refunded, winners, squarePrice } = gameDataState;
   const ticketPrice = squarePrice ? Number(squarePrice) / 1e18 : 0;
 
   const totalPrizePool = 25 * ticketPrice;
@@ -41,8 +44,15 @@ const GameMetadataCard: React.FC = () => {
   else if (ticketsSold >= 25) gameStatusLabel = "⏳ Waiting on Referee";
   else gameStatusLabel = "🟢 Tickets Available";
 
-  const halftimeWinner = winners?.[0] || null;
-  const finalWinner = winners?.[1] || null;
+const sortedWinners =
+  Array.isArray(winners) && winners.length > 0
+    ? [...winners].sort((a, b) => b.percentage - a.percentage)
+    : [];
+
+const finalWinner = sortedWinners[0] || null;
+const halftimeWinner = sortedWinners[1] || null;
+//const thirdPlaceWinner = sortedWinners[2] || null;
+
 
   const formatScore = (squareIndex: number | null) => {
     if (squareIndex === null) return "N/A";
@@ -53,8 +63,7 @@ const GameMetadataCard: React.FC = () => {
 
   const getWinnerAddress = (squareIndex: number | null) => {
     if (squareIndex === null) return "N/A";
-    const ticket = tickets?.find(ticket => ticket.squareIndex === squareIndex);
-    return ticket?.buyer || "Unknown";
+    return derivedPlayers[squareIndex] || "Unknown";
   };
 
   const getWinnerProfile = (address: string) => {
@@ -142,14 +151,16 @@ return (
           <p className="text-deepPink">({communityFee.toFixed(4)} Ξ)</p>
         </div>
       </div>
-
-      {(halftimeWinner || finalWinner) && (
+      {(finalWinner || halftimeWinner ) && (
         <div className="mt-4 bg-gray-900 p-4 rounded-lg shadow-md border border-yellow-500">
           <h4 className="text-md font-semibold text-yellow-400 text-center mb-2">🏅 Winners</h4>
-          <WinnerCard winner={halftimeWinner} label="🥈 HT" />
-          <WinnerCard winner={finalWinner} label="🏆 FT" />
+          {finalWinner && <WinnerCard winner={finalWinner} label="🏆 FT" />}
+          {halftimeWinner && <WinnerCard winner={halftimeWinner} label="🥈 HT" />}
+          {/* {thirdPlaceWinner && <WinnerCard winner={thirdPlaceWinner} label="🥉 Third" />} */}
         </div>
       )}
+
+
     </div>
   );
 };

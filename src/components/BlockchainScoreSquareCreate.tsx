@@ -5,7 +5,7 @@ import { useAccount } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth";
 import Image from "next/image";
-import BlockchainScoreSquare from "./BlockchainScoreSquare";
+import BlockchainScoreSquare from "./BlockchainScoreSquareCreateDetails";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const BASE_CHAIN_ID = 8453;
@@ -131,7 +131,7 @@ const BlockchainScoreSquareCreate: React.FC = () => {
       {authenticated && !isCorrectNetwork && (
         <div className="mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
           <h3 className="font-bold text-lg mb-2">Wrong Network Detected</h3>
-          <p className="mb-2">Please switch to Base or Base Sepolia:</p>
+          <p className="mb-2">Score Square requires the Base network. Please switch your Warpcast mobile.</p>
           <p className="mb-3 text-sm">
             Current network: <span className="font-semibold">{currentNetwork}</span>
           </p>

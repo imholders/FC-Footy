@@ -55,7 +55,7 @@ export async function fetchFarcasterProfileByAddress(address: string): Promise<F
       }
       
       const responseData = await response.json();
-      
+      // console.log('Response data:', responseData);
       // The response is an object with the address as the key and an array of users as the value
       if (!responseData || Object.keys(responseData).length === 0) {
         return null;
@@ -87,7 +87,7 @@ export async function fetchFarcasterProfileByAddress(address: string): Promise<F
         activeStatus: 'active',
         verifications: userData.verifications || []
       };
-      
+      // console.log('Returning result:', result);
       return result;
     } catch {
       return null;

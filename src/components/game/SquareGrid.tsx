@@ -112,10 +112,14 @@ const SquareGrid: React.FC<SquareGridProps> = ({
   const rowLabels = ["0", "1", "2", "3", "4+"];
 
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full mt-2">
       {showLabels && (
-        <div className="text-center mb-2 text-gray-400">
-          <p>Each square represents a possible scoreline, with <b>{homeTeam}</b> score along the side and <b>{awayTeam}</b> score along the top.</p>
+        <div className="text-center mb-2 text-lightPurple">
+          <p>
+            Each square represents a possible scoreline, with{' '}
+            <span className="text-notWhite font-semibold">{homeTeam}</span> score along the side and{' '}
+            <span className="text-notWhite font-semibold">{awayTeam}</span> score along the top.
+          </p>
         </div>
       )}
 
@@ -152,6 +156,7 @@ const SquareGrid: React.FC<SquareGridProps> = ({
 
               <button
                 onClick={() => {
+                  if (isOwned && !isReferee) return; // ✅ prevent user from clicking owned squares
                   if (isReferee && gameState === "waiting for VAR") {
                     handleTapSquare(index);
                   } else {
@@ -172,7 +177,12 @@ const SquareGrid: React.FC<SquareGridProps> = ({
               >
                 {isOwned ? (
                   <div className="flex flex-col items-center">
-                    <FarcasterAvatar address={player as string} size={32} className="mb-1" />
+                    <FarcasterAvatar 
+                      address={player as string} 
+                      size={32} 
+                      className="mb-1"
+                      disableClick={isReferee && gameState === "waiting for VAR"} 
+                    />
                   </div>
                 ) : (
                   <span className="text-gray-600">{index}</span>

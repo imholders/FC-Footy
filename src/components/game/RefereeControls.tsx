@@ -5,9 +5,12 @@ import React from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { SCORE_SQUARE_ADDRESS } from '../../lib/config';
 import { useGameContext } from '../../context/GameContext'; // ✅ Import Game Context
+import FarcasterAvatar from '../FarcasterAvatar'; // ✅ adjust path if needed
+import { fetchFarcasterProfileByAddress } from '../../utils/fetchFarcasterProfile'; // ✅ Make sure this is the correct path
 
 interface RefereeControlsProps {
   gameId: number;
+  squareOwners: (string | null)[];
   refetchOnChainTickets: () => Promise<void>;
   selectedWinners: { halftime: number | null; final: number | null };
   clearWinners: () => void;
@@ -15,12 +18,14 @@ interface RefereeControlsProps {
 
 const RefereeControls: React.FC<RefereeControlsProps> = ({
   gameId,
+  squareOwners,
   refetchOnChainTickets,
   selectedWinners,
   clearWinners,
 }) => {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [profiles, setProfiles] = useState<Record<string, { username: string; pfp: string }>>({});
 
   // ✅ Use game context instead of managing state separately
   const { gameDataState } = useGameContext();
@@ -49,25 +54,63 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
   });
 
   useEffect(() => {
+    const fetchProfiles = async () => {
+      const addresses = ['halftime', 'final']
+        .map((key) => {
+          const i = selectedWinners[key as 'halftime' | 'final'];
+          return i !== null ? squareOwners[i] : null;
+        })
+        .filter((addr): addr is string => !!addr && addr !== '0x0000000000000000000000000000000000000000');
+  
+      const uniqueAddresses = [...new Set(addresses)];
+  
+      const profileUpdates: Record<string, { username: string; pfp: string }> = {};
+      for (const address of uniqueAddresses) {
+        if (!profiles[address]) {
+          const profile = await fetchFarcasterProfileByAddress(address);
+          profileUpdates[address] = {
+            username: profile?.username ?? 'Anon',
+            pfp: profile?.pfp?.url || '/defifa_spinner.gif',
+          };
+        }
+      }
+  
+      if (Object.keys(profileUpdates).length > 0) {
+        setProfiles((prev) => ({ ...prev, ...profileUpdates }));
+      }
+    };
+  
+    fetchProfiles();
+  }, [selectedWinners, squareOwners]);
+  
+  useEffect(() => {
     if (isFinalized && !prizeClaimed) {
-      console.log("🔄 Re-fetching game data to ensure distribute button visibility...");
+      // console.log("🔄 Re-fetching game data to ensure distribute button visibility...");
       refetchOnChainTickets();
     }
   }, [isFinalized, prizeClaimed]);
   
   useEffect(() => {
     if (isTxConfirmed) {
-      // console.log("🎉 Transaction confirmed! Refreshing game data...");
       setTxStatus('success');
-
-      // ✅ Re-fetch Subgraph & On-Chain
+      setTxHash(null);
       refetchOnChainTickets();
+  
       setTimeout(() => {
-        setTxHash(null); // ✅ Clear TX hash after refresh
-      }, 3000);
+        window.location.reload(); // 😬 less elegant, but works
+      }, 1200);
     }
   }, [isTxConfirmed]);
+  
+  
 
+  const formatScoreFromSquare = (index: number): string => {
+    const home = Math.floor(index / 5);
+    const away = index % 5;
+    const format = (v: number) => (v === 4 ? '4+' : `${v}`);
+    return `${format(home)} - ${format(away)}`;
+  };
+  
   // ✅ Finalize Game (Step 1)
   const handleFinalizeGame = async () => {
     try {
@@ -141,42 +184,58 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
     }
   };
   
-  // ✅ Ensure UI updates after distribute transaction
-  useEffect(() => {
-    if (isTxConfirmed) {
-      // console.log("🎉 Transaction confirmed! Refreshing game data...");
-      setTxStatus('success');
-  
-      // ✅ Re-fetch Game Data to update Grid
-      refetchOnChainTickets();
-  
-      setTimeout(() => {
-        setTxHash(null); // ✅ Clear TX hash after refresh
-      }, 3000);
-    }
-  }, [isTxConfirmed]);
-  
   // console.log("🎯 showDistributePrizes:", showDistributePrizes);
 
   return (
     <div className="bg-gray-900 rounded-lg shadow-lg p-6 border border-yellow-500">
-      <h3 className="text-xl font-bold text-white mb-3">Referee Controls</h3>
+      <h3 className="text-xl font-bold text-notWhite mb-3">Referee Controls</h3>
 
-      {txStatus === "pending" && <p className="text-blue-400">⏳ Processing transaction...</p>}
-      {txStatus === "success" && <p className="text-green-400">✅ Transaction confirmed!</p>}
-      {txStatus === "error" && <p className="text-red-400">❌ Transaction failed.</p>}
+      {txStatus === "pending" && <p className="text-limeGreenOpacity">⏳ Processing transaction...</p>}
+      {txStatus === "success" && <p className="text-limeGreen">✅ Transaction confirmed!</p>}
+      {txStatus === "error" && <p className="text-fontRed">❌ Transaction failed.</p>}
 
       {/* Show Finalize Game & Cancel Buttons if game is active */}
       {!showDistributePrizes && (
         <>
+        {(selectedWinners.halftime !== null || selectedWinners.final !== null) && (
+          <div className="mb-4">
+            <p className="text-lightPurple font-semibold mb-2">Selected Winners:</p>
+            <div className="grid grid-cols-2 gap-4">
+              {['halftime', 'final'].map((key) => {
+                const squareIndex = selectedWinners[key as 'halftime' | 'final'];
+                if (squareIndex === null) return null;
+                const address = squareOwners?.[squareIndex] ?? null;
+                // console.log("🏆 Selected Winner:", key, "Square Index:", squareIndex, "Address:", address);
+                return (
+                  <div key={key} className="bg-gray-800 p-3 rounded-lg flex flex-col items-center space-y-2">
+                    <FarcasterAvatar address={address || ''} size={40} className="min-w-[40px] min-h-[40px]" />
+                    
+                    <p className="text-lightPurple text-xs break-all text-center">
+                      {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown'}
+                    </p>
+                
+                    <div className="text-center">
+                      <p className="text-notWhite text-sm font-bold capitalize">{key}</p>
+                      <p className="text-yellow-400 text-xs">Square #{squareIndex}</p>
+                      <p className="text-lightPurple text-xs">{formatScoreFromSquare(squareIndex)}</p>
+                    </div>
+                  </div>
+                );
+                
+                
+              })}
+            </div>
+          </div>
+        )}
+
           <div className="mt-4">
-            <span className="text-gray-400">
+            <span className="text-lightPurple">
               Select the halftime score first, then the final score. If the same score at the end of each half, only select one square.
             </span>
           </div>
           <button
             onClick={handleFinalizeGame}
-            className="w-full py-2 px-4 rounded mt-4 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="w-full py-2 px-4 rounded mt-4 bg-deepPink text-white hover:bg-fontRed transition-colors"
           >
             Finalize Game
           </button>
