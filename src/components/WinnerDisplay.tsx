@@ -4,38 +4,25 @@ import React from 'react';
 import FarcasterAvatar from './FarcasterAvatar';
 import { formatAddress } from '../utils/formatters';
 
-// Types
-interface SubgraphTicket {
-  id: string;
-  buyer: string;
-  squareIndex: number;
-  purchasedAt: string;
-}
-
 interface Winner {
-  id: string;
   squareIndex: number;
   percentage: number;
-  finalizedAt: string;
 }
 
 interface WinnerDisplayProps {
   winner: Winner;
-  tickets: SubgraphTicket[];
+  address?: string;
   className?: string;
 }
 
 /**
- * WinnerDisplay - A component that displays a winner's information
+ * WinnerDisplay - Displays a winner's score, percentage, and Farcaster info.
  */
 const WinnerDisplay: React.FC<WinnerDisplayProps> = ({ 
   winner,
-  tickets,
+  address = '0x0000000000000000000000000000000000000000',
   className = ''
 }) => {
-  const ticket = tickets.find(t => t.squareIndex === winner.squareIndex);
-  const address = ticket?.buyer || '0x0000000000000000000000000000000000000000';
-
   const home = Math.floor(winner.squareIndex / 5);
   const away = winner.squareIndex % 5;
   const formattedScore = `${home}-${away === 4 ? '4+' : away}`;
