@@ -91,7 +91,7 @@ const MoneyGamesContent: React.FC = () => {
       ) : gameState === 'active' ? (
         <ActiveGamesBrowser initialGameId={gameId} />
       ) : gameState === 'completed' ? (
-        <CompletedGamesBrowser initialGameId={gameId} />
+        <CompletedGamesBrowser />
       ) : (
         <div className="p-4 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
           <p>Unknown game state. Please select a valid option.</p>
