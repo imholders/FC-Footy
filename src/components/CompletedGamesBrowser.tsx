@@ -6,7 +6,7 @@ import CompletedGameCard from './CompletedGameCard';
 import type { SubgraphGame } from '../types/gameTypes';
 
 const CompletedGamesBrowser: React.FC = () => {
-  const { data, loading, error } = useGames(100, 0);
+  const { data, loading, error } = useGames(10, 0);
 
   const completedGames = data?.games
     ? data.games
