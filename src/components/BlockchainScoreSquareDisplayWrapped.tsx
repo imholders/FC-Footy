@@ -14,10 +14,12 @@ import ErrorDisplay from './game/ErrorDisplay';
 import NoGameData from './game/NoGameData';
 import RefereeCard from './game/RefereeCard';
 import RefereeControls from './game/RefereeControls';
+import UserInstructions from './UserInstructions';
 
 // Import contract config
 import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 import SquareGridPlaceholder from './game/SquareGridPlaceholder';
+import { Info } from 'lucide-react';
 
 interface BlockchainScoreSquareDisplayProps {
   eventId: string;
@@ -39,7 +41,7 @@ const ABI = [
 const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplayProps> = ({ eventId }) => {
   const { gameDataState, loading, setLoading, error, setError } = useGameContext();
   const [pfpsLoaded, setPfpsLoaded] = useState(false);
-
+  const [showInstructions, setShowInstructions] = useState(true);
   const [cart, setCart] = useState<number[]>([]);
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -226,7 +228,7 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
             {!isReferee && gameDataState.ticketsSold < 25 && (
               <RefereeCard referee={gameDataState.referee} />
             )}
-    
+
             {txStatus && (
               <p className="text-center text-lg font-semibold text-blue-500">
                 {txStatus}
@@ -244,7 +246,14 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
                 }
               />
             )}
-    
+            {showInstructions && <UserInstructions />}
+            <button
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="flex items-center text-deepPink hover:text-fontRed focus:outline-none transition"
+            >
+              <Info className="w-5 h-5" />
+              <span className="ml-2">{showInstructions ? "Hide Instructions" : "Show Instructions"}</span>
+            </button>
             {isGridReady ? (
               <SquareGrid
                 key={forceUpdate}

@@ -27,12 +27,12 @@ const GameMetadataCard: React.FC<GameMetadataCardProps> = ({ derivedPlayers }) =
   const leagueId = eventDetails?.leagueId || 'default.league';
   const homeTeam = eventDetails?.homeTeam || 'UNK';
   const awayTeam = eventDetails?.awayTeam || 'UNK';
-  const { ticketsSold, prizeClaimed, refunded, winners, squarePrice } = gameDataState;
+  const { ticketsSold, prizeClaimed, refunded, winners, squarePrice, deployerFeePercent } = gameDataState;
   const ticketPrice = squarePrice ? Number(squarePrice) / 1e18 : 0;
 
   const totalPrizePool = 25 * ticketPrice;
   const communityFee = (totalPrizePool * 4) / 100;
-  const refereeFee = (totalPrizePool * 4) / 100;
+  const refereeFee = (totalPrizePool * deployerFeePercent) / 100;
   const netPrizePool = totalPrizePool - communityFee - refereeFee;
 
   const displayHomeScore = homeScore !== undefined && homeScore !== null ? homeScore : '-';
@@ -122,12 +122,12 @@ return (
       </div>
 
       <div className="mt-4 bg-gray-800 p-4 rounded-lg shadow-md">
-        <div className="flex justify-between items-center text-notWhite text-sm border-b border-gray-700 pb-2">
+        <div className="flex justify-between items-center text-notWhite text-md font-bold border-b border-gray-700 pb-2">
           <div className="flex items-center gap-2">
             <FaTrophy className="text-orange-400" />
             <p>Prize Pool:</p>
           </div>
-          <p className="text-lightPurple">{netPrizePool.toFixed(4)} Ξ</p>
+          <p className="text-limeGreenOpacity">{netPrizePool.toFixed(4)} Ξ</p>
         </div>
 
         <div className="flex justify-between items-center text-notWhite text-sm mt-3">
@@ -141,7 +141,7 @@ return (
         <div className="flex justify-between items-center text-notWhite text-sm mt-2">
           <div className="flex items-left">
             <RefereeIcon size={20} />
-            <p>Referee 4%:</p>
+            <p>Referee bonus:</p>
           </div>
           <p className="text-deepPink">({refereeFee.toFixed(4)} Ξ)</p>
         </div>
