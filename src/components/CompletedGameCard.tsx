@@ -53,8 +53,8 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
     args: [BigInt(game.gameId)],
     chainId: 8453,
   });
-
-  const { data } = useContractRead({
+  
+  const { data: gameStatusRaw } = useContractRead({
     address: SCORE_SQUARE_ADDRESS as `0x${string}`,
     abi: SCORE_SQUARE_ABI,
     functionName: 'getGameStatus',
@@ -62,8 +62,23 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
     chainId: 8453,
   });
   
-  const gameStatusData = data as GameStatusResponse | undefined;
-
+  // 🧠 Manually shape the return tuple into a proper object
+  const gameStatus: GameStatusResponse | null = Array.isArray(gameStatusRaw) && gameStatusRaw.length === 10
+    ? {
+        active: gameStatusRaw[0],
+        referee: gameStatusRaw[1],
+        squarePrice: gameStatusRaw[2],
+        ticketsSold: gameStatusRaw[3],
+        prizePool: gameStatusRaw[4],
+        winningSquares: gameStatusRaw[5],
+        winnerPercentages: gameStatusRaw[6],
+        prizeClaimed: gameStatusRaw[7],
+        eventId: gameStatusRaw[8],
+        refunded: gameStatusRaw[9],
+      }
+    : null;
+  
+  
   const derivedPlayers = Array(25).fill(null);
   if (Array.isArray(onChainTickets) && onChainTickets.length === 2) {
     const [indexes, owners] = onChainTickets as [number[], string[]];
@@ -72,9 +87,23 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
     });
   }
 
-  const winnersExist =
-    Array.isArray(gameStatusData?.winningSquares) &&
-    gameStatusData.winningSquares.length > 0;
+    // 🧠 Debug logs
+    console.log('🏁 gameStatus:', gameStatus);
+    console.log('🧠 derivedPlayers:', derivedPlayers);
+    console.log("✅ gameStatus?.winningSquares:", gameStatus?.winningSquares);
+    console.log("✅ Array.isArray(gameStatus?.winningSquares):", Array.isArray(gameStatus?.winningSquares));
+    console.log("✅ onChainTickets:", onChainTickets);
+    console.log("✅ Array.isArray(onChainTickets):", Array.isArray(onChainTickets));
+    console.log("✅ onChainTickets[0].length:", Array.isArray(onChainTickets) && onChainTickets[0]?.length);
+
+  if (!onChainTickets || !gameStatus) {
+    return (
+      <div className="text-gray-400 text-sm px-4 py-2">
+        ⏳ Loading game results...
+      </div>
+    );
+  }
+
 
   return (
     <div className="w-full max-w-md bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-limeGreenOpacity transition-colors cursor-pointer flex flex-col justify-between">
@@ -131,34 +160,42 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
       </div>
 
       <div>
-        {game.refunded ? (
-          <div className="bg-red-900 bg-opacity-40 px-2 py-1 rounded text-[11px] text-red-200">
-            <strong>⚠️ Refunded:</strong> Not all squares filled.
-          </div>
-        ) : winnersExist ? (
-          <div className="px-2 py-1 rounded text-sm text-limeGreenOpacity">
-            <p className="font-semibold text-notWhite text-[13px] mb-1">🏆 Winners</p>
-            <div className="space-y-1">
-              {gameStatusData.winningSquares.map((squareIndex: number, i: number) => {
-                const address = derivedPlayers[squareIndex] || undefined;
-                const percentage = gameStatusData.winnerPercentages[i] ?? 0;
+      {!gameStatus ||
+ !Array.isArray(gameStatus.winningSquares) ||
+ !Array.isArray(onChainTickets) ||
+ onChainTickets[0].length === 0 ? (
+  <div className="bg-yellow-900 bg-opacity-40 px-2 py-1 rounded text-[11px] text-yellow-200">
+    ⏳ Loading game results...
+  </div>
+) : gameStatus.winningSquares.length > 0 ? (
+  // ✅ Render real winners
+  <div className="px-2 py-1 rounded text-sm text-limeGreenOpacity">
+    <p className="font-semibold text-notWhite text-[13px] mb-1">🏆 Winners</p>
+    <div className="space-y-1">
+      {gameStatus.winningSquares.map((squareIndex: number, i: number) => {
+        const address = derivedPlayers[squareIndex] || undefined;
+        const percentage = gameStatus.winnerPercentages[i] ?? 0;
 
-                return (
-                  <WinnerDisplay
-                    key={`${squareIndex}-${percentage}`}
-                    winner={{ squareIndex, percentage }}
-                    address={address}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="bg-yellow-900 bg-opacity-40 px-2 py-1 rounded text-[11px] text-yellow-200">
-            ⏳ Finalized, no winners.
-          </div>
-        )}
-      </div>
+        return (
+          <WinnerDisplay
+            key={`${squareIndex}-${percentage}`}
+            winner={{ squareIndex, percentage }}
+            address={address}
+          />
+        );
+      })}
+    </div>
+  </div>
+) : (
+  <div className="bg-yellow-900 bg-opacity-40 px-2 py-1 rounded text-[11px] text-yellow-200">
+    ⏳ Finalized, no winners.
+  </div>
+)}
+
+
+
+</div>
+
 
       <div className="text-[10px] text-gray-500 truncate">ID: {game.eventId}</div>
     </div>
