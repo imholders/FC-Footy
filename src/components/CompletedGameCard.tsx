@@ -87,6 +87,14 @@ const CompletedGameCard: React.FC<{ game: SubgraphGame }> = ({ game }) => {
     });
   }
 
+    // 🧠 Debug logs
+    console.log('🏁 gameStatus:', gameStatus);
+    console.log('🧠 derivedPlayers:', derivedPlayers);
+    console.log("✅ gameStatus?.winningSquares:", gameStatus?.winningSquares);
+    console.log("✅ Array.isArray(gameStatus?.winningSquares):", Array.isArray(gameStatus?.winningSquares));
+    console.log("✅ onChainTickets:", onChainTickets);
+    console.log("✅ Array.isArray(onChainTickets):", Array.isArray(onChainTickets));
+    console.log("✅ onChainTickets[0].length:", Array.isArray(onChainTickets) && onChainTickets[0]?.length);
 
   if (!onChainTickets || !gameStatus) {
     return (
