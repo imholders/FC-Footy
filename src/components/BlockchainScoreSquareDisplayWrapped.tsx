@@ -81,7 +81,7 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
   });
   
 
-  function isTicketTuple(value: any): value is [number[], string[]] {
+  function isTicketTuple(value: unknown): value is [number[], string[]] {
     return (
       Array.isArray(value) &&
       value.length === 2 &&
