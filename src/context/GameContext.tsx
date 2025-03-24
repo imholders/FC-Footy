@@ -91,7 +91,27 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
     matchClock: event.competitions?.[0]?.status?.displayClock || "",
     matchStatus: event.competitions?.[0]?.status?.type?.detail || "Unknown",
     matchCompleted: event.competitions?.[0]?.status?.type?.completed ?? false,
-    matchEvents: event.competitions?.[0]?.details || [],
+    matchEvents: (event.competitions?.[0]?.details || []).map((detail: any) => ({
+      type: {
+        id: detail.type?.id ?? 'unknown',
+        text: detail.type?.text ?? '',
+      },
+      clock: {
+        value: detail.clock?.value ?? 0,
+        displayValue: detail.clock?.displayValue ?? '',
+      },
+      team: {
+        id: detail.team?.id ?? '',
+      },
+      scoreValue: detail.scoreValue ?? 0,
+      scoringPlay: detail.scoringPlay ?? false,
+      redCard: detail.redCard ?? false,
+      yellowCard: detail.yellowCard ?? false,
+      penaltyKick: detail.penaltyKick ?? false,
+      ownGoal: detail.ownGoal ?? false,
+      shootout: detail.shootout ?? false,
+      athletesInvolved: detail.athletesInvolved ?? [],
+    })),
     matchSummary: event.competitions?.[0]?.headlines?.[0]?.description || "",
     tvBroadcasts: event.competitions?.[0]?.geoBroadcasts || [],
     bettingOdds: event.competitions?.[0]?.odds || [],          // Ensure it exists
