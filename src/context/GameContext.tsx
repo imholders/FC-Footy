@@ -67,7 +67,6 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [winnerProfiles, setWinnerProfiles] = useState<Record<string, { username: string; pfp: string }>>({});
-  console.log("🏟️ GameProvider rendering with eventId:", eventId);
   // Extract `leagueId` from `eventId`
   const extractLeagueId = (eventId: string): string => {
     const parts = eventId.split("_");
@@ -123,7 +122,6 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
   // Fetch game data from subgraph
   const fetchGameData = async () => {
     try {
-      console.log("🔄 Fetching fresh game data from subgraph...");
       const { data } = await apolloClient.query({
         query: GET_GAME_BY_EVENT_ID,
         variables: { eventId },
@@ -137,12 +135,10 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
         return;
       }
 
-      console.log("✅ Updated game data received:", data.games[0]);
       setGameDataState(data.games[0]);
 
       // ✅ Stop polling if match is completed
       if (data.games[0].prizeClaimed) {
-        console.log("🏆 Prize claimed! Stopping polling.");
         return;
       }
 
@@ -184,7 +180,6 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
   // Listen for manual refresh event
   useEffect(() => {
     const refreshHandler = () => {
-      console.log("🔄 Refreshing game data...");
       fetchGameData();
     };
 

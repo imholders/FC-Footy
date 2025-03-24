@@ -58,7 +58,6 @@ const SquareGrid: React.FC<SquareGridProps> = ({
         setIsFrameContext(false);
       }
     };
-    console.log(isFrameContext);  //remove this line
     checkFrameContext();
   }, []);
 
@@ -71,10 +70,12 @@ const SquareGrid: React.FC<SquareGridProps> = ({
         .filter((player): player is string => !!player && player !== zeroAddress)
         .filter((player, index, self) => self.indexOf(player) === index);
 
-      if (validPlayers.length === 0) {
-        setLoading(false);
-        return;
-      }
+        if (validPlayers.length === 0) {
+          setLoading(false);
+          setHasLoaded(true); // ✅ Add this!
+          return;
+        }
+        
 
       const profileUpdates: Record<string, { username: string; pfp: string }> = {};
       for (const address of validPlayers) {
