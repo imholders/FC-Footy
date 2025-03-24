@@ -82,7 +82,9 @@ const CartSection: React.FC<CartSectionProps> = ({
       ) : (
         <div className="text-center text-lightPurple py-4">
           <p>Your cart is empty</p>
-          <p className="text-sm mt-2">Click on available squares to add them to your cart</p>
+          <p className="text-sm mt-2">
+            🎟️ Pick your squares by tapping any open spot. Each square maps to a final score in the match. Once all 25 are claimed, the board shuffles and locks in — may the goals land in your favor!
+          </p>
         </div>
       )}
     </div>

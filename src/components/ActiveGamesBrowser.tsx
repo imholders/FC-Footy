@@ -70,6 +70,7 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
     setSelectedGame(gameId); // ✅ Update state before navigating
     setIsLoadingGame(true);
     const params = new URLSearchParams(searchParams?.toString());
+    params.delete('eventId'); 
     params.set('gameId', gameId);
     router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
     setTimeout(() => setIsLoadingGame(false), 300);

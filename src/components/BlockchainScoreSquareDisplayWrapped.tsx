@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useContractRead } from 'wagmi';
-import { debounce } from 'lodash';
 
 // Import context
 import { useGameContext } from '../context/GameContext';
@@ -41,7 +40,7 @@ const ABI = [
 const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplayProps> = ({ eventId }) => {
   const { gameDataState, loading, setLoading, error, setError } = useGameContext();
   const [pfpsLoaded, setPfpsLoaded] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [cart, setCart] = useState<number[]>([]);
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -82,24 +81,49 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
   });
   
 
-  const safeOnChainTickets: [number[], string[]] = Array.isArray(onChainTickets) && onChainTickets.length === 2
-    ? (onChainTickets as [number[], string[]])
-    : [[], []];
+  function isTicketTuple(value: unknown): value is [number[], string[]] {
+    return (
+      Array.isArray(value) &&
+      value.length === 2 &&
+      Array.isArray(value[0]) &&
+      Array.isArray(value[1])
+    );
+  }
+  
+  const safeOnChainTickets = useMemo<[number[], string[]]>(() => {
+    return isTicketTuple(onChainTickets) ? onChainTickets : [[], []];
+  }, [onChainTickets]);
+  
+  
 
-  const updatePlayers = debounce((tickets: [number[], string[]]) => {
-    if (!Array.isArray(tickets) || tickets.length !== 2) return;
-  
-    const [squareIndexes, buyers] = tickets;
-    const updatedPlayers: (string | null)[] = Array(25).fill(null);
-  
-    squareIndexes.forEach((squareIndex, i) => {
-      updatedPlayers[squareIndex] = buyers[i] || null;
-    });
-  
-    setDerivedPlayers(updatedPlayers);
-    setPfpsLoaded(true); // ✅ now you can treat grid as ready
-  }, 500);
-  
+// Only debounce if a bunch of updates are expected — otherwise run immediately
+const updatePlayers = (tickets: [number[], string[]]) => {
+  if (!Array.isArray(tickets) || tickets.length !== 2) return;
+
+  const [squareIndexes, buyers] = tickets;
+  const updatedPlayers: (string | null)[] = Array(25).fill(null);
+
+  squareIndexes.forEach((squareIndex, i) => {
+    updatedPlayers[squareIndex] = buyers[i] || null;
+  });
+
+  setDerivedPlayers(updatedPlayers);
+  setPfpsLoaded(true);
+};
+
+useEffect(() => {
+  const noTicketsYet =
+    safeOnChainTickets[0].length === 0 && safeOnChainTickets[1].length === 0;
+
+  if (noTicketsYet) {
+    setDerivedPlayers(Array(25).fill(null)); // ensure grid shows 25 empty squares
+    setPfpsLoaded(true); // ✅ manually mark as ready so grid loads
+    return;
+  }
+
+  updatePlayers(safeOnChainTickets);
+}, [safeOnChainTickets]);
+
     
   useEffect(() => {
     if (safeOnChainTickets[0].length === 0 && safeOnChainTickets[1].length === 0) return;
@@ -184,17 +208,15 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
   };
 
   const isGridReady =
-    gameDataState &&
-    Array.isArray(derivedPlayers) &&
-    derivedPlayers.some((addr) => addr !== null) &&
-    pfpsLoaded;
+  gameDataState &&
+  Array.isArray(derivedPlayers) &&
+  derivedPlayers.length === 25 &&
+  pfpsLoaded;
 
-   const isGameMissing =
+  const isGameMissing =
     delayedLoadComplete &&
     !!eventId &&
     (!gameDataState || !gameDataState.gameId);
-    console.log("eventId:", eventId);
-  
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {error ? (

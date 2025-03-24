@@ -37,7 +37,6 @@ const MoneyGamesContent: React.FC = () => {
         params.set('gameState', 'active');
 
         const tab = params.get('tab') || 'moneyGames';
-        console.log('tab', tab);
         const gameType = params.get('gameType') || 'scoreSquare';
         const gameIdParam = gameId ? `&gameId=${gameId}` : '';
         const eventIdParam = eventId ? `&eventId=${eventId}` : '';
