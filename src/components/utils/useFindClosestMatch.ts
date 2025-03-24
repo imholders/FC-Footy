@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-interface MatchEvent {
+export interface MatchEvent {
   type: {
     id: string;
     text: string;
@@ -12,14 +12,14 @@ interface MatchEvent {
   team: {
     id: string;
   };
-  scoreValue: number;
-  scoringPlay: boolean;
-  redCard: boolean;
-  yellowCard: boolean;
-  penaltyKick: boolean;
-  ownGoal: boolean;
-  shootout: boolean;
-  athletesInvolved: {
+  scoreValue?: number;
+  scoringPlay?: boolean;
+  redCard?: boolean;
+  yellowCard?: boolean;
+  penaltyKick?: boolean;
+  ownGoal?: boolean;
+  shootout?: boolean;
+  athletesInvolved?: {
     id: string;
     displayName: string;
     shortName: string;
@@ -70,6 +70,7 @@ interface Match {
     drawOdds: number;
   }[];
 }
+
 
 const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null => {
   const [closestMatch, setClosestMatch] = useState<Match | null>(null);
