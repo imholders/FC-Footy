@@ -3,7 +3,13 @@ import { gql } from '@apollo/client';
 // Query to get all games
 export const GET_GAMES = gql`
   query GetGames($first: Int = 10, $skip: Int = 0) {
-    games(first: $first, skip: $skip, orderBy: createdAt, orderDirection: desc) {
+    games(
+      first: $first
+      skip: $skip
+      orderBy: createdAt
+      orderDirection: desc
+      where: { refunded: false }
+    ) {
       id
       gameId
       eventId
@@ -31,6 +37,7 @@ export const GET_GAMES = gql`
     }
   }
 `;
+
 
 // Query to get a specific game by ID
 export const GET_GAME_BY_ID = gql`

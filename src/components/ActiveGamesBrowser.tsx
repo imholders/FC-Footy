@@ -50,7 +50,7 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
   const [isLoadingGame, setIsLoadingGame] = useState<boolean>(false);
   const [showInstructions, setShowInstructions] = useState(false);
 
-  const { data, loading, error } = useGames(100, 0);
+  const { data, loading, error } = useGames(20, 0);
   const activeGames = data?.games
   ? data.games
       .filter((game: SubgraphGame) => !game.prizeClaimed && !game.refunded)

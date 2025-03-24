@@ -4,90 +4,92 @@ import BlockchainScoreSquareCreate from './BlockchainScoreSquareCreate';
 import ActiveGamesBrowser from './ActiveGamesBrowser';
 import CompletedGamesBrowser from './CompletedGamesBrowser';
 import GameStateNavigation from './GameStateNavigation';
+import BlockchainScoreSquareDisplayWrapped from './BlockchainScoreSquareDisplayWrapped';
+import { GameProvider } from '~/context/GameContext';
 
 /**
  * MoneyGamesContent - A component that handles all game states internally
- * 
- * This component manages the display of different game states (active, create, completed)
- * without using route navigation, keeping everything within the main app navigation.
  */
 const MoneyGamesContent: React.FC = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  // Get gameId from query params
+
   const gameId = searchParams?.get('gameId');
-  
-  // Get gameState from query params or default to 'active'
+  const eventId = searchParams?.get('eventId');
   const gameStateParam = searchParams?.get('gameState') || 'active';
-  
-  // Set initial game state
+
   const [gameState, setGameState] = useState<'create' | 'active' | 'completed'>(
     gameStateParam === 'completed' ? 'completed' : 
     gameStateParam === 'create' ? 'create' : 'active'
   );
-  
-  // If gameId is present but gameState is 'create', we need to determine the correct state
+
+  const [hasMounted, setHasMounted] = useState(false);
+
+  // 🧠 Only override 'create' from querystring on first mount
   useEffect(() => {
-    if (gameId && gameState === 'create') {
-      // Default to 'active' when a gameId is present but no specific state is set
-      // This ensures game details are shown when a user navigates directly to a URL with a gameId
-      setGameState('active');
-      
-      // Update URL to reflect the correct state
-      const params = new URLSearchParams(searchParams?.toString());
-      params.set('gameState', 'active');
-      
-      // Preserve tab and gameType parameters
-      const tab = searchParams?.get('tab') || 'moneyGames';
-      const gameType = searchParams?.get('gameType') || 'scoreSquare';
-      
-      // Update the URL without refreshing the page
-      router.replace(`/?tab=${tab}&gameType=${gameType}&gameState=active&gameId=${gameId}`, { scroll: false });
+    if (!hasMounted) {
+      setHasMounted(true);
+
+      if ((gameId || eventId) && gameState === 'create') {
+        setGameState('active');
+
+        const params = new URLSearchParams(searchParams?.toString());
+        params.set('gameState', 'active');
+
+        const tab = params.get('tab') || 'moneyGames';
+        console.log('tab', tab);
+        const gameType = params.get('gameType') || 'scoreSquare';
+        const gameIdParam = gameId ? `&gameId=${gameId}` : '';
+        const eventIdParam = eventId ? `&eventId=${eventId}` : '';
+
+        router.replace(
+          `/?tab=${tab}&gameType=${gameType}&gameState=active&gameId=${gameIdParam}eventId=${eventIdParam}`,
+          { scroll: false }
+        );
+      }
     }
-  }, [gameId, gameState, router, searchParams]);
-  
-  // Handle game state change
+  }, [gameId, eventId, gameState, hasMounted, router, searchParams]);
+
+  // 🔁 Handle switching tabs
   const handleGameStateChange = (state: string) => {
     setGameState(state as 'create' | 'active' | 'completed');
-    
-    // Update URL with the new game state
+
     const params = new URLSearchParams(searchParams?.toString());
     params.set('gameState', state);
-    
-    // If changing to a different state, remove the gameId parameter
-    // This prevents showing game details when switching between states
-    if (gameId && state !== 'active' && state !== 'completed') {
-      params.delete('gameId');
-    }
-    
-    // Preserve tab and gameType parameters
+
     const tab = searchParams?.get('tab') || 'moneyGames';
     const gameType = searchParams?.get('gameType') || 'scoreSquare';
-    
-    // Update the URL without refreshing the page
-    router.push(`/?tab=${tab}&gameType=${gameType}&gameState=${state}${gameId && (state === 'active' || state === 'completed') ? `&gameId=${gameId}` : ''}`);
+
+    // 🚿 Clean up query if we're not in an individual game view
+    if (state !== 'active') {
+      params.delete('gameId');
+      params.delete('eventId');
+    }
+
+    router.push(`/?tab=${tab}&gameType=${gameType}&${params.toString()}`, { scroll: false });
   };
-  
-  // Update gameState when gameState query param changes
+
+  // 👂 Sync query param changes to local state
   useEffect(() => {
     const newGameState = searchParams?.get('gameState');
     if (newGameState) {
       setGameState(newGameState as 'create' | 'active' | 'completed');
     }
   }, [searchParams]);
-  
+
   return (
     <div className="w-full">
-      {/* Game state navigation (third level) */}
       <GameStateNavigation 
         selectedState={gameState} 
         onStateChange={handleGameStateChange} 
       />
-      
-      {/* Content based on selected game state */}
+
       {gameState === 'create' ? (
         <BlockchainScoreSquareCreate />
+      ) : gameState === 'active' && eventId ? (
+        <GameProvider eventId={eventId}>
+          <BlockchainScoreSquareDisplayWrapped eventId={eventId} />
+        </GameProvider>
       ) : gameState === 'active' ? (
         <ActiveGamesBrowser initialGameId={gameId} />
       ) : gameState === 'completed' ? (
@@ -101,4 +103,4 @@ const MoneyGamesContent: React.FC = () => {
   );
 };
 
-export default MoneyGamesContent; 
+export default MoneyGamesContent;
