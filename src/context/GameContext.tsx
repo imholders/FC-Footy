@@ -96,7 +96,6 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
     tvBroadcasts: event.competitions?.[0]?.geoBroadcasts || [],
     bettingOdds: event.competitions?.[0]?.odds || [],          // Ensure it exists
   }));
-  
 
   // Find the Closest Match
   const closestMatch = useFindClosestMatch(eventId, formattedMatches);
@@ -138,23 +137,16 @@ export const GameProvider: React.FC<{ children: ReactNode; eventId: string }> = 
   useEffect(() => {
     if (!eventId) return;
   
-    if (!closestMatch) {
-      console.warn("🟡 Skipping fetchGameData because no closest match found.");
-      setLoading(false); // 🧼 Important: avoid hanging loading state
-      return;
-    }
-  
-
     setLoading(true);
     setError(null);
     fetchGameData();
-
-    const intervalId = closestMatch.matchCompleted || gameDataState?.prizeClaimed ? null : setInterval(fetchGameData, 30000);
+  
+    const intervalId = gameDataState?.prizeClaimed ? null : setInterval(fetchGameData, 30000);
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [eventId, closestMatch, gameDataState?.prizeClaimed]);
-
+  }, [eventId, gameDataState?.prizeClaimed]);
+  
   // Ensure match status updates even after game completion
   useEffect(() => {
     if (!closestMatch) return;

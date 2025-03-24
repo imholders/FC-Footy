@@ -193,6 +193,7 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
     delayedLoadComplete &&
     !!eventId &&
     (!gameDataState || !gameDataState.gameId);
+    console.log("eventId:", eventId);
   
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -246,14 +247,20 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
                 }
               />
             )}
+            <div className="flex items-center gap-2 mt-2 mb-2 ml-6">
+              <Info className="w-5 h-5 text-deepPink" />
+
+              <button
+                onClick={() => setShowInstructions(!showInstructions)}
+                className="text-deepPink hover:text-fontRed focus:outline-none transition font-medium"
+              >
+                {showInstructions ? "Hide Instructions" : "Show Instructions"}
+              </button>
+            </div>
+
             {showInstructions && <UserInstructions />}
-            <button
-              onClick={() => setShowInstructions(!showInstructions)}
-              className="flex items-center text-deepPink hover:text-fontRed focus:outline-none transition"
-            >
-              <Info className="w-5 h-5" />
-              <span className="ml-2">{showInstructions ? "Hide Instructions" : "Show Instructions"}</span>
-            </button>
+
+
             {isGridReady ? (
               <SquareGrid
                 key={forceUpdate}

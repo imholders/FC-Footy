@@ -1,7 +1,43 @@
-/* eslint-disable */
 import { useState, useEffect } from "react";
 
-// ✅ Define the Match interface based on the API response
+interface MatchEvent {
+  type: {
+    id: string;
+    text: string;
+  };
+  clock: {
+    value: number;
+    displayValue: string;
+  };
+  team: {
+    id: string;
+  };
+  scoreValue: number;
+  scoringPlay: boolean;
+  redCard: boolean;
+  yellowCard: boolean;
+  penaltyKick: boolean;
+  ownGoal: boolean;
+  shootout: boolean;
+  athletesInvolved: {
+    id: string;
+    displayName: string;
+    shortName: string;
+    fullName: string;
+    jersey: string;
+    team: {
+      id: string;
+    };
+    position: string;
+    links: {
+      rel: string[];
+      href: string;
+      isHidden: boolean;
+    }[];
+    headshot?: string;
+  }[];
+}
+
 interface Match {
   id: string;
   date: string;
@@ -15,7 +51,7 @@ interface Match {
   matchClock: string;
   matchStatus: string;
   matchCompleted: boolean;
-  matchEvents: any[];
+  matchEvents: MatchEvent[];
   matchSummary: string;
   espnSummaryLink?: string;
   espnStatsLink?: string;
@@ -34,18 +70,8 @@ interface Match {
   }[];
 }
 
-/**
- * Hook to find the closest match based on event identifier
- * @param eventId The event ID to compare
- * @param matches The dataset of matches
- * @returns Closest match or null if not found
- */
 const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null => {
   const [closestMatch, setClosestMatch] = useState<Match | null>(null);
-
-  useEffect(() => {
-    console.log("✅ Closest Match:", closestMatch);
-  }, [closestMatch]);
 
   useEffect(() => {
     if (!eventId) {
@@ -54,16 +80,12 @@ const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null =>
     }
 
     if (!matches || matches.length === 0) {
-      console.info("🟡 useFindClosestMatch: Waiting on matches to load for eventId:", eventId);
+      console.info("🟡 useFindClosestMatch: Waiting for matches to load.");
       return;
     }
 
-    console.log("🔍 Processing matches for eventId:", eventId);
+    console.log("🔍 Looking for exact match using eventId:", eventId);
 
-    let bestMatch: Match | null = matches[0];
-    let highestScore = 0;
-
-    // ✅ Extract teams from eventId (expected format: league_game_Home_Away_Timestamp)
     const parts = eventId.split("_");
     if (parts.length < 4) {
       console.error("❌ Invalid eventId format:", eventId);
@@ -73,32 +95,28 @@ const useFindClosestMatch = (eventId: string, matches: Match[]): Match | null =>
     const eventHome = parts[2]?.toUpperCase() || "";
     const eventAway = parts[3]?.toUpperCase() || "";
 
-    matches.forEach((match) => {
-      const homeAbbr = match.homeTeam.toUpperCase();
-      const awayAbbr = match.awayTeam.toUpperCase();
-
-      if (!homeAbbr || !awayAbbr) {
-        console.warn("⚠️ Missing home or away team in match:", match);
-        return;
-      }
-
-      const score =
-        (eventHome === homeAbbr ? 1 : 0) +
-        (eventAway === awayAbbr ? 1 : 0);
-
-      const isMoreRecent = new Date(match.date) > new Date(bestMatch?.date || 0);
-
-      if (score > highestScore || (score === highestScore && isMoreRecent)) {
-        highestScore = score;
-        bestMatch = match;
-      }
+    const exactMatches = matches.filter((match) => {
+      const home = match.homeTeam?.toUpperCase();
+      const away = match.awayTeam?.toUpperCase();
+      return home === eventHome && away === eventAway;
     });
 
-    if (bestMatch && bestMatch.id !== closestMatch?.id) {
-      console.log("✅ Found closest match:", bestMatch);
-      setClosestMatch(bestMatch);
+    if (exactMatches.length === 0) {
+      console.warn("❌ No exact match found for eventId:", eventId);
+      if (closestMatch !== null) setClosestMatch(null); // Clear stale match
+      return;
     }
-  }, [eventId, matches, closestMatch]);
+
+    const mostRecent = exactMatches.reduce((latest, current) =>
+      new Date(current.date) > new Date(latest.date) ? current : latest
+    );
+
+    if (mostRecent?.id !== closestMatch?.id) {
+      console.log("✅ Found closest exact match:", mostRecent);
+      setClosestMatch(mostRecent);
+    }
+
+  }, [eventId, matches]);
 
   return closestMatch;
 };

@@ -26,10 +26,10 @@ const MoneyGames: React.FC = () => {
     
     // Preserve tab and league parameters
     const tab = searchParams?.get('tab') || 'moneyGames';
-    const league = searchParams?.get('league') || 'eng.1';
+    const eventId = searchParams?.get('eventId') || '';
     
     // Update the URL without refreshing the page
-    router.push(`/?tab=${tab}&league=${league}&gameType=${selectedGame}`);
+    router.push(`/?tab=${tab}&gameType=${selectedGame}&eventId=${eventId}`);
   }, [selectedGame, router, searchParams]);
   
   // Update selectedGame when gameType query param changes
