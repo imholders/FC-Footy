@@ -40,7 +40,7 @@ const ABI = [
 const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplayProps> = ({ eventId }) => {
   const { gameDataState, loading, setLoading, error, setError } = useGameContext();
   const [pfpsLoaded, setPfpsLoaded] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [cart, setCart] = useState<number[]>([]);
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
