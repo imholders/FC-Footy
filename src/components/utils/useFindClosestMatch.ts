@@ -28,15 +28,16 @@ interface MatchEvent {
     team: {
       id: string;
     };
-    position: string;
-    links: {
+    position?: string;
+    headshot?: string;
+    links?: {
       rel: string[];
       href: string;
       isHidden: boolean;
     }[];
-    headshot?: string;
   }[];
 }
+
 
 interface Match {
   id: string;
