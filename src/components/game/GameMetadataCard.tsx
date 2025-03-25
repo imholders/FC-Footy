@@ -42,17 +42,19 @@ const GameMetadataCard: React.FC<GameMetadataCardProps> = ({ derivedPlayers }) =
   // console.log('warpcastUrl', warpcastUrl);
   
   // Optional: custom cast message
-  const text = encodeURIComponent("Check out this Score Square game 👇");
+  //const text = encodeURIComponent("Check out this Score Square game 👇");
   
   // Warpcast Cast Intent with embed
-  const castIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedShareUrl}`;
+  //const castIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedShareUrl}`;
   // console.log('castIntentUrl', castIntentUrl);
   
   // Cast intent that embeds the Warpcast frame launcher
-  const encodedWarpcastUrl = encodeURIComponent(warpcastUrl);
-  const launcherCastIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedWarpcastUrl}`;
+  //const encodedWarpcastUrl = encodeURIComponent(warpcastUrl);
+  //const launcherCastIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedWarpcastUrl}`;
   // console.log("launcherCastIntentUrl", launcherCastIntentUrl);
-
+  //const castIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedShareUrl}`;
+  //const launchLastTry = `https://warpcast.com/~/frames/launch?url=${encodedShareUrl}`;
+  //console.log( "launchLastTry", launchLastTry);
   const totalPrizePool = 25 * ticketPrice;
   const communityFee = (totalPrizePool * 4) / 100;
   const refereeFee = (totalPrizePool * deployerFeePercent) / 100;

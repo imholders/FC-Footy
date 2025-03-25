@@ -51,29 +51,10 @@ export async function deleteTeamPreferences(fid: number): Promise<void> {
 }
 
 /**
- * Get all fan FIDs for a given team (by unique team ID) from KV.
- * This function scans keys with the prefix "fc-footy:preference:" and returns an array
- * of FIDs for which the stored preferences include the given unique team ID.
+ * DEPRECATED: Use getFansForTeams([teamId]) instead.
  */
 export async function getFansForTeam(uniqueTeamId: string): Promise<number[]> {
-  //console.log("Scanning keys for fans of team:", uniqueTeamId);
-  const keys = await redis.keys("fc-footy:preference:*");
-  // console.log("Found keys:", keys);
-  const matchingFids: number[] = [];
-  for (const key of keys) {
-    const preferences = await redis.get<string[]>(key);
-    if (preferences && preferences.includes(uniqueTeamId)) {
-      // key is in the form "fc-footy:preference:{fid}"
-      const parts = key.split(":");
-      const fidStr = parts[parts.length - 1];
-      const fid = Number(fidStr);
-      if (!isNaN(fid)) {
-        matchingFids.push(fid);
-      }
-    }
-  }
-  // console.log("Matching fan FIDs for team", uniqueTeamId, matchingFids);
-  return matchingFids;
+  return await getFansForTeams([uniqueTeamId]);
 }
 
 /**
