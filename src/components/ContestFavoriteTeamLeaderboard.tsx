@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { fetchTeamLogos } from "./utils/fetchTeamLogos";
-import { getFansForTeam } from "../lib/kvPerferences";
+import { getFansForTeams } from "../lib/kvPerferences";
 
 interface Team {
   fid?: number; // Now optional
@@ -54,18 +54,11 @@ const FavoriteTeamLeaderboard = () => {
   useEffect(() => {
     async function fetchFanCounts() {
       const counts: Record<string, number> = {};
-      await Promise.all(
-        teams.map(async (team) => {
-          const teamId = getTeamId(team);
-          try {
-            const fans = await getFansForTeam(teamId);
-            counts[teamId] = fans.length;
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (error) {
-            counts[teamId] = 0;
-          }
-        })
-      );
+      const teamIds = teams.map(getTeamId);
+      const fansByTeam = await Promise.all(teamIds.map((id) => getFansForTeams([id])));
+      teamIds.forEach((id, i) => {
+        counts[id] = fansByTeam[i].length;
+      });
       setFanCounts(counts);
     }
 
