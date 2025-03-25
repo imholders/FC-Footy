@@ -24,6 +24,15 @@ export default {
         fontRed: '#EC017C',
         notWhite: '#FEA282',
       },
+      keyframes: {
+        'fall-in': {
+          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      animation: {
+        'fall-in': 'fall-in 0.5s ease-out forwards',
+      },
     },
   },
   plugins: [],

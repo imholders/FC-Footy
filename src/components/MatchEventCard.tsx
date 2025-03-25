@@ -1,11 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useApolloClient } from '@apollo/client';
 import Image from 'next/image';
 import Link from 'next/link';
+import { FaTrophy, FaTicketAlt } from 'react-icons/fa';
+import RefereeIcon from '../components/ui/RefereeIcon';
 import RAGameContext from './ai/RAGameContext';
 import { WarpcastShareButton } from './ui/WarpcastShareButton';
 import { getFansForTeam } from '../lib/kvPerferences';
 import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchTeamLogos } from './utils/fetchTeamLogos';
+import { GET_SS_GAMES } from '../lib/graphql/queries';
+import FarcasterAvatar from './FarcasterAvatar';
 // import ContestScoreSquare from './ContestScoreSquare';
 // import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 
@@ -75,6 +80,16 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [isLoadingFans, setIsLoadingFans] = useState(false);
   const [loadingDots, setLoadingDots] = useState('');
   const elementRef = useRef<HTMLDivElement | null>(null);
+  const fanCacheTeam1 = useRef<Map<number, string>>(new Map());
+  const fanCacheTeam2 = useRef<Map<number, string>>(new Map());
+  const hasLoadedFans = useRef(false);
+  const client = useApolloClient();
+  const [hasQueried, setHasQueried] = useState(false);
+  const [ssGames, setSsGames] = useState<
+    Array<{ eventId: string; gameId: string; referee: string; prizePool: string; squarePrice: string; deployerFeePercent: string }>>([]);
+  useEffect(() => {
+    setHasQueried(false);
+  }, [event.id]);
 
   // Animate three dots every 500ms
   useEffect(() => {
@@ -93,6 +108,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const competitorsLong = event.name;
   const homeTeam = event.shortName.slice(6, 9);
   const awayTeam = event.shortName.slice(0, 3);
+  
   const eventStarted = new Date() >= new Date(event.date);
   const clock = event.status.displayClock + ' ' + event.status.type.detail || '00:00';
 
@@ -143,24 +159,49 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       return acc;
     }, []) || [];
 
-  const handleSelectMatch = () => {
-    const keyMomentStrings = keyMoments.map((moment) => {
-      const formattedTime = moment.times?.join(", ") || "No time provided";
-      return `${moment.action} ${moment.teamName} by ${moment.playerName} at ${formattedTime}`;
-    });
-    setSelectedMatch({
-      homeTeam,
-      awayTeam,
-      competitorsLong,
-      homeLogo: homeTeamLogo,
-      awayLogo: awayTeamLogo,
-      homeScore,
-      awayScore,
-      clock,
-      eventStarted,
-      keyMoments: keyMomentStrings,
-    });
-  };
+    const handleSelectMatch = () => {
+      const keyMomentStrings = keyMoments.map((moment) => {
+        const formattedTime = moment.times?.join(", ") || "No time provided";
+        return `${moment.action} ${moment.teamName} by ${moment.playerName} at ${formattedTime}`;
+      });
+    
+      const normalizedSportId = sportId.replace(/\./g, "_");
+      const eventId = `${normalizedSportId}_${homeTeam}_${awayTeam}_`;
+      console.log("Event ID:", eventId);
+    
+      // Only fetch on first open
+      if (!showDetails && !hasQueried) {
+        client
+          .query({
+            query: GET_SS_GAMES,
+            variables: { prefix: eventId },
+          })
+          .then((result) => {
+            console.log("Subgraph GET_SS_GAMES:", result.data);
+            setHasQueried(true);
+            setSsGames(result.data.games); // Store subgraph results
+          })
+          .catch((err) => {
+            console.error("Subgraph query error:", err);
+          });
+      }
+    
+      setSelectedMatch({
+        homeTeam,
+        awayTeam,
+        competitorsLong,
+        homeLogo: homeTeamLogo,
+        awayLogo: awayTeamLogo,
+        homeScore,
+        awayScore,
+        clock,
+        eventStarted,
+        keyMoments: keyMomentStrings,
+      });
+    
+      // Finally toggle the dropdown
+      setShowDetails((prev) => !prev);
+    };
 
   const fetchAiSummary = async () => {
     if (selectedMatch) {
@@ -215,25 +256,37 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
             : team2.abbreviation.toLowerCase();
 
           const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
-          const fanPfpPromises1 = fanFidsTeam1.map(async (fid) => {
-            const userData = await fetchFanUserData(fid);
-            const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
-            return userData && pfp ? { fid, pfp } : null;
-          });
-          const fanResults1 = await Promise.all(fanPfpPromises1);
-          const validFans1 = fanResults1.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
-          setMatchFanAvatarsTeam1(validFans1);
+          if (fanCacheTeam1.current.size > 0) {
+            setMatchFanAvatarsTeam1(Array.from(fanCacheTeam1.current.entries()).map(([fid, pfp]) => ({ fid, pfp })));
+          } else {
+            setMatchFanAvatarsTeam1([]);
+            for (const fid of fanFidsTeam1) {
+              const userData = await fetchFanUserData(fid);
+              const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+              if (userData && pfp) {
+                fanCacheTeam1.current.set(fid, pfp);
+                setMatchFanAvatarsTeam1((prev) => [...prev, { fid, pfp }]);
+              }
+            }
+          }
 
           const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
-          const fanPfpPromises2 = fanFidsTeam2.map(async (fid) => {
-            const userData = await fetchFanUserData(fid);
-            const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
-            return userData && pfp ? { fid, pfp } : null;
-          });
-          const fanResults2 = await Promise.all(fanPfpPromises2);
-          const validFans2 = fanResults2.filter((fan) => fan !== null) as Array<{ fid: number; pfp: string }>;
-          setMatchFanAvatarsTeam2(validFans2);
-        } catch (error) {
+          if (fanCacheTeam2.current.size > 0) {
+            setMatchFanAvatarsTeam2(Array.from(fanCacheTeam2.current.entries()).map(([fid, pfp]) => ({ fid, pfp })));
+          } else {
+            setMatchFanAvatarsTeam2([]);
+            for (const fid of fanFidsTeam2) {
+              const userData = await fetchFanUserData(fid);
+              const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+              if (userData && pfp) {
+                fanCacheTeam2.current.set(fid, pfp);
+                setMatchFanAvatarsTeam2((prev) => [...prev, { fid, pfp }]);
+            }
+          }
+
+          hasLoadedFans.current = true;
+        }
+      } catch (error) {
           console.error("Error fetching match fan avatars:", error);
         } finally {
           setIsLoadingFans(false);
@@ -244,12 +297,9 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       }
     };
 
-    if (showDetails) {
-      fetchTeamFanAvatars();
-    } else {
-      setMatchFanAvatarsTeam1([]);
-      setMatchFanAvatarsTeam2([]);
-    }
+  if (showDetails && !hasLoadedFans.current) {
+    fetchTeamFanAvatars();
+  }
   }, [showDetails, event, teams]);
 
   const combinedFanAvatars = Array.from(
@@ -352,7 +402,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
             <h3 className="text-notWhite font-semibold mb-1">
               Following ({combinedFanAvatars.length})
             </h3>
-            <div className="flex space-x-1 overflow-x-auto">
+          <div className="grid grid-cols-10 gap-1">
               {isLoadingFans ? (
                 <span className="text-sm text-gray-400">Loading{loadingDots}</span>
               ) : (
@@ -374,6 +424,8 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               )}
             </div>
           </div>
+
+          {/* AI Summary Section */}
           <div className="mt-4 flex flex-row gap-4 justify-center items-center">
             <button
               className="w-full sm:w-38 bg-deepPink text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-fontRed"
@@ -414,15 +466,10 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               targetElement={elementRef.current}
             />
           </div>
-          {/* <div className="mt-4">
-            <ContestScoreSquare 
-              home={event.competitions?.[0]?.competitors?.[0]?.team?.abbreviation || ''} 
-              away={event.competitions?.[0]?.competitors?.[1]?.team?.abbreviation || ''}
-              homeScore={homeScore}
-              awayScore={awayScore} 
-            />
-          </div> */}
-          {gameContext && (
+          {ssGames.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-notWhite font-semibold mb-2">ScoreSquare Games:</h4>
+              {gameContext && (
             <div className="mt-4 text-lightPurple bg-purplePanel">
               <h2 className="font-2xl text-notWhite font-bold mb-4">
                 <button onClick={readMatchSummary}>
@@ -431,7 +478,109 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               </h2>
               <pre className="text-sm whitespace-pre-wrap break-words mb-4">{gameContext}</pre>
             </div>
+          )}    
+          
+          {ssGames.map((game) => (
+            <Link
+              key={game.gameId}
+              href={`/?tab=moneyGames&gameType=scoreSquare&eventId=${game.eventId}`}
+              className="block"
+            >
+            {/* Removed animated square background */}
+            <div className="mt-4 relative group">
+                <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <span className="text-white text-sm font-semibold">👆 Tap to Play</span>
+              
+                </div>
+                <div className="bg-gray-800 p-4 rounded-lg shadow-md z-0">
+                  <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                    <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-0.5 opacity-30">
+                      {Array.from({ length: 25 }).map((_, i) => {
+                        const isEven = i % 2 === 0;
+                        const logoSrc = isEven ? homeTeamLogo : awayTeamLogo;
+                        return (
+                          <Image
+                            key={i}
+                            src={logoSrc || "/assets/defifa_spinner.gif"}
+                            alt="Team Logo"
+                            className="w-full h-full object-cover animate-pulse rounded-sm"
+                            width={40}
+                            height={40}
+                            style={{
+                              animationDelay: `${i * 0.1}s`,
+                              animationDuration: '1.5s',
+                              animationName: 'fall-in',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {(() => {
+                    
+                      const squarePrice = parseFloat(game.squarePrice) / 1e18;
+                      const deployerFee = parseFloat(game.deployerFeePercent || "0");
+                      const communityFeeRate = 4; // percent
+                      const netMultiplier = (100 - deployerFee - communityFeeRate) / 100;
+                      const totalPool = 25 * squarePrice;
+                      const netPrizePool = totalPool * netMultiplier;
+                      const refereeFee = totalPool * (deployerFee / 100);
+                      const communityFee = totalPool * (communityFeeRate / 100);
+                    
+                    return (
+                      <>
+                        <div className="flex justify-between items-center text-notWhite text-md font-bold border-b border-gray-700 pb-2">
+                          <div className="flex items-center gap-2">
+                            <FaTrophy className="text-orange-400" />
+                            <p>Prize Pool:</p>
+                          </div>
+                          <p className="text-limeGreenOpacity">{netPrizePool.toFixed(3)} Ξ</p>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2 text-notWhite text-sm">
+                          <FarcasterAvatar address={game.referee} showName />  <p>is the referee</p>
+                        </div>
+                        <div className="flex justify-between items-center text-notWhite text-sm mt-3">
+                          <div className="flex items-center gap-4">
+                            <FaTicketAlt className="text-blue-400" />
+                            <p>Ticket Price:</p>
+                          </div>
+                          <p className="text-lightPurple">{squarePrice.toFixed(3)} Ξ</p>
+                        </div>
+
+                        <div className="flex justify-between items-center text-notWhite text-sm mt-2">
+                          <div className="flex items-left gap-2">
+                            <RefereeIcon size={20} />
+                            <p>Referee Bonus:</p>
+                          </div>
+                          <p className="text-deepPink">({refereeFee.toFixed(3)} Ξ)</p>
+                        </div>
+
+                        <div className="flex justify-between items-center text-notWhite text-sm mt-2">
+                          <div className="flex items-left gap-3">
+                            <p>🛠️</p>
+                            <p>Community 4%:</p>
+
+                        </div>
+                          <p className="text-deepPink">({communityFee.toFixed(3)} Ξ)</p>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </Link>
+          ))}
+          </div>
           )}
+          {/* <div className="mt-4">
+            <ContestScoreSquare 
+              home={event.competitions?.[0]?.competitors?.[0]?.team?.abbreviation || ''} 
+              away={event.competitions?.[0]?.competitors?.[1]?.team?.abbreviation || ''}
+              homeScore={homeScore}
+              awayScore={awayScore} 
+            />
+          </div> */}
+
         </div>
       )}
     </div>
@@ -439,3 +588,4 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
 };
 
 export default MatchEventCard;
+ 
