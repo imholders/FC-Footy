@@ -36,7 +36,7 @@ const Settings = () => {
       const fid = Number(farcasterAccount.fid);
       getTeamPreferences(fid)
         .then((teamsFromRedis) => {
-          console.log("Existing team preferences:", teamsFromRedis);
+          // console.log("Existing team preferences:", teamsFromRedis);
           if (teamsFromRedis) {
             setFavTeams(teamsFromRedis);
           }
@@ -65,10 +65,10 @@ const Settings = () => {
     let updatedFavTeams: string[];
 
     if (favTeams.includes(teamId)) {
-      console.log(`Removing ${team.name} (${teamId}) from notifications`);
+      // console.log(`Removing ${team.name} (${teamId}) from notifications`);
       updatedFavTeams = favTeams.filter((id) => id !== teamId);
     } else {
-      console.log(`Adding ${team.name} (${teamId}) as favorite`);
+      // console.log(`Adding ${team.name} (${teamId}) as favorite`);
       updatedFavTeams = [...favTeams, teamId];
     }
 

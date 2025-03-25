@@ -29,6 +29,29 @@ const GameMetadataCard: React.FC<GameMetadataCardProps> = ({ derivedPlayers }) =
   const awayTeam = eventDetails?.awayTeam || 'UNK';
   const { ticketsSold, prizeClaimed, refunded, winners, squarePrice, deployerFeePercent } = gameDataState;
   const ticketPrice = squarePrice ? Number(squarePrice) / 1e18 : 0;
+  // console.log('gameDataState', gameDataState);
+
+  const shareUrl = `https://147585e1f72a.ngrok.app/?tab=moneyGames&gameType=scoreSquare&eventId=${gameDataState.eventId}`;
+  // console.log('shareUrl', shareUrl);
+  
+  // Encode the URL for use in both warpcast links
+  const encodedShareUrl = encodeURIComponent(shareUrl);
+  
+  // Warpcast Frame Launcher URL
+  const warpcastUrl = `https://warpcast.com/~/launch/frames?url=${encodedShareUrl}`;
+  // console.log('warpcastUrl', warpcastUrl);
+  
+  // Optional: custom cast message
+  const text = encodeURIComponent("Check out this Score Square game 👇");
+  
+  // Warpcast Cast Intent with embed
+  const castIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedShareUrl}`;
+  // console.log('castIntentUrl', castIntentUrl);
+  
+  // Cast intent that embeds the Warpcast frame launcher
+  const encodedWarpcastUrl = encodeURIComponent(warpcastUrl);
+  const launcherCastIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedWarpcastUrl}`;
+  // console.log("launcherCastIntentUrl", launcherCastIntentUrl);
 
   const totalPrizePool = 25 * ticketPrice;
   const communityFee = (totalPrizePool * 4) / 100;

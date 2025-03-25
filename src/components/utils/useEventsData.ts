@@ -54,7 +54,7 @@ function useEventsData(selectedSport: string) {
     async function fetchEventsData() {
       setLoading(true);
       setError(null);
-      console.log("Fetching events data for selected sport:", selectedSport);
+      // console.log("Fetching events data for selected sport:", selectedSport);
       
       try {
         const sport = sportsData.find(s => s.sportId === selectedSport);
@@ -69,7 +69,7 @@ function useEventsData(selectedSport: string) {
     
         // ✅ FIX: Call response.json() only once and store it in a variable
         const data = await response.json();
-        console.log("✅ Response received:", data); // Log the parsed data, not response.json()
+        // console.log("✅ Response received:", data); // Log the parsed data, not response.json()
         
         setEvents(data.events || []);
       } catch (error) {

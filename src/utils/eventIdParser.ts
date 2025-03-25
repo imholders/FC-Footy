@@ -86,13 +86,13 @@ export const leagueMap: Record<string, string> = {
  */
 export function parseEventId(eventId: string): EventDetails | null {
   if (!eventId) return null;
-  console.log("Parsing eventId:", eventId);
+  // console.log("Parsing eventId:", eventId);
   const parts = eventId.split('_');
   if (parts.length < 4) return null;
 
   let country = "";
   let leagueId, homeTeam, awayTeam, dateStr;
-  console.log("Parsed parts:", parts);
+  // console.log("Parsed parts:", parts);
   if (parts.length === 5) {
     // **Format: "usa_1_CLB_HOU_20250307223123"**
     [country, leagueId, homeTeam, awayTeam, dateStr] = parts;
@@ -101,10 +101,10 @@ export function parseEventId(eventId: string): EventDetails | null {
     // **Format: "uefa.champions_LIV_BAY_20230915"**
     [leagueId, homeTeam, awayTeam, dateStr] = parts;
   }
-  console.log("Parsed details:", { leagueId, homeTeam, awayTeam, dateStr });
+  // console.log("Parsed details:", { leagueId, homeTeam, awayTeam, dateStr });
   // **Map `leagueId` correctly**
   const league = leagueMap[leagueId] || leagueId; // ✅ Use the map if available, fallback to original
-  console.log("Final parsed details:", { league, leagueId, country, homeTeam, awayTeam, dateStr });
+  // console.log("Final parsed details:", { league, leagueId, country, homeTeam, awayTeam, dateStr });
   return {
     league,
     leagueId,

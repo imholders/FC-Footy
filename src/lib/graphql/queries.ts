@@ -38,7 +38,6 @@ export const GET_GAMES = gql`
   }
 `;
 
-
 // Query to get a specific game by ID
 export const GET_GAME_BY_ID = gql`
   query GetGameById($id: ID!) {
@@ -133,4 +132,17 @@ export const SEARCH_GAMES = gql`
       createdAt
     }
   }
-`; 
+`;
+
+// Query to get Score Square games by prefix
+export const GET_SS_GAMES = gql`
+  query GetSSGames($prefix: String!) {
+    games(where: { eventId_starts_with: $prefix }) {
+      gameId
+      eventId
+      referee
+      squarePrice
+      deployerFeePercent
+    }
+  }
+`;

@@ -26,7 +26,7 @@ export async function fetchFanUserData(fanFid: number): Promise<Record<string, s
   try {
     const response = await fetch(`https://hub.pinata.cloud/v1/userDataByFid?fid=${fanFid}`);
     const data: PinataResponse = await response.json();
-    console.log("Data for fid:", fanFid, data);
+    // console.log("Data for fid:", fanFid, data);
     if (!data.messages || data.messages.length === 0) {
       return {};
     }
@@ -44,7 +44,7 @@ export async function fetchFanUserData(fanFid: number): Promise<Record<string, s
         userDataMap[userData.type].push(userData.value);
       }
     }
-    console.log("User data for fid:", fanFid, userDataMap.value);
+    // console.log("User data for fid:", fanFid, userDataMap.value);
     return userDataMap;
   } catch (error) {
     console.error("Error fetching fan user data for fid:", fanFid, error);

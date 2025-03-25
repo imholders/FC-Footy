@@ -42,10 +42,6 @@ const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
-  // Optional: Log to check the selected tab
-  console.log("Selected Tab (raw):", selectedTab);
-  console.log("Display Label:", tabDisplayMap[selectedTab]);
-
    // UI state
    const [context, setContext] = useState<FrameContext>();
    const [errorMessage, setErrorMessage] = useState("");
@@ -59,15 +55,21 @@ const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
    ); */
  
    useEffect(() => {
-     const load = async () => {
-       setContext((await frameSdk.context) as FrameContext);
-       frameSdk.actions.ready({});
-     };
-     if (frameSdk && !isSDKLoaded) {
-       setIsSDKLoaded(true);
-       load();
-     }
-   }, [isSDKLoaded]);
+    const load = async () => {
+      const ctx = (await frameSdk.context) as FrameContext;
+      setContext(ctx);
+      console.log("frame context:", ctx);
+
+      frameSdk.actions.ready({});
+  
+      // 👇 Log the embed URL or any part of context
+    };
+  
+    if (frameSdk && !isSDKLoaded) {
+      setIsSDKLoaded(true);
+      load();
+    }
+  }, [isSDKLoaded]);
  
    // Login to Frame with Privy automatically
    useEffect(() => {
