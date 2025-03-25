@@ -136,8 +136,17 @@ export const SEARCH_GAMES = gql`
 
 // Query to get Score Square games by prefix
 export const GET_SS_GAMES = gql`
-  query GetSSGames($prefix: String!) {
-    games(where: { eventId_starts_with: $prefix }) {
+  query GetSSGames($prefix: String!, $ticketsSold: Int = 25) {
+    games(
+      where: {
+        refunded: false
+        prizeClaimed: false
+        ticketsSold_lt: $ticketsSold
+        eventId_contains: $prefix
+      }
+      orderBy: createdAt
+      orderDirection: desc
+    ) {
       gameId
       eventId
       referee
