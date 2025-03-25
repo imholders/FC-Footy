@@ -65,7 +65,7 @@ export const fetchPlayerElements = async () => {
     const playersWithStats = data.elements.map((player: Player) => {
       const teamName = teams[player.team]; // Get the full team name
       const teamAbbreviation = teamAbbreviations[teamName]; // Get the abbreviation from the map
-    console.log('teamAbbreviation', teamAbbreviation,teams[player.team]);
+    // console.log('teamAbbreviation', teamAbbreviation,teams[player.team]);
       return {
         id: player.id,
         webName: player.web_name,

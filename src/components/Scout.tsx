@@ -37,7 +37,7 @@ const Scout: React.FC = () => {
       try {
         const data = await fetchPlayerElements();
         setPlayers(data);
-        console.log('data', data);
+        // console.log('data', data);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Error fetching data');

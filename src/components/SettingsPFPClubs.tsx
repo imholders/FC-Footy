@@ -45,7 +45,7 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
       const fid = Number(farcasterAccount.fid);
       getTeamPreferences(fid)
         .then((teamsFromRedis) => {
-          console.log("Existing team preferences:", teamsFromRedis);
+          // console.log("Existing team preferences:", teamsFromRedis);
           if (teamsFromRedis) {
             setFavTeams(teamsFromRedis);
           }
@@ -94,7 +94,7 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
   useEffect(() => {
     async function renderFinalImage() {
       try {
-        console.log("Applying filter...");
+        // console.log("Applying filter...");
         if (!user?.farcaster?.pfp) throw new Error("No PFP URL found");
         const img = new window.Image();
         img.crossOrigin = "anonymous";
@@ -164,13 +164,13 @@ const SettingsPFPClubs: React.FC<SettingsPFPClubsProps> = ({ onTabChange }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: renderedSrc }),
       });
-      console.log("Response:", response);
+      // console.log("Response:", response);
       if (!response.ok)
         throw new Error(`Upload failed: ${response.statusText}`);
       const json = await response.json();
       const imageUrl = `https://images.colorino.site/${json.hash}.png`;
       const fid = farcasterAccount ? Number(farcasterAccount.fid) : 0;
-      console.log("Setting PFP to:", imageUrl, " for FID: ", fid);
+      // console.log("Setting PFP to:", imageUrl, " for FID: ", fid);
       const signer = {
         getSignerKey: getFarcasterSignerPublicKey,
         signMessageHash: (messageHash: Uint8Array) =>

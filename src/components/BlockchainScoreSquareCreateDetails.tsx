@@ -129,7 +129,7 @@ const BlockchainScoreSquareCreateDetails: React.FC<BlockchainScoreSquareCreateDe
 
   const { address } = useAccount();
   const { events, loading: eventsLoading, error: eventsError } = useEventsData(selectedSportId);
-  console.log("🏀 Available Matches:", events);
+  // console.log("🏀 Available Matches:", events);
 
   // Add the useWriteContract hook
   const { writeContractAsync } = useWriteContract();
@@ -252,7 +252,7 @@ const BlockchainScoreSquareCreateDetails: React.FC<BlockchainScoreSquareCreateDe
       } else if (!isAddress(finalRefereeAddress)) {
         throw new Error("Please enter a valid referee address");
       }
-      console.log("[DEBUG] selectedSportId before event creation:", selectedSportId);
+      // console.log("[DEBUG] selectedSportId before event creation:", selectedSportId);
 
       // Create event ID - we no longer need to pass selectedMatchId since our timestamp is unique
       const eventId = createCompositeEventId(
@@ -261,7 +261,7 @@ const BlockchainScoreSquareCreateDetails: React.FC<BlockchainScoreSquareCreateDe
         awayTeam
       );
       
-      console.log("Event ID:", eventId);
+      // console.log("Event ID:", eventId);
       setBlockchainEventId(eventId);
       
       // Check if wallet is connected

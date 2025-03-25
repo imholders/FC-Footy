@@ -386,10 +386,10 @@ export function getTeamFullName(teamAbbr: string, league: string): string {
 export function getTeamLogo(teamAbbr: string, league: string): string {
   // Default fallback image
   const DEFAULT_LOGO = '/defifa_spinner.gif';
-  console.log(`[Team Logo] Fetching logo for team: ${teamAbbr}, league: ${league}`);
+  //console.log(`[Team Logo] Fetching logo for team: ${teamAbbr}, league: ${league}`);
   // Return default if missing required params
   if (!teamAbbr || !league) {
-    console.log(`[Team Logo] Missing required params: teamAbbr=${teamAbbr}, league=${league}. Using fallback.`);
+    // console.log(`[Team Logo] Missing required params: teamAbbr=${teamAbbr}, league=${league}. Using fallback.`);
     return DEFAULT_LOGO;
   }
   
@@ -399,7 +399,7 @@ export function getTeamLogo(teamAbbr: string, league: string): string {
   // Validate if the team exists in the specified league
   const leagueTeams = teamsByLeague[league];
   if (!leagueTeams) {
-    console.log(`[Team Logo] League not found: ${league}. Using fallback.`);
+    // console.log(`[Team Logo] League not found: ${league}. Using fallback.`);
     return DEFAULT_LOGO;
   }
   

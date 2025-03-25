@@ -42,10 +42,6 @@ const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
-  // Optional: Log to check the selected tab
-  console.log("Selected Tab (raw):", selectedTab);
-  console.log("Display Label:", tabDisplayMap[selectedTab]);
-
    // UI state
    const [context, setContext] = useState<FrameContext>();
    const [errorMessage, setErrorMessage] = useState("");
