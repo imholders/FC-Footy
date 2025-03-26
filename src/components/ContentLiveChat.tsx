@@ -286,8 +286,8 @@ const ContentLiveChat = () => {
           text: {
             value: message,
             embeds: [],
-            parent_url: "https://warpcast.com/~/channel/football",
           },
+          parent: {type: "url", url:"https://warpcast.com/~/channel/football"},
           isLong: false,
         },
       }, {
