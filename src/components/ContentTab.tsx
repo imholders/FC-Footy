@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ContentFalseNine from "./ContentFalseNine";
+import ContentLiveChat from "./ContentLiveChat";
 
 const ContentTab = () => {
   const [selectedTab, setSelectedTab] = useState<string>("falseNine");
@@ -21,10 +22,19 @@ const ContentTab = () => {
         >
           The False Nine
         </button>
+        <button
+          onClick={() => handleTabSelect("liveChat")}
+          className={`flex-shrink-0 py-1 px-6 text-sm font-semibold cursor-pointer rounded-full border-2 ${
+            selectedTab === "liveChat" ? "border-limeGreenOpacity text-lightPurple" : "border-gray-500 text-gray-500"
+          }`}
+        >
+          Live Chat
+        </button>
       </div>
 
       <div className="bg-purplePanel text-lightPurple rounded-lg p-2">
         {selectedTab === "falseNine" && <ContentFalseNine />}
+        {selectedTab === "liveChat" && <ContentLiveChat />}
       </div>
     </div>
   );
