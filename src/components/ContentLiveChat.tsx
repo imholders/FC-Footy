@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { usePrivy, useLogin, useFarcasterSigner } from "@privy-io/react-auth";
-import axios from "axios";
 import * as Account from "fhub/Account";
 import { useCastCreateMutation } from "~/hooks/fhub/useCastCreateMutation";
 import { emojiPacks } from "~/components/utils/customEmojis";
 import { getTeamPreferences } from "~/lib/kv";
-// import { fetchManagerData } from "./utils/fetchManagerData";
+import { fetchCasts } from "./utils/fetchCasts";
 
 type EmojiItem =
   | { type: 'message'; content: string }
@@ -242,7 +241,8 @@ const ContentLiveChat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
-
+  const [channel, setChannel] = useState("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+  
   const { authenticated, user } = usePrivy();
   
   useEffect(() => {
@@ -282,43 +282,23 @@ const ContentLiveChat = () => {
   const createCast = useCastCreateMutation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchCasts = async () => {
-    console.log("Fetching casts...");
-    try {
-      const response = await axios.get("https://api.neynar.com/v2/farcaster/feed/channels", {
-        headers: {
-          "x-api-key": process.env.NEXT_PUBLIC_NEYNAR_API_KEY!,
-          "accept": "application/json",
-        },
-        params: {
-          channel_ids: "football",
-          with_recasts: false,
-          with_replies: false,
-          members_only: true,
-          limit: 10,
-        },
-      });
-      console.log("Fetched casts:", response.data.casts);
-      const enriched = await Promise.all(
-        (response.data.casts || []).map(async (cast: any) => {
-          const teamIds = await getTeamPreferences(cast.author.fid.toString());
-          const teamBadgeUrl =
-            teamIds?.[0] && teamIds[0].includes("-")
-              ? `https://tjftzpjqfqnbtvodsigk.supabase.co/storage/v1/object/public/d33m_images/teams/leagues/${teamIds[0].replace("-", "/")}.png`
-              : null;
-
-          return {
-            ...cast,
-            teamBadgeUrl,
-          };
-        })
-      );
-      setCasts(enriched);
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    } catch (err) {
-      console.error("Failed to fetch casts", err);
-    }
+  const loadCasts = async (selectedChannel?: string) => {
+    const channelToUse = selectedChannel ?? channel;
+    const enriched = await fetchCasts(channelToUse);
+    setCasts(enriched);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+  
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      loadCasts(channel); // respect current selected channel
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [channel]);
+  
+  useEffect(() => {
+    loadCasts(channel);
+  }, []);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -392,8 +372,36 @@ const ContentLiveChat = () => {
       }}
     />
   )}
+  <div className="flex justify-start gap-2 mb-2">
+    <button
+      onClick={() => {
+        setChannel("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+        loadCasts("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+      }}
+      className={`px-3 py-1 rounded text-sm ${
+        channel === "match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a"
+          ? "bg-deepPink text-black font-bold"
+          : "bg-gray-700 text-white"
+      }`}
+    >
+      🧃 Match Chat
+    </button>
+    <button
+      onClick={() => {
+        setChannel("football");
+        loadCasts("football");
+      }}
+      className={`px-3 py-1 rounded text-sm ${
+        channel === "football"
+          ? "bg-deepPink text-black font-bold"
+          : "bg-gray-700 text-white"
+      }`}
+    >
+      ⚽ General Chat
+    </button>
+  </div>
       <div className="flex-1 overflow-y-auto space-y-3">
-       {casts.slice().reverse().map((cast, idx) => (
+      {casts.map((cast, idx) => (
         <div key={idx} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
             <div className="relative w-6 h-6">
               <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
