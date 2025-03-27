@@ -1,6 +1,6 @@
 import { getTeamPreferences } from "~/lib/kv";
 import axios from "axios";
-
+/* 
 export const fetchCasts = async (channel?: string) => {
     const selectedChannel = channel ?? "football";
   
@@ -39,9 +39,9 @@ export const fetchCasts = async (channel?: string) => {
     );
   
     return enriched;
-};
+}; */
 
-export const fetchCastByHash = async (hash: string) => {
+export const fetchCastByHash = async () => {
     try {
       const response = await axios.get(
         `https://api.neynar.com/v2/farcaster/cast/conversation`,
@@ -51,7 +51,7 @@ export const fetchCastByHash = async (hash: string) => {
             "accept": "application/json",
           },
           params: {
-            identifier: hash,
+            identifier: '0x4ab7832ecd907494ddfce5802c0cec1c00430c5a',
             type: "hash",
             reply_depth: 1,
             include_chronological_parent_casts: false,

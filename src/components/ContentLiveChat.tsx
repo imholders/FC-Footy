@@ -4,7 +4,7 @@ import * as Account from "fhub/Account";
 import { useCastCreateMutation } from "~/hooks/fhub/useCastCreateMutation";
 import { emojiPacks } from "~/components/utils/customEmojis";
 import { getTeamPreferences } from "~/lib/kv";
-import { fetchCasts } from "./utils/fetchCasts";
+import { fetchCastByHash } from "./utils/fetchCasts";
 
 type EmojiItem =
   | { type: 'message'; content: string }
@@ -242,7 +242,16 @@ const ContentLiveChat = () => {
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
   const [channel, setChannel] = useState("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+  const [parentCastUrl, setParentCastUrl] = useState<string | null>(null);
   
+  useEffect(() => {
+    if (channel.startsWith("hash:")) {
+      const hash = channel.split("hash:")[1];
+      setParentCastUrl(`https://warpcast.com/~/cast/${hash}`);
+    } else {
+      setParentCastUrl(null);
+    }
+  }, [channel]);
   const { authenticated, user } = usePrivy();
   
   useEffect(() => {
@@ -282,40 +291,44 @@ const ContentLiveChat = () => {
   const createCast = useCastCreateMutation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadCasts = async (selectedChannel?: string) => {
-    const channelToUse = selectedChannel ?? channel;
-    const enriched = await fetchCasts(channelToUse);
-    setCasts(enriched);
+  const loadCasts = async () => {
+    //const channelToUse = selectedChannel ?? channel;
+    const enriched = await fetchCastByHash();
+  setCasts(enriched);
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   
   useEffect(() => {
     const intervalId = setInterval(() => {
-      loadCasts(channel); // respect current selected channel
+      loadCasts(); // respect current selected channel
     }, 5000);
     return () => clearInterval(intervalId);
   }, [channel]);
   
   useEffect(() => {
-    loadCasts(channel);
+    loadCasts();
   }, []);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      fetchCasts();
+      fetchCastByHash();
     }, 5000);
     return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
-    fetchCasts();
+    fetchCastByHash();
   }, []);
 
   const postMessage = async () => {
-    if (!authenticated) {
-      login();
-      return;
-    }
+  if (!authenticated) {
+    login();
+    return;
+  }
+  if (channel.startsWith("hash:") && !parentCastUrl) {
+    console.error("Error: cannot post reply without a valid cast hash.");
+    return;
+  }
     if (farcasterAccount) {
       const fid = Number(farcasterAccount.fid);
       const signer = {
@@ -334,14 +347,14 @@ const ContentLiveChat = () => {
             value: message,
             embeds: [],
           },
-          parent: {type: "url", url:"chain://eip155:1/erc721:0x7abfe142031532e1ad0e46f971cc0ef7cf4b98b0"},
+          parent: { type: "cast", hash:  `0x4ab7832ecd907494ddfce5802c0cec1c00430c5a`},
           isLong: false,
         },
       }, {
         onSuccess: () => {
           console.log("Cast sent successfully!");
           setMessage("");
-          setTimeout(fetchCasts, 3000);
+          setTimeout(fetchCastByHash, 3000);
         },
         onError: (error) => {
           console.error("Error sending cast:", error);
@@ -375,18 +388,18 @@ const ContentLiveChat = () => {
   <div className="flex justify-start gap-2 mb-2">
     <button
       onClick={() => {
-        setChannel("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
-        loadCasts("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+        setChannel("hash:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+        loadCasts();
       }}
       className={`px-3 py-1 rounded text-sm ${
-        channel === "match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a"
+        channel === "hash:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a"
           ? "bg-deepPink text-black font-bold"
           : "bg-gray-700 text-white"
       }`}
     >
       🧃 Match Chat
     </button>
-    <button
+{/*     <button
       onClick={() => {
         setChannel("football");
         loadCasts("football");
@@ -398,7 +411,7 @@ const ContentLiveChat = () => {
       }`}
     >
       ⚽ General Chat
-    </button>
+    </button> */}
   </div>
       <div className="flex-1 overflow-y-auto space-y-3">
       {casts.map((cast, idx) => (
