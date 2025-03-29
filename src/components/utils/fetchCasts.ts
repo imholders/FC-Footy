@@ -38,7 +38,6 @@ export const fetchCastByHash = async (): Promise<CastType[]> => {
       const root = response.data?.conversation?.cast;
       const replies = (root?.direct_replies ?? []).reverse();
       const casts = [root, ...replies];
-      console.log("Casts:", casts);
       const enriched = await Promise.all(
         casts.map(async (cast: CastType): Promise<CastType> => {
           const teamIds = await getTeamPreferences(cast.author.fid.toString());

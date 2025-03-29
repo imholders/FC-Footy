@@ -20,113 +20,111 @@ import { FrameContext } from "@farcaster/frame-node";
 export default function Main() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { ready, authenticated, user, createWallet, login} = usePrivy();
-  // const { client } = useSmartWallets();
   const { initLoginToFrame, loginToFrame } = useLoginToFrame();
   const [showH2, setShowH2] = useState(true); // State to control visibility of h2
-
   const searchParams = useSearchParams();
   const router = useRouter();
-  console.log("searchParams", searchParams);
-  const selectedTab = searchParams?.get("tab") || "matches";
-  const selectedLeague = searchParams?.get("league") || "eng.1";
+  const [customSearchParams, setCustomSearchParams] = useState<URLSearchParams | null>(null);
+  const effectiveSearchParams = searchParams || customSearchParams;
+  const selectedTab = effectiveSearchParams?.get("tab") || "matches";
+  const selectedLeague = effectiveSearchParams?.get("league") || "eng.1";
 
-// Now handleTabChange matches React.Dispatch<SetStateAction<string>>
-const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
-  const newTab =
-    typeof value === "function" ? value(selectedTab) : value;
-  const league = searchParams?.get("league") || "eng.1";
-  router.push(`/?tab=${newTab}&league=${league}`);
-};
+  // Now handleTabChange matches React.Dispatch<SetStateAction<string>>
+  const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
+    const newTab =
+      typeof value === "function" ? value(selectedTab) : value;
+    const league = effectiveSearchParams?.get("league") || "eng.1";
+    router.push(`/?tab=${newTab}&league=${league}`);
+  };
+
   const handleLeagueChange = (league: string) => {
-    const tab = searchParams?.get("tab") || "matches";
+    const tab = effectiveSearchParams?.get("tab") || "matches";
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
-   // UI state
-   const [context, setContext] = useState<FrameContext>();
-   const [errorMessage, setErrorMessage] = useState("");
- 
-   // Loading states
-   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
- 
-   // Derived state
- /*   const smartWallet = user?.linkedAccounts.find(
-     (account) => account.type === "smart_wallet",
-   ); */
- 
-   useEffect(() => {
+  // UI state
+  const [context, setContext] = useState<FrameContext>();
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Loading states
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+    
+  useEffect(() => {
     const load = async () => {
       const ctx = (await frameSdk.context) as FrameContext;
       setContext(ctx);
+      if (ctx.locations && ctx.locations.embedded) {
+        const url = new URL(ctx.locations.embedded);
+        setCustomSearchParams(url.searchParams);
+      }
       console.log("frame context:", ctx);
-
       frameSdk.actions.ready({});
-  
+
       // 👇 Log the embed URL or any part of context
     };
-  
+
     if (frameSdk && !isSDKLoaded) {
       setIsSDKLoaded(true);
       load();
     }
   }, [isSDKLoaded]);
- 
-   // Login to Frame with Privy automatically
-   useEffect(() => {
-     if (ready && !authenticated) {
-       const login = async () => {
-         const { nonce } = await initLoginToFrame();
-         const result = await frameSdk.actions.signIn({ nonce: nonce });
-         await loginToFrame({
-           message: result.message,
-           signature: result.signature,
-         });
-       };
-       login();
-     } else if (ready && authenticated) {
-     }
-   }, [ready, authenticated]);
- 
-   useEffect(() => {
-     if (showH2) {
-       const timer = setTimeout(() => {
-         setShowH2(false); // Hide h2 after 3 seconds
-       }, 3000);
- 
-       return () => clearTimeout(timer); // Cleanup the timer if component is unmounted
-     }
-   }, [showH2]);
- 
-   useEffect(() => {
-     if (
-       authenticated &&
-       ready &&
-       user &&
-       user.linkedAccounts.filter(
-         (account) =>
-           account.type === "wallet" && account.walletClientType === "privy",
-       ).length === 0
-     ) {
-       createWallet();
-     }
-   }, [authenticated, ready, user]);
- 
-   const handleLogin = async () => {
-     setIsAuthenticating(true);
-     try {
-       await login(); // Use Privy's login method
-     } catch (error) {
-       console.error(error);
-       setErrorMessage("Login failed. Please try again.");
-     } finally {
-       setIsAuthenticating(false);
-     }
-   };
- 
-   // Render loading state
-   if (!ready || isAuthenticating) {
-     return <div className="w-full h-full flex items-center justify-center">Loading...</div>;
-   }
+  
+// Login to Frame with Privy automatically
+  useEffect(() => {
+    if (ready && !authenticated) {
+      const login = async () => {
+        const { nonce } = await initLoginToFrame();
+        const result = await frameSdk.actions.signIn({ nonce: nonce });
+        await loginToFrame({
+          message: result.message,
+          signature: result.signature,
+        });
+      };
+      login();
+    } else if (ready && authenticated) {
+    }
+  }, [ready, authenticated]);
+
+  useEffect(() => {
+    if (showH2) {
+      const timer = setTimeout(() => {
+        setShowH2(false); // Hide h2 after 3 seconds
+      }, 3000);
+
+      return () => clearTimeout(timer); // Cleanup the timer if component is unmounted
+    }
+  }, [showH2]);
+
+  useEffect(() => {
+    if (
+      authenticated &&
+      ready &&
+      user &&
+      user.linkedAccounts.filter(
+        (account) =>
+          account.type === "wallet" && account.walletClientType === "privy",
+      ).length === 0
+    ) {
+      createWallet();
+    }
+  }, [authenticated, ready, user]);
+
+  const handleLogin = async () => {
+    setIsAuthenticating(true);
+    try {
+      await login(); // Use Privy's login method
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Login failed. Please try again.");
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  // Render loading state
+  if (!ready || isAuthenticating) {
+    return <div className="w-full h-full flex items-center justify-center">Loading...</div>;
+  }
    
   // Render main app UI
   return (
