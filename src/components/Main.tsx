@@ -26,7 +26,7 @@ export default function Main() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-
+  console.log("searchParams", searchParams);
   const selectedTab = searchParams?.get("tab") || "matches";
   const selectedLeague = searchParams?.get("league") || "eng.1";
 

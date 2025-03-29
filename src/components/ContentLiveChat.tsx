@@ -399,7 +399,7 @@ const loadCasts = async () => {
     <div className="h-screen relative pt-4 pb-0 px-4 rounded-lg flex flex-col bg-darkPurple/80">
       {backgroundLogo && (
         <div
-          className="absolute top-4 left-0 right-0 bottom-0 z-0 bg-no-repeat bg-contain bg-center opacity-10 pointer-events-none"
+          className="absolute top-4 left-0 right-0 bottom-0 z-0 bg-no-repeat bg-contain bg-center opacity-20 pointer-events-none"
           style={{
               backgroundImage: `url(${backgroundLogo})`,
               backgroundSize: "50%",
@@ -441,7 +441,7 @@ const loadCasts = async () => {
               </div>
               <div className="flex-1 text-lightPurple break-words">
                 <span className="font-bold text-notWhite">@{cast.author.username}</span>{" "}
-                {shortenLongWords(cast.text).split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                {cast.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
                   part.match(/https?:\/\/[^\s]+/) ? (
                     <a
                       key={i}
@@ -450,10 +450,10 @@ const loadCasts = async () => {
                       rel="noopener noreferrer"
                       className="text-fontRed underline break-all"
                     >
-                      {part.length > 40 ? part.slice(0, 37) + "..." : part}
+                      [Link]
                     </a>
                   ) : (
-                    renderMessageWithEmojis(part).map((node, j) => (
+                    renderMessageWithEmojis(shortenLongWords(part)).map((node, j) => (
                       <React.Fragment key={j}>{node}</React.Fragment>
                     ))
                   )
