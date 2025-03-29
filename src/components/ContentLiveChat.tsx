@@ -6,6 +6,16 @@ import { emojiPacks } from "~/components/utils/customEmojis";
 import { getTeamPreferences } from "~/lib/kv";
 import { fetchCastByHash } from "./utils/fetchCasts";
 
+interface CastType {
+  author: {
+    pfp_url: string;
+    username: string;
+    fid: string; // or number, if that's more appropriate
+  };
+  teamBadgeUrl?: string | null;
+  text: string;
+  // add any additional fields as needed, like hash, direct_replies, etc.
+}
 
 type EmojiItem =
   | { type: 'message'; content: string }
@@ -235,8 +245,7 @@ const ChatInput = ({
 };
 
 const ContentLiveChat = () => {
-  const [casts, setCasts] = useState<unknown[]>([]);
-  const [message, setMessage] = useState("");
+  const [casts, setCasts] = useState<CastType[]>([]);  const [message, setMessage] = useState("");
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const [selectedPack, setSelectedPack] = useState(emojiPacks[0].name);
   const [searchTerm, setSearchTerm] = useState("");
