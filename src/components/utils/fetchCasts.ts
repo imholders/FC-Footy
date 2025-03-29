@@ -40,9 +40,22 @@ export const fetchCasts = async (channel?: string) => {
   
     return enriched;
 }; */
+export interface CastType {
+  hash: string;
+  text: string;
+  author: {
+    fid: string;
+    username: string;
+    pfp_url: string;
+  };
+  direct_replies?: CastType[];
+  teamBadgeUrl?: string | null;
+  // Add any additional fields as needed
+}
 
-export const fetchCastByHash = async () => {
-    try {
+
+export const fetchCastByHash = async (): Promise<CastType[]> => {
+  try {
       const response = await axios.get(
         `https://api.neynar.com/v2/farcaster/cast/conversation`,
         {
@@ -56,7 +69,7 @@ export const fetchCastByHash = async () => {
             reply_depth: 1,
             include_chronological_parent_casts: false,
             viewer_fid: 4163,
-            sort_type: "desc_chron",
+            sort_type: "chron", // "desc_chron" | "chron" ??
             limit: 10,
           },
         }
@@ -67,7 +80,7 @@ export const fetchCastByHash = async () => {
       const casts = [root, ...replies];
   
       const enriched = await Promise.all(
-        casts.map(async (cast: any) => {
+        casts.map(async (cast: CastType): Promise<CastType> => {
           const teamIds = await getTeamPreferences(cast.author.fid.toString());
           const teamBadgeUrl =
             teamIds?.[0] && teamIds[0].includes("-")

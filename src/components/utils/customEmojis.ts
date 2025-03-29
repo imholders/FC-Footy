@@ -31,7 +31,7 @@ export const emojiPacks: EmojiPack[] = [
     emojis: [
       { code: "ars::arteta", url: "/assets/ars-arteta.png" },
       { code: "ars::odegaard", url: "/assets/ars-odegaard.png" },
-      { code: "ars::gunnersaurus ", url: "/assets/ars-gunnersaurus.png" },
+      { code: "ars::gunnersaurus", url: "/assets/ars-gunnersaurus.png" },
       { code: "ars::saka", url: "/assets/ars-saka.png" },
     ],
   },

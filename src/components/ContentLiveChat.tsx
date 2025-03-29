@@ -6,6 +6,7 @@ import { emojiPacks } from "~/components/utils/customEmojis";
 import { getTeamPreferences } from "~/lib/kv";
 import { fetchCastByHash } from "./utils/fetchCasts";
 
+
 type EmojiItem =
   | { type: 'message'; content: string }
   | { packLabel: string; code: string; url: string };
@@ -96,7 +97,7 @@ const ChatInput = ({
   }, [message]);
 
   return (
-    <div className="border-t border-gray-700 pt-3 relative">
+    <div className="relative">
       <button
         onClick={() => setShowEmojiPanel((prev) => !prev)}
         className="group absolute bottom-2 left-4 flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-white text-sm transition-all duration-200 ease-out hover:scale-105 hover:shadow-md"
@@ -213,7 +214,7 @@ const ChatInput = ({
         }}
         maxLength={390}
         placeholder="Type your cast... (use footy::smile for custom emoji)"
-        className="w-full px-4 py-2 rounded-md bg-gray-800 text-white outline-none resize-none overflow-hidden pb-12"
+        className="w-full px-4 py-2 rounded-md border border-limeGreenOpacity bg-gray-800 text-white outline-none resize-none overflow-hidden pb-12"
       />
       <button
         onClick={onSubmit}
@@ -241,9 +242,10 @@ const ContentLiveChat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
-  const [channel, setChannel] = useState("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+  const [channel] = useState("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
   const [parentCastUrl, setParentCastUrl] = useState<string | null>(null);
-  
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (channel.startsWith("hash:")) {
       const hash = channel.split("hash:")[1];
@@ -257,19 +259,19 @@ const ContentLiveChat = () => {
   useEffect(() => {
     const fetchUserTeamLogoAndEmoji = async () => {
       if (user?.farcaster?.fid) {
-        console.log("Fetching team preferences for FID:", user.farcaster.fid);
+        //console.log("Fetching team preferences for FID:", user.farcaster.fid);
         const teamIds = await getTeamPreferences(user.farcaster.fid.toString());
-        console.log("Team IDs returned:", teamIds);
+        //console.log("Team IDs returned:", teamIds);
 
         const teamId = teamIds?.[0];
         if (teamId) {
           const logo = getTeamLogoFromId(teamId);
           setBackgroundLogo(logo);
-          console.log("Setting background logo:", logo);
+          //console.log("Setting background logo:", logo);
 
           const matchingPack = emojiPacks.find((pack) => pack.teamId === teamId);
           if (matchingPack) {
-            console.log("Found matching emoji pack:", matchingPack.name);
+            //console.log("Found matching emoji pack:", matchingPack.name);
             setSelectedPack(matchingPack.name);
           } else {
             console.log("No matching emoji pack found for teamId:", teamId);
@@ -288,15 +290,24 @@ const ContentLiveChat = () => {
     (account) => account.type === "farcaster"
   );
 
-  const createCast = useCastCreateMutation();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+const createCast = useCastCreateMutation();
+const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadCasts = async () => {
-    //const channelToUse = selectedChannel ?? channel;
-    const enriched = await fetchCastByHash();
+const loadCasts = async () => {
+  const enriched = await fetchCastByHash();
   setCasts(enriched);
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+
+  if (chatContainerRef.current) {
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
+    if (isAtBottom) {
+      // Scroll to bottom only if the user hasn't intentionally scrolled up
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      // Optionally, you can also call:
+      // messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }
+};
   
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -347,14 +358,15 @@ const ContentLiveChat = () => {
             value: message,
             embeds: [],
           },
-          parent: { type: "cast", hash:  `0x4ab7832ecd907494ddfce5802c0cec1c00430c5a`},
+          parent: { type: "cast", hash:  `0x4ab7832ecd907494ddfce5802c0cec1c00430c5a`, fid: BigInt(fid) },
           isLong: false,
         },
       }, {
         onSuccess: () => {
           console.log("Cast sent successfully!");
-          setMessage("");
-          setTimeout(fetchCastByHash, 3000);
+            setMessage("");
+            setShowEmojiPanel(false);
+            setTimeout(fetchCastByHash, 3000);
         },
         onError: (error) => {
           console.error("Error sending cast:", error);
@@ -373,83 +385,77 @@ const ContentLiveChat = () => {
     });
   };
 
-  console.log("background logo:", backgroundLogo   );
+  // console.log("background logo:", backgroundLogo   );
   return (
-<div className="h-[500px] relative p-4 rounded-lg flex flex-col bg-darkPurple/80">
-  {backgroundLogo && (
-    <div
-    className="absolute top-4 left-0 right-0 bottom-0 z-0 bg-no-repeat bg-contain bg-center opacity-10 pointer-events-none"
-    style={{
-        backgroundImage: `url(${backgroundLogo})`,
-        backgroundSize: "50%",
-      }}
-    />
-  )}
-  <div className="flex justify-start gap-2 mb-2">
-    <button
-      onClick={() => {
-        setChannel("hash:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
-        loadCasts();
-      }}
-      className={`px-3 py-1 rounded text-sm ${
-        channel === "hash:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a"
-          ? "bg-deepPink text-black font-bold"
-          : "bg-gray-700 text-white"
-      }`}
-    >
-      🧃 Match Chat
-    </button>
-{/*     <button
-      onClick={() => {
-        setChannel("football");
-        loadCasts("football");
-      }}
-      className={`px-3 py-1 rounded text-sm ${
-        channel === "football"
-          ? "bg-deepPink text-black font-bold"
-          : "bg-gray-700 text-white"
-      }`}
-    >
-      ⚽ General Chat
-    </button> */}
-  </div>
-      <div className="flex-1 overflow-y-auto space-y-3">
-      {casts.map((cast, idx) => (
-        <div key={idx} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
-            <div className="relative w-6 h-6">
-              <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
-              {cast.teamBadgeUrl && (
-                <img
-                  src={cast.teamBadgeUrl}
-                  alt="team badge"
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-[0.5px] border-white"
-                />
-              )}
-            </div>
-            <div className="flex-1 text-lightPurple break-words">
-              <span className="font-bold text-notWhite">@{cast.author.username}</span>{" "}
-              {shortenLongWords(cast.text).split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-  part.match(/https?:\/\/[^\s]+/) ? (
-    <a
-      key={i}
-      href={part}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-fontRed underline break-all"
-    >
-      {part.length > 40 ? part.slice(0, 37) + "..." : part}
-    </a>
-  ) : (
-    renderMessageWithEmojis(part).map((node, j) => (
-      <React.Fragment key={j}>{node}</React.Fragment>
-    ))
-  )
-)}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+    <div className="h-screen relative pt-4 pb-0 px-4 rounded-lg flex flex-col bg-darkPurple/80">
+      {backgroundLogo && (
+        <div
+          className="absolute top-4 left-0 right-0 bottom-0 z-0 bg-no-repeat bg-contain bg-center opacity-10 pointer-events-none"
+          style={{
+              backgroundImage: `url(${backgroundLogo})`,
+              backgroundSize: "50%",
+            }}
+        />
+      )}
+      
+      {/* Room name - shown above casts */}
+      <div className="flex justify-start gap-2 mb-2 text-md">
+          🏟️ The Gantry
+    {/*     <button
+          onClick={() => {
+            setChannel("football");
+            loadCasts("football");
+          }}
+          className={`px-3 py-1 rounded text-sm ${
+            channel === "football"
+              ? "bg-deepPink text-black font-bold"
+              : "bg-gray-700 text-white"
+          }`}
+        >
+          ⚽ General Chat
+        </button> */}
       </div>
+
+      {/* Room casts */}
+      <div ref={chatContainerRef} className="w-full h-[calc(100vh-160px)] overflow-y-auto space-y-3 scroll-pb-44">        
+        {casts.map((cast, idx) => (
+          <div key={idx} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
+              <div className="relative w-6 h-6">
+                <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
+                {cast.teamBadgeUrl && (
+                  <img
+                    src={cast.teamBadgeUrl}
+                    alt="team badge"
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-[0.5px] border-white"
+                  />
+                )}
+              </div>
+              <div className="flex-1 text-lightPurple break-words">
+                <span className="font-bold text-notWhite">@{cast.author.username}</span>{" "}
+                {shortenLongWords(cast.text).split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                  part.match(/https?:\/\/[^\s]+/) ? (
+                    <a
+                      key={i}
+                      href={part}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-fontRed underline break-all"
+                    >
+                      {part.length > 40 ? part.slice(0, 37) + "..." : part}
+                    </a>
+                  ) : (
+                    renderMessageWithEmojis(part).map((node, j) => (
+                      <React.Fragment key={j}>{node}</React.Fragment>
+                    ))
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+      </div>
+      
+      {/* Authorize casting */}
       {user?.farcaster && !user.farcaster?.signerPublicKey && (
         <div className="flex flex-col gap-2 mt-4">
           <button
@@ -460,7 +466,9 @@ const ContentLiveChat = () => {
           </button>
         </div>
       )}
-      <div className="mt-4 flex-shrink-0">
+      
+      {/* Cast affordance - shown below casts */}
+      <div className="absolute bottom-0.5 left-0 right-0 px-4">
         <ChatInput
           message={message}
           setMessage={setMessage}
@@ -475,6 +483,57 @@ const ContentLiveChat = () => {
           setShowPackDropdown={setShowPackDropdown}
           addEmoji={addEmoji}
         />
+      </div>
+      
+      {/* Footer Desktop version - shown above content */}
+      <div className="hidden md:block mt-2">
+        <div className="flex border-t border-limeGreenOpacity w-full">
+          <button className="px-4 py-2 flex-1 text-gray-500">
+            Find match
+          </button>
+          <button className="px-4 py-2 flex-1 text-gray-500">
+            Create room
+          </button>
+          <button className="px-4 py-2 flex-1 text-gray-500">
+            tip host
+          </button>
+        </div>
+      </div>
+
+      {/* Footer Mobile version - fixed to bottom of screen */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-darkPurple border-t border-limeGreenOpacity z-20">
+        <div className="flex justify-around">
+          <button className="flex-1 py-3 px-2 text-center text-gray-500">
+            <div className="flex flex-col items-center">
+              <div className="mb-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+              </div>
+              <span className="text-xs">Find match</span>
+            </div>
+          </button>
+          <button className="flex-1 py-3 px-2 text-center text-gray-500">
+            <div className="flex flex-col items-center">
+              <div className="mb-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+              </div>
+              <span className="text-xs">Create room</span>
+            </div>
+          </button>
+          <button className="flex-1 py-3 px-2 text-center text-gray-500">
+            <div className="flex flex-col items-center">
+              <div className="mb-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+              </div>
+              <span className="text-xs">tip host</span>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );
