@@ -54,6 +54,7 @@ useEffect(() => {
     const ctx = (await frameSdk.context) as FrameContext;
     setContext(ctx);
     if (ctx.location && ctx.location?.type === "cast_embed") {
+      console.log("frame context:", ctx);
       const url = new URL(ctx.location.type);
       const params = new URLSearchParams(url.search);
       const newParams = new URLSearchParams();
