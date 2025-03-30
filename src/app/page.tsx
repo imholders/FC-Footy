@@ -6,7 +6,7 @@ const appUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
 
 export const revalidate = 300;
 
-export async function generateMetadata({ params, searchParams }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] }, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
     // Build the path from params
   const path = params.slug ? `/${params.slug.join('/')}` : '/';
   
@@ -14,8 +14,11 @@ export async function generateMetadata({ params, searchParams }): Promise<Metada
   const url = new URL(path, appUrl);
   
   // Add all search parameters
-  Object.entries(await searchParams).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value) {
+      const stringValue = Array.isArray(value) ? value.join(',') : value;
+      url.searchParams.append(key, stringValue);
+    }
   });
   
   const frame = {
