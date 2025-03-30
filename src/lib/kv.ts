@@ -32,4 +32,15 @@ export async function deleteUserNotificationDetails(
   fid: number
 ): Promise<void> {
   await redis.del(getUserNotificationDetailsKey(fid));
-} 
+}
+
+export async function getTeamPreferences(fid: string): Promise<string[] | null> {
+  try {
+    const key = `fc-footy:preference:${fid}`;
+    const res = await redis.get<string[]>(key);
+    return res || null;
+  } catch (error) {
+    console.error("Failed to get team preferences:", error);
+    return null;
+  }
+}

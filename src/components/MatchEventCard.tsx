@@ -72,6 +72,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const [selectedMatch, setSelectedMatch] = useState<SelectedMatch | null>(null);
   const [gameContext, setGameContext] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showGameContext, setShowGameContext] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   // State for fan avatar rows for team1 and team2
   const [matchFanAvatarsTeam1, setMatchFanAvatarsTeam1] = useState<Array<{ fid: number; pfp: string }>>([]);
@@ -206,13 +207,16 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   const fetchAiSummary = async () => {
     if (selectedMatch) {
       try {
-        setLoading(true);
-        const data = await RAGameContext(event.id, sportId, competitorsLong);
-        if (data && typeof data === 'string') {
-          setGameContext(data);
-        } else {
-          setGameContext('Failed to fetch AI context.');
+        if (!showGameContext && !gameContext) {
+          setLoading(true);
+          const data = await RAGameContext(event.id, sportId, competitorsLong);
+          if (data && typeof data === 'string') {
+            setGameContext(data);
+          } else {
+            setGameContext('Failed to fetch AI context.');
+          }
         }
+        setShowGameContext((prev) => !prev);
       } catch (error) {
         setGameContext('Failed to fetch game context.');
         console.error('Failed to fetch game context:', error);
@@ -457,7 +461,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                   Waiting for VAR...
                 </div>
               ) : (
-                eventStarted ? "Summary" : "Preview"
+                showGameContext ? "Hide" : eventStarted ? "Summary" : "Preview"
               )}
             </button>
 
@@ -466,10 +470,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               targetElement={elementRef.current}
             />
           </div>
-          {ssGames.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <h4 className="text-notWhite font-semibold mb-2">ScoreSquare Games:</h4>
-              {gameContext && (
+          {showGameContext && gameContext && (
             <div className="mt-4 text-lightPurple bg-purplePanel">
               <h2 className="font-2xl text-notWhite font-bold mb-4">
                 <button onClick={readMatchSummary}>
@@ -478,99 +479,101 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
               </h2>
               <pre className="text-sm whitespace-pre-wrap break-words mb-4">{gameContext}</pre>
             </div>
-          )}    
-          
-          {ssGames.map((game) => (
-            <Link
-              key={game.gameId}
-              href={`/?tab=moneyGames&gameType=scoreSquare&eventId=${game.eventId}`}
-              className="block"
-            >
-            {/* Removed animated square background */}
-            <div className="mt-4 relative group">
-                <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <span className="text-white text-sm font-semibold">👆 Tap to Play</span>
-              
-                </div>
-                <div className="bg-gray-800 p-4 rounded-lg shadow-md z-0">
-                  <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-                    <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-0.5 opacity-30">
-                      {Array.from({ length: 25 }).map((_, i) => {
-                        const isEven = i % 2 === 0;
-                        const logoSrc = isEven ? homeTeamLogo : awayTeamLogo;
+          )}
+          {ssGames.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-notWhite font-semibold mb-2">ScoreSquare Games:</h4>
+              {ssGames.map((game) => (
+                <Link
+                  key={game.gameId}
+                  href={`/?tab=moneyGames&gameType=scoreSquare&eventId=${game.eventId}`}
+                  className="block"
+                >
+                {/* Removed animated square background */}
+                <div className="mt-4 relative group">
+                    <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <span className="text-white text-sm font-semibold">👆 Tap to Play</span>
+                  
+                    </div>
+                    <div className="bg-gray-800 p-4 rounded-lg shadow-md z-0">
+                      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                        <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-0.5 opacity-30">
+                          {Array.from({ length: 25 }).map((_, i) => {
+                            const isEven = i % 2 === 0;
+                            const logoSrc = isEven ? homeTeamLogo : awayTeamLogo;
+                            return (
+                              <Image
+                                key={i}
+                                src={logoSrc || "/assets/defifa_spinner.gif"}
+                                alt="Team Logo"
+                                className="w-full h-full object-cover animate-pulse rounded-sm"
+                                width={40}
+                                height={40}
+                                style={{
+                                  animationDelay: `${i * 0.1}s`,
+                                  animationDuration: '1.5s',
+                                  animationName: 'fall-in',
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {(() => {
+                        
+                          const squarePrice = parseFloat(game.squarePrice) / 1e18;
+                          const deployerFee = parseFloat(game.deployerFeePercent || "0");
+                          const communityFeeRate = 4; // percent
+                          const netMultiplier = (100 - deployerFee - communityFeeRate) / 100;
+                          const totalPool = 25 * squarePrice;
+                          const netPrizePool = totalPool * netMultiplier;
+                          const refereeFee = totalPool * (deployerFee / 100);
+                          const communityFee = totalPool * (communityFeeRate / 100);
+                        
                         return (
-                          <Image
-                            key={i}
-                            src={logoSrc || "/assets/defifa_spinner.gif"}
-                            alt="Team Logo"
-                            className="w-full h-full object-cover animate-pulse rounded-sm"
-                            width={40}
-                            height={40}
-                            style={{
-                              animationDelay: `${i * 0.1}s`,
-                              animationDuration: '1.5s',
-                              animationName: 'fall-in',
-                            }}
-                          />
+                          <>
+                            <div className="flex justify-between items-center text-notWhite text-md font-bold border-b border-gray-700 pb-2">
+                              <div className="flex items-center gap-2">
+                                <FaTrophy className="text-orange-400" />
+                                <p>Prize Pool:</p>
+                              </div>
+                              <p className="text-limeGreenOpacity">{netPrizePool.toFixed(3)} Ξ</p>
+                            </div>
+                            <div className="flex items-center gap-2 mb-2 text-notWhite text-sm">
+                              <FarcasterAvatar address={game.referee} showName />  <p>is the referee</p>
+                            </div>
+                            <div className="flex justify-between items-center text-notWhite text-sm mt-3">
+                              <div className="flex items-center gap-4">
+                                <FaTicketAlt className="text-blue-400" />
+                                <p>Ticket Price:</p>
+                              </div>
+                              <p className="text-lightPurple">{squarePrice.toFixed(3)} Ξ</p>
+                            </div>
+
+                            <div className="flex justify-between items-center text-notWhite text-sm mt-2">
+                              <div className="flex items-left gap-2">
+                                <RefereeIcon size={20} />
+                                <p>Referee Bonus:</p>
+                              </div>
+                              <p className="text-deepPink">({refereeFee.toFixed(3)} Ξ)</p>
+                            </div>
+
+                            <div className="flex justify-between items-center text-notWhite text-sm mt-2">
+                              <div className="flex items-left gap-3">
+                                <p>🛠️</p>
+                                <p>Community 4%:</p>
+
+                            </div>
+                              <p className="text-deepPink">({communityFee.toFixed(3)} Ξ)</p>
+                            </div>
+                          </>
                         );
-                      })}
+                      })()}
                     </div>
                   </div>
-                  {(() => {
-                    
-                      const squarePrice = parseFloat(game.squarePrice) / 1e18;
-                      const deployerFee = parseFloat(game.deployerFeePercent || "0");
-                      const communityFeeRate = 4; // percent
-                      const netMultiplier = (100 - deployerFee - communityFeeRate) / 100;
-                      const totalPool = 25 * squarePrice;
-                      const netPrizePool = totalPool * netMultiplier;
-                      const refereeFee = totalPool * (deployerFee / 100);
-                      const communityFee = totalPool * (communityFeeRate / 100);
-                    
-                    return (
-                      <>
-                        <div className="flex justify-between items-center text-notWhite text-md font-bold border-b border-gray-700 pb-2">
-                          <div className="flex items-center gap-2">
-                            <FaTrophy className="text-orange-400" />
-                            <p>Prize Pool:</p>
-                          </div>
-                          <p className="text-limeGreenOpacity">{netPrizePool.toFixed(3)} Ξ</p>
-                        </div>
-                        <div className="flex items-center gap-2 mb-2 text-notWhite text-sm">
-                          <FarcasterAvatar address={game.referee} showName />  <p>is the referee</p>
-                        </div>
-                        <div className="flex justify-between items-center text-notWhite text-sm mt-3">
-                          <div className="flex items-center gap-4">
-                            <FaTicketAlt className="text-blue-400" />
-                            <p>Ticket Price:</p>
-                          </div>
-                          <p className="text-lightPurple">{squarePrice.toFixed(3)} Ξ</p>
-                        </div>
-
-                        <div className="flex justify-between items-center text-notWhite text-sm mt-2">
-                          <div className="flex items-left gap-2">
-                            <RefereeIcon size={20} />
-                            <p>Referee Bonus:</p>
-                          </div>
-                          <p className="text-deepPink">({refereeFee.toFixed(3)} Ξ)</p>
-                        </div>
-
-                        <div className="flex justify-between items-center text-notWhite text-sm mt-2">
-                          <div className="flex items-left gap-3">
-                            <p>🛠️</p>
-                            <p>Community 4%:</p>
-
-                        </div>
-                          <p className="text-deepPink">({communityFee.toFixed(3)} Ξ)</p>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </Link>
-          ))}
-          </div>
+                </Link>
+              ))}
+            </div>
           )}
           {/* <div className="mt-4">
             <ContestScoreSquare 
