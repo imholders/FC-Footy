@@ -476,23 +476,6 @@ const loadCasts = async () => {
         </div>
       )}
       
-      {/* Cast affordance - shown below casts */}
-      <div className="absolute bottom-0.5 left-0 right-0 px-4">
-        <ChatInput
-          message={message}
-          setMessage={setMessage}
-          onSubmit={postMessage}
-          showEmojiPanel={showEmojiPanel}
-          setShowEmojiPanel={setShowEmojiPanel}
-          selectedPack={selectedPack}
-          setSelectedPack={setSelectedPack}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          showPackDropdown={showPackDropdown}
-          setShowPackDropdown={setShowPackDropdown}
-          addEmoji={addEmoji}
-        />
-      </div>
       
       {/* Footer Desktop version - shown above content */}
       <div className="hidden md:block mt-2">
@@ -504,13 +487,29 @@ const loadCasts = async () => {
             Create room
           </button>
           <button className="px-4 py-2 flex-1 text-gray-500">
-            tip host
+            Tip host
           </button>
         </div>
       </div>
 
       {/* Footer Mobile version - fixed to bottom of screen */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-darkPurple border-t border-limeGreenOpacity z-20">
+        <div className="px-4 py-2">
+          <ChatInput
+            message={message}
+            setMessage={setMessage}
+            onSubmit={postMessage}
+            showEmojiPanel={showEmojiPanel}
+            setShowEmojiPanel={setShowEmojiPanel}
+            selectedPack={selectedPack}
+            setSelectedPack={setSelectedPack}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            showPackDropdown={showPackDropdown}
+            setShowPackDropdown={setShowPackDropdown}
+            addEmoji={addEmoji}
+          />
+        </div>
         <div className="flex justify-around">
           <button className="flex-1 py-3 px-2 text-center text-gray-500">
             <div className="flex flex-col items-center">
@@ -539,7 +538,7 @@ const loadCasts = async () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                 </svg>
               </div>
-              <span className="text-xs">tip host</span>
+              <span className="text-xs">Tip host</span>
             </div>
           </button>
         </div>

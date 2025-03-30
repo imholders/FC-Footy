@@ -53,8 +53,16 @@ export default function Main() {
     const load = async () => {
       const ctx = (await frameSdk.context) as FrameContext;
       setContext(ctx);
-      if (ctx.locations && ctx.locations.embedded) {
-        const url = new URL(ctx.locations.embedded);
+      if (ctx.location) {
+        const url = new URL(ctx.location.type);
+        const params = new URLSearchParams(url.search);
+        const newParams = new URLSearchParams(params);
+        newParams.set("tab", selectedTab);
+        console.log("newParams", newParams);
+        console.log("ctx", ctx);
+        console.log("url", url);
+        console.log("url.searchParams", url.searchParams);
+        console.log("url.searchParams.get", url.searchParams.get("tab"));
         setCustomSearchParams(url.searchParams);
       }
       console.log("frame context:", ctx);
