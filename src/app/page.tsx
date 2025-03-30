@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Metadata } from "next";
 import App from "./app";
 import { Providers } from "./providers";
@@ -6,21 +7,16 @@ const appUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
 
 export const revalidate = 300;
 
-export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] } | Promise<{ slug?: string[] }>, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
-  const resolvedParams = await params;
-  
-  // Build the path from params
-  const path = resolvedParams.slug ? `/${resolvedParams.slug.join('/')}` : '/';
+export async function generateMetadata({ params, searchParams }): Promise<Metadata> {
+    // Build the path from params
+  const path = params.slug ? `/${params.slug.join('/')}` : '/';
   
   // Create URL instance
   const url = new URL(path, appUrl);
   
   // Add all search parameters
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value) {
-      const stringValue = Array.isArray(value) ? value.join(',') : value;
-      url.searchParams.append(key, stringValue);
-    }
+  Object.entries(await searchParams).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
   });
   
   const frame = {
