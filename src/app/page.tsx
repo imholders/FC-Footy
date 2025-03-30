@@ -6,13 +6,18 @@ const appUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
 
 export const revalidate = 300;
 
-export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] }, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: { slug?: string[] } | Promise<{ slug?: string[] }>, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
+    const { searchParams } = props;
+    // Cast params to a promise to satisfy PageProps constraints
+    const params = props.params as Promise<{ slug?: string[] }>;
+    const resolvedParams = await params;
+    
     // Build the path from params
-    const path = params.slug ? `/${params.slug.join('/')}` : '/';
-  
+    const path = resolvedParams.slug ? `/${resolvedParams.slug.join('/')}` : '/';
+    
     // Create URL instance
     const url = new URL(path, appUrl);
-  
+    
     // Add all search parameters
     Object.entries(searchParams).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -23,7 +28,7 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
             }
         }
     });
-  
+    
     const frame = {
         version: "next",
         imageUrl: `${appUrl}/opengraph-image`,
@@ -38,7 +43,7 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
             },
         },
     };
-  
+    
     return {
         title: "FC Footy App",
         openGraph: {
