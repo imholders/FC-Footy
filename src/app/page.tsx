@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { Metadata } from "next";
 import App from "./app";
 import { Providers } from "./providers";
@@ -7,10 +6,9 @@ const appUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
 
 export const revalidate = 300;
 
-export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] } | Promise<{ slug?: string[] }>, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
-    // Resolve params if it's a promise and build the path
-    const resolvedParams = await Promise.resolve(params);
-    const path = resolvedParams.slug ? `/${resolvedParams.slug.join('/')}` : '/';
+export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] }, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
+    // Build the path from params
+    const path = params.slug ? `/${params.slug.join('/')}` : '/';
   
     // Create URL instance
     const url = new URL(path, appUrl);
@@ -18,8 +16,11 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
     // Add all search parameters
     Object.entries(searchParams).forEach(([key, value]) => {
         if (value !== undefined) {
-            const stringValue = Array.isArray(value) ? value.join(',') : value;
-            url.searchParams.append(key, stringValue);
+            if (Array.isArray(value)) {
+                value.forEach(v => url.searchParams.append(key, v));
+            } else {
+                url.searchParams.append(key, value);
+            }
         }
     });
   
@@ -37,8 +38,6 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
             },
         },
     };
-
-    console.log(frame);
   
     return {
         title: "FC Footy App",
