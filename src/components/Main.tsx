@@ -53,23 +53,26 @@ useEffect(() => {
   const load = async () => {
     const ctx = (await frameSdk.context) as FrameContext;
     setContext(ctx);
-    if (ctx.location && ctx.location?.type === "cast_embed") {
-      console.log("frame context:", ctx);
-      const url = new URL(ctx.location.type);
-      const params = new URLSearchParams(url.search);
-      const newParams = new URLSearchParams();
-      for (const [key, value] of params.entries()) {
-        if (key !== "tab") {
-          newParams.append(key, value);
-        }
-      }
-      newParams.append("tab", selectedTab);
-      setCustomSearchParams(url.searchParams);
-    }
-    console.log("frame context:", ctx);
-    frameSdk.actions.ready({});
+    // Temporarily disable ctx.location logic
+    // if (ctx.location && ctx.location?.type === "cast_embed") {
+    //   console.log("frame context:", ctx);
+    //   const url = new URL(ctx.location.type);
+    //   const params = new URLSearchParams(url.search);
+    //   const newParams = new URLSearchParams();
+    //   for (const [key, value] of params.entries()) {
+    //     if (key !== "tab") {
+    //       newParams.append(key, value);
+    //     }
+    //   }
+    //   newParams.append("tab", selectedTab);
+    //   setCustomSearchParams(url.searchParams);
+    // }
 
-    // 👇 Log the embed URL or any part of context
+    if (typeof window !== "undefined") {
+      setCustomSearchParams(new URLSearchParams(window.location.search));
+    }
+
+    frameSdk.actions.ready({});
   };
 
   if (frameSdk && !isSDKLoaded) {
