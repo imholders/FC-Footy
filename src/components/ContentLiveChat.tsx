@@ -251,7 +251,7 @@ const ChatInput = ({
 };
 
 const ContentLiveChat = () => {
-  const DEFAULT_CHANNEL_HASH = process.env.NEXT_PUBLIC_DEFAULT_CHANNEL_HASH || "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0";
+const DEFAULT_CHANNEL_HASH: `0x${string}` = (process.env.NEXT_PUBLIC_DEFAULT_CHANNEL_HASH || "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0") as `0x${string}`;
   const [casts, setCasts] = useState<CastType[]>([]);  const [message, setMessage] = useState("");
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const [selectedPack, setSelectedPack] = useState(emojiPacks[0].name);
