@@ -6,9 +6,11 @@ const appUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
 
 export const revalidate = 300;
 
-export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] }, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
-    // Build the path from params
-  const path = params.slug ? `/${params.slug.join('/')}` : '/';
+export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] } | Promise<{ slug?: string[] }>, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
+  const resolvedParams = await params;
+  
+  // Build the path from params
+  const path = resolvedParams.slug ? `/${resolvedParams.slug.join('/')}` : '/';
   
   // Create URL instance
   const url = new URL(path, appUrl);
