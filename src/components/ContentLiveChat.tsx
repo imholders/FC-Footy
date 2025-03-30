@@ -142,7 +142,7 @@ const ChatInput = ({
                 {emojiPacks.find((p) => p.name === selectedPack)?.label}
               </button>
               {showPackDropdown && (
-                <ul className="absolute z-20 top-full mt-2 w-48 bg-gray-800 rounded shadow-lg max-h-60 overflow-y-auto">
+                <ul className="absolute z-20 top-full mt-2 w-48 bg-gray-800 border border-lightPurple rounded shadow-lg max-h-60 overflow-y-auto">
                   {emojiPacks.map((pack) => (
                     <li
                       key={pack.name}
@@ -164,7 +164,7 @@ const ChatInput = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search emojis..."
-              className="text-sm px-2 py-1 rounded bg-gray-800 text-white w-full"
+              className="text-sm px-2 py-1 rounded bg-gray-800 border border-limeGreenOpacity text-white w-full"
             />
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
@@ -216,6 +216,12 @@ const ChatInput = ({
       <textarea
         ref={textareaRef}
         value={message}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSubmit();
+          }
+        }}
         onChange={(e) => {
           const newValue = e.target.value;
           if (newValue.length <= 390) {
@@ -245,13 +251,14 @@ const ChatInput = ({
 };
 
 const ContentLiveChat = () => {
+  const DEFAULT_CHANNEL_HASH = process.env.NEXT_PUBLIC_DEFAULT_CHANNEL_HASH || "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0";
   const [casts, setCasts] = useState<CastType[]>([]);  const [message, setMessage] = useState("");
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const [selectedPack, setSelectedPack] = useState(emojiPacks[0].name);
   const [searchTerm, setSearchTerm] = useState("");
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
-  const [channel] = useState("match:0x4ab7832ecd907494ddfce5802c0cec1c00430c5a");
+  const [channel] = useState(`match:${DEFAULT_CHANNEL_HASH}`);
   const [parentCastUrl, setParentCastUrl] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -263,6 +270,7 @@ const ContentLiveChat = () => {
       setParentCastUrl(null);
     }
   }, [channel]);
+
   const { authenticated, user } = usePrivy();
   
   useEffect(() => {
@@ -292,6 +300,27 @@ const ContentLiveChat = () => {
     fetchUserTeamLogoAndEmoji();
   }, [user?.farcaster?.fid]);
 
+  useEffect(() => {
+    // Wait briefly to ensure the DOM is updated with new casts
+    const timer = setTimeout(() => {
+      if (chatContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+        if (isAtBottom) {
+          chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+        }
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [casts]);
+  
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [casts]);
+  
   const { login } = useLogin();
   const { getFarcasterSignerPublicKey, signFarcasterMessage } = useFarcasterSigner();
   const { requestFarcasterSignerFromWarpcast } = useFarcasterSigner();
@@ -306,16 +335,14 @@ const loadCasts = async () => {
   const enriched = await fetchCastByHash();
   setCasts(enriched);
 
-  if (chatContainerRef.current) {
-    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
-    if (isAtBottom) {
-      // Scroll to bottom only if the user hasn't intentionally scrolled up
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-      // Optionally, you can also call:
-      // messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
+      if (isAtBottom) {
+        // Scroll to bottom only if the user hasn't intentionally scrolled up
+        chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+      }
     }
-  }
 };
   
   useEffect(() => {
@@ -329,12 +356,6 @@ const loadCasts = async () => {
     loadCasts();
   }, []);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchCastByHash();
-    }, 5000);
-    return () => clearInterval(intervalId);
-  }, []);
 
   useEffect(() => {
     fetchCastByHash();
@@ -367,7 +388,7 @@ const loadCasts = async () => {
             value: message,
             embeds: [],
           },
-          parent: { type: "cast", hash:  `0x4ab7832ecd907494ddfce5802c0cec1c00430c5a`, fid: BigInt(fid) },
+          parent: { type: "cast", hash: DEFAULT_CHANNEL_HASH, fid: BigInt(fid) },
           isLong: false,
         },
       }, {
@@ -396,8 +417,7 @@ const loadCasts = async () => {
 
   // console.log("background logo:", backgroundLogo   );
   return (
-    <div className="h-screen relative pt-4 pb-0 px-4 rounded-lg flex flex-col bg-darkPurple/80">
-      {backgroundLogo && (
+    <div className="h-full relative pt-4 pb-0 px-4 rounded-lg flex flex-col bg-darkPurple/80 overflow-hidden">      {backgroundLogo && (
         <div
           className="absolute top-4 left-0 right-0 bottom-0 z-0 bg-no-repeat bg-contain bg-center opacity-20 pointer-events-none"
           style={{
@@ -426,8 +446,7 @@ const loadCasts = async () => {
       </div>
 
       {/* Room casts */}
-      <div ref={chatContainerRef} className="w-full h-[calc(100vh-160px)] overflow-y-auto space-y-3 scroll-pb-44">        
-        {casts.map((cast, idx) => (
+      <div ref={chatContainerRef} className="w-full flex-1 overflow-y-auto space-y-3 scroll-pb-44 scroll-smooth overscroll-contain">        {casts.map((cast, idx) => (
           <div key={idx} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
               <div className="relative w-6 h-6">
                 <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
@@ -493,8 +512,8 @@ const loadCasts = async () => {
       </div>
 
       {/* Footer Mobile version - fixed to bottom of screen */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-darkPurple border-t border-limeGreenOpacity z-20">
-        <div className="px-4 py-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-darkPurple border-limeGreenOpacity z-20">
+        <div className="px-10 py-2 ml-3">       {/* hack need to fix when containers get wider */}
           <ChatInput
             message={message}
             setMessage={setMessage}
@@ -510,12 +529,13 @@ const loadCasts = async () => {
             addEmoji={addEmoji}
           />
         </div>
-        <div className="flex justify-around">
+        {/* <div className="flex justify-around">
           <button className="flex-1 py-3 px-2 text-center text-gray-500">
             <div className="flex flex-col items-center">
               <div className="mb-1">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9a3 3 0 1 1 6 0c0 1.5-1.5 2.5-2 3l-1 1"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01"></path>
                 </svg>
               </div>
               <span className="text-xs">Find match</span>
@@ -525,7 +545,8 @@ const loadCasts = async () => {
             <div className="flex flex-col items-center">
               <div className="mb-1">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9a3 3 0 1 1 6 0c0 1.5-1.5 2.5-2 3l-1 1"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01"></path>
                 </svg>
               </div>
               <span className="text-xs">Create room</span>
@@ -534,14 +555,14 @@ const loadCasts = async () => {
           <button className="flex-1 py-3 px-2 text-center text-gray-500">
             <div className="flex flex-col items-center">
               <div className="mb-1">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
-                </svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 1.343-3 3 0 .432.112.83.304 1.184M12 8c1.657 0 3 1.343 3 3 0 .432-.112.83-.304 1.184M12 2v2m0 16v2m-4-4h-2m10 0h-2m-4-4H6m12 0h-2"/>
+              </svg>
               </div>
               <span className="text-xs">Tip host</span>
             </div>
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

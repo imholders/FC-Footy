@@ -33,7 +33,7 @@ const ContentTab = () => {
         </button>
       </div>
 
-      <div className="bg-purplePanel text-lightPurple rounded-lg p-2">
+      <div className="bg-purplePanel text-lightPurple rounded-lg p-2 h-[380px] overflow-hidden">        
         {selectedTab === "liveChat" && <ContentLiveChat />}
         {selectedTab === "falseNine" && <ContentFalseNine />}
       </div>

@@ -42,41 +42,41 @@ export default function Main() {
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
-  // UI state
-  const [context, setContext] = useState<FrameContext>();
-  const [errorMessage, setErrorMessage] = useState("");
+// UI state
+const [context, setContext] = useState<FrameContext>();
+const [errorMessage, setErrorMessage] = useState("");
 
-  // Loading states
-  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-    
-  useEffect(() => {
-    const load = async () => {
-      const ctx = (await frameSdk.context) as FrameContext;
-      setContext(ctx);
-      if (ctx.location) {
-        const url = new URL(ctx.location.type);
-        const params = new URLSearchParams(url.search);
-        const newParams = new URLSearchParams(params);
-        newParams.set("tab", selectedTab);
-        console.log("newParams", newParams);
-        console.log("ctx", ctx);
-        console.log("url", url);
-        console.log("url.searchParams", url.searchParams);
-        console.log("url.searchParams.get", url.searchParams.get("tab"));
-        setCustomSearchParams(url.searchParams);
+// Loading states
+const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+ 
+useEffect(() => {
+  const load = async () => {
+    const ctx = (await frameSdk.context) as FrameContext;
+    setContext(ctx);
+    if (ctx.location && ctx.location?.type === "cast_embed") {
+      const url = new URL(ctx.location.type);
+      const params = new URLSearchParams(url.search);
+      const newParams = new URLSearchParams();
+      for (const [key, value] of params.entries()) {
+        if (key !== "tab") {
+          newParams.append(key, value);
+        }
       }
-      console.log("frame context:", ctx);
-      frameSdk.actions.ready({});
-
-      // 👇 Log the embed URL or any part of context
-    };
-
-    if (frameSdk && !isSDKLoaded) {
-      setIsSDKLoaded(true);
-      load();
+      newParams.append("tab", selectedTab);
+      setCustomSearchParams(url.searchParams);
     }
-  }, [isSDKLoaded]);
-  
+    console.log("frame context:", ctx);
+    frameSdk.actions.ready({});
+
+    // 👇 Log the embed URL or any part of context
+  };
+
+  if (frameSdk && !isSDKLoaded) {
+    setIsSDKLoaded(true);
+    load();
+  }
+}, [isSDKLoaded, selectedTab]);
+ 
 // Login to Frame with Privy automatically
   useEffect(() => {
     if (ready && !authenticated) {
@@ -91,7 +91,7 @@ export default function Main() {
       login();
     } else if (ready && authenticated) {
     }
-  }, [ready, authenticated]);
+  }, [ready, authenticated, initLoginToFrame, loginToFrame]);
 
   useEffect(() => {
     if (showH2) {
@@ -115,7 +115,7 @@ export default function Main() {
     ) {
       createWallet();
     }
-  }, [authenticated, ready, user]);
+  }, [authenticated, createWallet, ready, user]);
 
   const handleLogin = async () => {
     setIsAuthenticating(true);

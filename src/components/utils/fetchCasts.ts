@@ -1,4 +1,5 @@
 import { getTeamPreferences } from "~/lib/kv";
+const DEFAULT_CHANNEL_HASH = process.env.NEXT_PUBLIC_DEFAULT_CHANNEL_HASH || "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0";
 import axios from "axios";
 
 export interface CastType {
@@ -25,7 +26,7 @@ export const fetchCastByHash = async (): Promise<CastType[]> => {
             "accept": "application/json",
           },
           params: {
-            identifier: '0x4ab7832ecd907494ddfce5802c0cec1c00430c5a',
+            identifier: DEFAULT_CHANNEL_HASH, // The Gantry hash in /football
             type: "hash",
             reply_depth: 1,
             include_chronological_parent_casts: false,
