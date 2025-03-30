@@ -7,55 +7,56 @@ const appUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
 
 export const revalidate = 300;
 
-export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] }, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
-    // Build the path from params
-  const path = params.slug ? `/${params.slug.join('/')}` : '/';
+export async function generateMetadata({ params, searchParams }: { params: { slug?: string[] } | Promise<{ slug?: string[] }>, searchParams: { [key: string]: string | string[] | undefined } }): Promise<Metadata> {
+    // Resolve params if it's a promise and build the path
+    const resolvedParams = await Promise.resolve(params);
+    const path = resolvedParams.slug ? `/${resolvedParams.slug.join('/')}` : '/';
   
-  // Create URL instance
-  const url = new URL(path, appUrl);
+    // Create URL instance
+    const url = new URL(path, appUrl);
   
-  // Add all search parameters
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value !== undefined) {
-      const stringValue = Array.isArray(value) ? value.join(',') : value;
-      url.searchParams.append(key, stringValue);
-    }
-  });
+    // Add all search parameters
+    Object.entries(searchParams).forEach(([key, value]) => {
+        if (value !== undefined) {
+            const stringValue = Array.isArray(value) ? value.join(',') : value;
+            url.searchParams.append(key, stringValue);
+        }
+    });
   
-  const frame = {
-    version: "next",
-    imageUrl: `${appUrl}/opengraph-image`,
-    button: {
-      title: "FC Footy App",
-      action: {
-        type: "launch_frame",
-        name: "FC Footy App",
-        url: url.href,
-        splashImageUrl: `${appUrl}/defifa_spinner.gif`,
-        splashBackgroundColor: "#010513",
-      },
-    },
-  };
+    const frame = {
+        version: "next",
+        imageUrl: `${appUrl}/opengraph-image`,
+        button: {
+            title: "FC Footy App",
+            action: {
+                type: "launch_frame",
+                name: "FC Footy App",
+                url: url.href,
+                splashImageUrl: `${appUrl}/defifa_spinner.gif`,
+                splashBackgroundColor: "#010513",
+            },
+        },
+    };
 
-  console.log(frame);
+    console.log(frame);
   
-  return {
-    title: "FC Footy App",
-    openGraph: {
-      title: "FC Footy App",
-      description: "FC Footy App: Live Match Summaries, Fantasy League, Banter bot, Collectables & Contests",
-    },
-    other: {
-      "fc:frame": JSON.stringify(frame),
-    },
-  };
+    return {
+        title: "FC Footy App",
+        openGraph: {
+            title: "FC Footy App",
+            description: "FC Footy App: Live Match Summaries, Fantasy League, Banter bot, Collectables & Contests",
+        },
+        other: {
+            "fc:frame": JSON.stringify(frame),
+        },
+    };
 }
 
 export default function Home() {
 
-  return (
-    <Providers>
-      <App />
-    </Providers>
-  );
+    return (
+        <Providers>
+            <App />
+        </Providers>
+    );
 }
