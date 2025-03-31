@@ -6,6 +6,7 @@ import {
   getTeamPreferences,
   setTeamPreferences,
 } from "../lib/kvPerferences";
+import { FrameContext } from "@farcaster/frame-node";
 
 interface Team {
   name: string;
@@ -19,7 +20,7 @@ const altImage =`${appUrl}/512.png`
 // Helper function to generate a unique ID for each team.
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
 
-const Settings = () => {
+const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
   const [teams, setTeams] = useState<Team[]>([]);
   // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
@@ -32,11 +33,16 @@ const Settings = () => {
   );
 
   useEffect(() => {
-    if (farcasterAccount) {
-      const fid = Number(farcasterAccount.fid);
+    let fid: number | null = null;
+    if (ctx && ctx.user && ctx.user.fid) {
+      fid = Number(ctx.user.fid);
+    } else if (farcasterAccount) {
+      fid = Number(farcasterAccount.fid);
+    }
+
+    if (fid !== null) {
       getTeamPreferences(fid)
         .then((teamsFromRedis) => {
-          // console.log("Existing team preferences:", teamsFromRedis);
           if (teamsFromRedis) {
             setFavTeams(teamsFromRedis);
           }
@@ -46,15 +52,15 @@ const Settings = () => {
         });
     }
     fetchTeamLogos().then((data) => setTeams(data));
-  }, [farcasterAccount]);
+  }, [ctx, farcasterAccount]);
 
   const handleRowClick = async (team: Team) => {
-    if (!farcasterAccount) {
+    const fid = ctx && ctx.user ? Number(ctx.user.fid) : farcasterAccount ? Number(farcasterAccount.fid) : null;
+    if (fid === null) {
       console.error("User not authenticated");
       return;
     }
     const teamId = getTeamId(team);
-    const fid = Number(farcasterAccount.fid);
 
     // Prevent new clicks if any update is already in progress.
     if (loadingTeamIds.length > 0) return;
@@ -65,10 +71,8 @@ const Settings = () => {
     let updatedFavTeams: string[];
 
     if (favTeams.includes(teamId)) {
-      // console.log(`Removing ${team.name} (${teamId}) from notifications`);
       updatedFavTeams = favTeams.filter((id) => id !== teamId);
     } else {
-      // console.log(`Adding ${team.name} (${teamId}) as favorite`);
       updatedFavTeams = [...favTeams, teamId];
     }
 
@@ -108,6 +112,11 @@ const Settings = () => {
 
   return (
     <div className="w-full h-full overflow-y-auto">
+      {ctx && ctx.user && (
+        <div className="mb-2 text-center text-white font-semibold">
+          Hello, {ctx.user.username || ctx.user.name}
+        </div>
+      )}
       {favTeams.length > 0 && (
         <div className="mb-2 text-center text-notWhite font-semibold">
           Favorite Team: {favTeamObj ? favTeamObj.name : favTeams[0]}{" "}
@@ -171,13 +180,6 @@ const Settings = () => {
                       {favTeams.includes(teamId) && (
                         <span role="img" aria-label="notification" className="ml-2">
                           🔔
-                          {/* <Image
-                            src="/banny_goal.png"
-                            alt="goal emoji"
-                            className="inline-block w-6 h-6"
-                            width={30}
-                            height={30}
-                          /> */}
                         </span>
                       )}
                     </div>

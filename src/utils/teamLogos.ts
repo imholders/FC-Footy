@@ -31,7 +31,7 @@ export const getTeamLogo = (teamName: string, leagueCode: string): string => {
   let leaguePrefix = 'generic';
   if (leagueCode === 'usa') {
     leaguePrefix = 'usa.1';
-  } else if (leagueCode === 'eng') {
+  } else if (leagueCode === 'eng.1') {
     leaguePrefix = 'premier-league';
   } else if (leagueCode === 'esp') {
     leaguePrefix = 'la-liga';

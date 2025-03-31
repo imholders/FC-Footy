@@ -11,6 +11,7 @@ import ContentTab from "./ContentTab";
 import Scout from "./Scout";
 import Settings from "./Settings";
 import MoneyGames from "./MoneyGames";
+import ForYouComponent from "./ForYouComponent";
 import { tabDisplayMap } from "../lib/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
@@ -26,7 +27,7 @@ export default function Main() {
   const router = useRouter();
   const [customSearchParams, setCustomSearchParams] = useState<URLSearchParams | null>(null);
   const effectiveSearchParams = searchParams || customSearchParams;
-  const selectedTab = effectiveSearchParams?.get("tab") || "matches";
+  const selectedTab = effectiveSearchParams?.get("tab") || "forYou";
   const selectedLeague = effectiveSearchParams?.get("league") || "eng.1";
 
   // Now handleTabChange matches React.Dispatch<SetStateAction<string>>
@@ -38,7 +39,7 @@ export default function Main() {
   };
 
   const handleLeagueChange = (league: string) => {
-    const tab = effectiveSearchParams?.get("tab") || "matches";
+    const tab = effectiveSearchParams?.get("tab") || "forYou";
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
@@ -178,7 +179,8 @@ useEffect(() => {
           {selectedTab === "moneyGames" && <MoneyGames />}
           {selectedTab === "extraTime" && <ContentTab />}
           {selectedTab === "settings" && <Settings />}
-          {!["matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"].includes(selectedTab) && (
+          {selectedTab === "forYou" && <ForYouComponent />}
+          {!["forYou", "matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"].includes(selectedTab) && (
             <div className="text-center text-lg text-fontRed">Coming soon...</div>
           )}
       </div>
