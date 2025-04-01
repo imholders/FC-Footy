@@ -3,6 +3,7 @@ const DEFAULT_CHANNEL_HASH = process.env.NEXT_PUBLIC_DEFAULT_CHANNEL_HASH || "0x
 import axios from "axios";
 
 export interface CastType {
+  timestamp: number;
   hash: string;
   text: string;
   author: {

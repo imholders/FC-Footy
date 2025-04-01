@@ -22,7 +22,6 @@ export default function Main() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { ready, authenticated, user, createWallet, login} = usePrivy();
   const { initLoginToFrame, loginToFrame } = useLoginToFrame();
-  const [showH2, setShowH2] = useState(true); // State to control visibility of h2
   const searchParams = useSearchParams();
   const router = useRouter();
   const [customSearchParams, setCustomSearchParams] = useState<URLSearchParams | null>(null);
@@ -44,7 +43,7 @@ export default function Main() {
   };
 
 // UI state
-const [context, setContext] = useState<FrameContext>();
+//const [context, setContext] = useState<FrameContext>();
 const [errorMessage, setErrorMessage] = useState("");
 
 // Loading states
@@ -53,7 +52,8 @@ const [isSDKLoaded, setIsSDKLoaded] = useState(false);
 useEffect(() => {
   const load = async () => {
     const ctx = (await frameSdk.context) as FrameContext;
-    setContext(ctx);
+    //setContext(ctx);
+
     // Temporarily disable ctx.location logic
     // if (ctx.location && ctx.location?.type === "cast_embed") {
     //   console.log("frame context:", ctx);
@@ -99,16 +99,6 @@ useEffect(() => {
   }, [ready, authenticated, initLoginToFrame, loginToFrame]);
 
   useEffect(() => {
-    if (showH2) {
-      const timer = setTimeout(() => {
-        setShowH2(false); // Hide h2 after 3 seconds
-      }, 3000);
-
-      return () => clearTimeout(timer); // Cleanup the timer if component is unmounted
-    }
-  }, [showH2]);
-
-  useEffect(() => {
     if (
       authenticated &&
       ready &&
@@ -142,11 +132,6 @@ useEffect(() => {
   // Render main app UI
   return (
     <div className="w-[380px] mx-auto py-4 px-2">
-      {context === undefined && showH2 && (
-        <h2 className="text-2xl font-bold text-center text-notWhite">
-          The Footy App. Match previews, summaries, fantasy EPL, analysis and money games.
-        </h2>
-      )}
       {!authenticated ? (
         <div className="text-center text-lg text-fontRed">
           <button
