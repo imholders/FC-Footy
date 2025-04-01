@@ -7,7 +7,7 @@ import { getTeamPreferences } from "~/lib/kv";
 import { fetchCastByHash } from "./utils/fetchCasts";
 
 interface CastType {
-  timestamp: string;
+  timestamp: number;
   author: {
     pfp_url: string;
     username: string;
