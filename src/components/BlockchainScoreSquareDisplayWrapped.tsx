@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useContractRead } from 'wagmi';
-
+// At the top of the file (with other imports), add:
+import { toPng } from 'html-to-image';
+import { useRef } from 'react';
 // Import context
 import { useGameContext } from '../context/GameContext';
 
@@ -59,6 +61,7 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
   const { isLoading: isTxPending, isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({
     hash: txHash ? (txHash as `0x${string}`) : undefined,
   });
+  const metadataRef = useRef<HTMLDivElement>(null); 
 
   const isReferee = gameDataState?.referee?.toLowerCase() === address?.toLowerCase();
   const gameState = gameDataState
@@ -207,6 +210,70 @@ useEffect(() => {
     }
   };
 
+const handleShareClick = async () => {
+  if (!gameDataState || !gameDataState.gameId) {
+    alert("Game ID is not available.");
+    return;
+  }
+
+  // Generate an image from the GameMetadataCard using html-to-image
+  let imageUrl = "";
+  if (metadataRef.current) {
+    try {
+      const dataUrl = await toPng(metadataRef.current, { cacheBust: true });
+      // Convert the dataUrl to a blob
+      const blob = await (await fetch(dataUrl)).blob();
+      
+      // Upload the blob to your image upload endpoint
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: blob,
+      });
+      const uploadResult = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error('Image upload failed');
+      
+      // Construct the image URL (adjust the gateway URL as needed)
+      
+      imageUrl = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${uploadResult.ipfsHash}`);
+    } catch (error) {
+      console.error("Error generating image: ", error);
+      alert("Failed to generate image for sharing.");
+      return;
+    }
+  }
+
+  // Construct the share URL as before
+  const baseUrl = window.location.origin + window.location.pathname;
+  const shareUrl = `${baseUrl}?tab=moneyGames&gameType=scoreSquare&gameId=${gameDataState.gameId}`;
+  
+  
+  const ticketsAvailable = gameDataState.ticketsSold !== undefined ? 25 - gameDataState.ticketsSold : 0;
+  
+  let fomoMessage = "Grab yours now before they're gone!";
+  if (ticketsAvailable <= 5) {
+    fomoMessage = "Hurry up, almost sold out!";
+  }
+  
+  // Prepare the share text
+  const funText = `⚽ Score Square - The Footy Final Score Lottery! ⚽
+
+Don't miss out only ${ticketsAvailable} tickets remaining 
+${fomoMessage}
+Try your luck. Halftime score gets 25 percent of the pool, final score winner gets 75 percent.`;
+  
+  const text = encodeURIComponent(funText);
+  console.log("Text to share: ", text);
+  const encodedShareUrl = encodeURIComponent(shareUrl);
+  
+  // Build the Warpcast intent URL including both the share URL and the generated image URL (if available)
+  const castIntentUrl = `https://warpcast.com/~/compose?text=${text}&embeds[]=${encodedShareUrl}${
+    imageUrl ? `&embeds[]=${imageUrl}` : ''
+  }`;
+  
+  window.open(castIntentUrl, '_blank');
+};
+// ... (rest of the file code)
+
   const isGridReady =
   gameDataState &&
   Array.isArray(derivedPlayers) &&
@@ -246,8 +313,9 @@ useEffect(() => {
           </div>
         ) : (
           <div>
-            <GameMetadataCard derivedPlayers={derivedPlayers} />
-    
+            <div ref={metadataRef}>
+              <GameMetadataCard derivedPlayers={derivedPlayers} />
+            </div>    
             {!isReferee && gameDataState.ticketsSold < 25 && (
               <RefereeCard referee={gameDataState.referee} />
             )}
@@ -277,6 +345,14 @@ useEffect(() => {
                 className="text-deepPink hover:text-fontRed focus:outline-none transition font-medium"
               >
                 {showInstructions ? "Hide Instructions" : "Show Instructions"}
+              </button>
+
+              {/* New Share Button */}
+              <button
+                onClick={handleShareClick}
+                className="bg-deepPink text-white px-3 py-1 rounded hover:bg-fontRed transition font-medium"
+              >
+                Share
               </button>
             </div>
 
