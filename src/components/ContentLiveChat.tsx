@@ -7,6 +7,7 @@ import { getTeamPreferences } from "~/lib/kv";
 import { fetchCastByHash } from "./utils/fetchCasts";
 
 interface CastType {
+  timestamp: string;
   author: {
     pfp_url: string;
     username: string;
@@ -333,16 +334,20 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 
 const loadCasts = async () => {
   const enriched = await fetchCastByHash();
-  setCasts(enriched);
+  // Attach a timestamp to each cast if it doesn't already have one
+  const enrichedWithTimestamp = enriched.map(cast => ({
+    ...cast,
+    timestamp: cast.timestamp || Date.now()
+  }));
+  setCasts(enrichedWithTimestamp);
 
-    if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
-      if (isAtBottom) {
-        // Scroll to bottom only if the user hasn't intentionally scrolled up
-        chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
-      }
+  if (chatContainerRef.current) {
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
+    if (isAtBottom) {
+      chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
     }
+  }
 };
   
   useEffect(() => {
@@ -446,9 +451,10 @@ const loadCasts = async () => {
       </div>
 
       {/* Room casts */}
-      <div ref={chatContainerRef} className="w-full flex-1 overflow-y-auto space-y-3 scroll-pb-44 scroll-smooth overscroll-contain">        {casts.map((cast, idx) => (
-          <div key={idx} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
-              <div className="relative w-6 h-6">
+      <div ref={chatContainerRef} className="w-full flex-1 overflow-y-auto space-y-3 scroll-pb-44 scroll-smooth overscroll-contain">        
+      {casts.map((cast) => (
+        <div key={`${cast.author.fid}-${cast.timestamp}`} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
+          <div className="relative w-6 h-6">
                 <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
                 {cast.teamBadgeUrl && (
                   <img
