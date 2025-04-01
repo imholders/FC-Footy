@@ -53,7 +53,7 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
   const { data, loading, error } = useGames(20, 0);
   const activeGames = data?.games
   ? data.games
-      .filter((game: SubgraphGame) => !game.prizeClaimed && !game.refunded)
+      .filter((game: SubgraphGame) => !game.prizeClaimed && !game.refunded && game.eventId.startsWith("eng_1"))
       .sort((a: SubgraphGame, b: SubgraphGame) => {
         const leagueA = parseEventId(a.eventId)?.leagueId || "";
         const leagueB = parseEventId(b.eventId)?.leagueId || "";

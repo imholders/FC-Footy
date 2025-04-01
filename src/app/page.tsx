@@ -37,10 +37,10 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   console.log(frame);
   
   return {
-    title: "FC Footy App",
+    title: "Footy App",
     openGraph: {
-      title: "FC Footy App",
-      description: "FC Footy App: Live Match Summaries, Fantasy League, Banter bot, Collectables & Contests",
+      title: "Footy App",
+      description: "⚽️ match previews, summaries, Farcaster fantasy league, money games & onchain fan experiences",
     },
     other: {
       "fc:frame": JSON.stringify(frame),

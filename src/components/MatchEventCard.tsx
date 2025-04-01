@@ -489,7 +489,6 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                   href={`/?tab=moneyGames&gameType=scoreSquare&eventId=${game.eventId}`}
                   className="block"
                 >
-                {/* Removed animated square background */}
                 <div className="mt-4 relative group">
                     <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <span className="text-white text-sm font-semibold">👆 Tap to Play</span>
@@ -497,7 +496,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                     </div>
                     <div className="bg-gray-800 p-4 rounded-lg shadow-md z-0">
                       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-                        <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-0.5 opacity-30">
+                        <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-0.5 opacity-5">
                           {Array.from({ length: 25 }).map((_, i) => {
                             const isEven = i % 2 === 0;
                             const logoSrc = isEven ? homeTeamLogo : awayTeamLogo;
@@ -506,7 +505,7 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                                 key={i}
                                 src={logoSrc || "/assets/defifa_spinner.gif"}
                                 alt="Team Logo"
-                                className="w-full h-full object-cover animate-pulse rounded-sm"
+                                className="w-full h-full object-cover rounded-sm"
                                 width={40}
                                 height={40}
                                 style={{

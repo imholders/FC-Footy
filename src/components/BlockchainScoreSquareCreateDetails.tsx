@@ -396,20 +396,17 @@ const BlockchainScoreSquareCreateDetails: React.FC<BlockchainScoreSquareCreateDe
           <select 
             value={selectedSportId}
             onChange={(e) => {
+              // Even though there's only one option, we keep the handler to maintain consistency
               setSelectedSportId(e.target.value);
               setSelectedMatchId(""); // Reset selected match when changes
               setHomeTeam("");
               setAwayTeam("");
-              setBlockchainEventId(""); // ✅ Reset event ID when changes
+              setBlockchainEventId(""); // Reset event ID when changes
             }}
             className="border border-limeGreenOpacity p-2 rounded w-full bg-darkPurple text-lightPurple"
             required
           >
-            {sportsData.map(sport => (
-              <option key={sport.sportId} value={sport.sportId}>
-                {sport.name}
-              </option>
-            ))}
+            <option value="eng.1">EPL (eng.1)</option>
           </select>
         </div>
         
