@@ -7,7 +7,7 @@ import { getTeamPreferences } from "~/lib/kv";
 import { fetchCastByHash } from "./utils/fetchCasts";
 
 interface CastType {
-  timestamp: any;
+  timestamp: number;
   author: {
     pfp_url: string;
     username: string;
@@ -453,9 +453,9 @@ const loadCasts = async () => {
 
       {/* Room casts */}
       <div ref={chatContainerRef} className="w-full flex-1 overflow-y-auto space-y-3 scroll-pb-44 scroll-smooth overscroll-contain">        
-        {casts.map((cast, idx) => (
-            <div key={`${cast.author.fid}-${cast.timestamp}`} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
-              <div className="relative w-6 h-6">
+      {casts.map((cast) => (
+        <div key={`${cast.author.fid}-${cast.timestamp}`} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
+          <div className="relative w-6 h-6">
                 <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
                 {cast.teamBadgeUrl && (
                   <img
