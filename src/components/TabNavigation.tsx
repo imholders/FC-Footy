@@ -1,11 +1,8 @@
-// components/TabNavigation.tsx
 import React from 'react';
 
 interface TabNavigationProps {
   selectedTab: string;
   setSelectedTab: React.Dispatch<React.SetStateAction<string>>;
-  selectedLeague: string;
-  setSelectedLeague: (league: string) => void;
   tabDisplayMap: Record<string, string>;
 }
 
@@ -15,10 +12,10 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   tabDisplayMap,
 }) => {
   // Use keys without spaces here
-  const tabs = ["matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"];
+  const tabs = ["forYou", "matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"];
 
   return (
-    <div className="flex overflow-x-auto overflow-y-hidden space-x-4 mb-4 sticky top-0 z-50 bg-darkPurple py-2 shadow-md w-full">
+    <div className="flex overflow-x-auto overflow-y-hidden space-x-4 mb-1 sticky top-0 z-50 bg-darkPurple py-2 shadow-md w-full">
       {tabs.map((tab) => (
         <div
           key={tab}

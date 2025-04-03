@@ -6,7 +6,6 @@ import {
   getTeamPreferences,
   setTeamPreferences,
 } from "../lib/kvPerferences";
-import { FrameContext } from "@farcaster/frame-node";
 
 interface Team {
   name: string;
@@ -14,18 +13,21 @@ interface Team {
   league: string;
   logoUrl: string;
 }
+
+interface SettingsFollowClubsProps {
+  onSave?: (newFavorites: string[]) => void;
+}
+
 const appUrl = process.env.NEXT_PUBLIC_URL;
 const altImage =`${appUrl}/512.png`
 
 // Helper function to generate a unique ID for each team.
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
 
-const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
+const SettingsFollowClubs: React.FC<SettingsFollowClubsProps> = ({ onSave }) => {
   const [teams, setTeams] = useState<Team[]>([]);
-  // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  // loadingTeamIds will store the team IDs currently processing an update.
   const [loadingTeamIds, setLoadingTeamIds] = useState<string[]>([]);
   const { user } = usePrivy();
   const farcasterAccount = user?.linkedAccounts.find(
@@ -33,14 +35,8 @@ const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
   );
 
   useEffect(() => {
-    let fid: number | null = null;
-    if (ctx && ctx.user && ctx.user.fid) {
-      fid = Number(ctx.user.fid);
-    } else if (farcasterAccount) {
-      fid = Number(farcasterAccount.fid);
-    }
-
-    if (fid !== null) {
+    if (farcasterAccount) {
+      const fid = Number(farcasterAccount.fid);
       getTeamPreferences(fid)
         .then((teamsFromRedis) => {
           if (teamsFromRedis) {
@@ -52,37 +48,40 @@ const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
         });
     }
     fetchTeamLogos().then((data) => setTeams(data));
-  }, [ctx, farcasterAccount]);
+  }, [farcasterAccount]);
 
   const handleRowClick = async (team: Team) => {
-    const fid = ctx && ctx.user ? Number(ctx.user.fid) : farcasterAccount ? Number(farcasterAccount.fid) : null;
-    if (fid === null) {
+    if (!farcasterAccount) {
       console.error("User not authenticated");
       return;
     }
     const teamId = getTeamId(team);
+    const fid = Number(farcasterAccount.fid);
 
-    // Prevent new clicks if any update is already in progress.
+    // Prevent new clicks if any update is in progress
     if (loadingTeamIds.length > 0) return;
 
-    // Mark this team as loading.
+    // Mark this team as loading
     setLoadingTeamIds((prev) => [...prev, teamId]);
 
     let updatedFavTeams: string[];
 
     if (favTeams.includes(teamId)) {
+      // Remove team
       updatedFavTeams = favTeams.filter((id) => id !== teamId);
     } else {
+      // Add team
       updatedFavTeams = [...favTeams, teamId];
     }
 
     await setTeamPreferences(fid, updatedFavTeams);
     setFavTeams(updatedFavTeams);
-
-    // Remove the loading state for this team.
+    onSave?.(updatedFavTeams);
+    
+    // Remove the loading state for this team
     setLoadingTeamIds((prev) => prev.filter((id) => id !== teamId));
-
-    // Clear the search term if any.
+    
+    // Clear search term if needed
     if (searchTerm.trim() !== "") {
       setSearchTerm("");
     }
@@ -112,11 +111,6 @@ const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
 
   return (
     <div className="w-full h-full overflow-y-auto">
-      {ctx && ctx.user && (
-        <div className="mb-2 text-center text-white font-semibold">
-          Hello, {ctx.user.username || ctx.user.name}
-        </div>
-      )}
       {favTeams.length > 0 && (
         <div className="mb-2 text-center text-notWhite font-semibold">
           Favorite Team: {favTeamObj ? favTeamObj.name : favTeams[0]}{" "}
@@ -150,7 +144,7 @@ const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
             <thead className="bg-darkPurple">
               <tr className="text-fontRed text-center border-b border-limeGreenOpacity">
                 <th className="py-1 text-left font-medium">
-                  Select clubs to get notifications
+                  Select your favorite team first
                 </th>
                 <th className="py-1 text-center font-medium"></th>
                 <th className="py-1 text-right font-medium"></th>
@@ -211,4 +205,4 @@ const Settings: React.FC<{ ctx?: FrameContext }> = ({ ctx }) => {
   );
 };
 
-export default Settings;
+export default SettingsFollowClubs;

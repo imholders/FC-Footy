@@ -16,7 +16,7 @@ import { tabDisplayMap } from "../lib/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
 // import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
-import { FrameContext } from "@farcaster/frame-node";
+// import { FrameContext } from "@farcaster/frame-node";
 
 export default function Main() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -51,12 +51,12 @@ const [isSDKLoaded, setIsSDKLoaded] = useState(false);
  
 useEffect(() => {
   const load = async () => {
-    const ctx = (await frameSdk.context) as FrameContext;
+    // const ctx = (await frameSdk.context) as FrameContext;
     //setContext(ctx);
 
     // Temporarily disable ctx.location logic
     // if (ctx.location && ctx.location?.type === "cast_embed") {
-    //   console.log("frame context:", ctx);
+      // console.log("frame context:", ctx);
     //   const url = new URL(ctx.location.type);
     //   const params = new URLSearchParams(url.search);
     //   const newParams = new URLSearchParams();
@@ -147,8 +147,6 @@ useEffect(() => {
       <TabNavigation
           selectedTab={selectedTab}
           setSelectedTab={handleTabChange}
-          selectedLeague={selectedLeague}
-          setSelectedLeague={handleLeagueChange}
           tabDisplayMap={tabDisplayMap}
         />
         <div className="bg-darkPurple p-4 rounded-md text-white">

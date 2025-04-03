@@ -55,26 +55,46 @@ export const followUser = async (fid: number, viewerFid: number) => {
     return res.ok;
   };
   
-  export const unfollowUser = async (fid: number, viewerFid: number) => {
-    const res = await fetch("https://api.neynar.com/v2/farcaster/user/unfollow", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.NEXT_PUBLIC_NEYNAR_API_KEY || "",
-      },
-      body: JSON.stringify({
-        fid: viewerFid,
-        target_fid: fid,
-      }),
-    });
-    return res.ok;
-  };
+export const unfollowUser = async (fid: number, viewerFid: number) => {
+  const res = await fetch("https://api.neynar.com/v2/farcaster/user/unfollow", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.NEXT_PUBLIC_NEYNAR_API_KEY || "",
+    },
+    body: JSON.stringify({
+      fid: viewerFid,
+      target_fid: fid,
+    }),
+  });
+  return res.ok;
+};
 
-  export const fetchCheckIfFollowing = async (
-    viewerFid: number,
-    targetFid: number
-  ): Promise<boolean> => {
-    const res = await fetchFollowers(viewerFid);
-    if (!res) return false;
-    return res.users.some((user) => user.fid === targetFid);
-  };
+export const fetchCheckIfFollowing = async (
+  viewerFid: number,
+  targetFid: number
+): Promise<boolean> => {
+  const res = await fetchFollowers(viewerFid);
+  if (!res) return false;
+  return res.users.some((user) => user.fid === targetFid);
+};
+
+export async function fetchMutualFollowers(viewerFid: number, fanFids: number[]): Promise<Record<number, boolean>> {
+  const url = `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fanFids.join(",")}&viewer_fid=${viewerFid}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "x-api-key": process.env.NEXT_PUBLIC_NEYNAR_API_KEY || "",
+    },
+  });
+
+  const data = await res.json();
+
+  const result: Record<number, boolean> = {};
+  for (const user of data.users) {
+    result[user.fid] = user.viewer_context?.following || false;
+  }
+
+  return result;
+}
