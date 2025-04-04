@@ -11,7 +11,7 @@ import ContentTab from "./ContentTab";
 import Scout from "./Scout";
 import Settings from "./Settings";
 import MoneyGames from "./MoneyGames";
-import ForYouComponent from "./ForYouComponent";
+import ForYou from "./ForYou";
 import { tabDisplayMap } from "../lib/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
@@ -162,7 +162,7 @@ useEffect(() => {
           {selectedTab === "moneyGames" && <MoneyGames />}
           {selectedTab === "extraTime" && <ContentTab />}
           {selectedTab === "settings" && <Settings />}
-          {selectedTab === "forYou" && <ForYouComponent />}
+          {selectedTab === "forYou" && <ForYou />}
           {!["forYou", "matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"].includes(selectedTab) && (
             <div className="text-center text-lg text-fontRed">Coming soon...</div>
           )}

@@ -16,8 +16,7 @@ export interface CastType {
   // Add any additional fields as needed
 }
 
-
-export const fetchCastByHash = async (): Promise<CastType[]> => {
+export const fetchCastByHash = async (roomHash: string = DEFAULT_CHANNEL_HASH): Promise<CastType[]> => {
   try {
       const response = await axios.get(
         `https://api.neynar.com/v2/farcaster/cast/conversation`,
@@ -27,7 +26,7 @@ export const fetchCastByHash = async (): Promise<CastType[]> => {
             "accept": "application/json",
           },
           params: {
-            identifier: DEFAULT_CHANNEL_HASH, // The Gantry hash in /football
+            identifier: roomHash, // The Gantry hash in /football
             type: "hash",
             reply_depth: 1,
             include_chronological_parent_casts: false,

@@ -5,6 +5,7 @@ import { useCastCreateMutation } from "~/hooks/fhub/useCastCreateMutation";
 import { emojiPacks } from "~/components/utils/customEmojis";
 import { getTeamPreferences } from "~/lib/kv";
 import { fetchCastByHash } from "./utils/fetchCasts";
+import { teamsByLeague, getTeamFullName } from "./utils/fetchTeamLogos";
 
 interface CastType {
   timestamp: number;
@@ -230,7 +231,7 @@ const ChatInput = ({
           }
         }}
         maxLength={390}
-        placeholder="Type your cast... (use footy::smile for custom emoji)"
+        placeholder="Type your cast... (tap ⚽️ for custom emojis)"
         className="w-full px-4 py-2 rounded-md border border-limeGreenOpacity bg-gray-800 text-white outline-none resize-none overflow-hidden pb-12"
       />
       <button
@@ -250,9 +251,15 @@ const ChatInput = ({
     </div>
   );
 };
-
-const ContentLiveChat = () => {
 const DEFAULT_CHANNEL_HASH: `0x${string}` = (process.env.NEXT_PUBLIC_DEFAULT_CHANNEL_HASH || "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0") as `0x${string}`;
+
+const ContentLiveChat = ({ teamId }: { teamId: string }) => {
+  const leagueKey = teamId.split("-")[0];
+  const abbr = teamId.split("-")[1];
+  const teamName = getTeamFullName(abbr, leagueKey);
+  const roomHash =
+    teamsByLeague[leagueKey]?.find((t) => t.abbr === abbr)?.roomHash ??
+    DEFAULT_CHANNEL_HASH;
   const [casts, setCasts] = useState<CastType[]>([]);  
   const [message, setMessage] = useState("");
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
@@ -260,7 +267,14 @@ const DEFAULT_CHANNEL_HASH: `0x${string}` = (process.env.NEXT_PUBLIC_DEFAULT_CHA
   const [searchTerm, setSearchTerm] = useState("");
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
-  const [channel] = useState(`match:${DEFAULT_CHANNEL_HASH}`);
+  console.log("ContentLiveChat received roomHash:", roomHash);
+  const [channel, setChannel] = useState(`match:${roomHash}`);
+  console.log("Initial channel state:", `match:${roomHash}`);
+  
+  useEffect(() => {
+    console.log("Updating channel from roomHash:", roomHash);
+    setChannel(`match:${roomHash}`);
+  }, [roomHash]);
   const [parentCastUrl, setParentCastUrl] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -330,26 +344,25 @@ const DEFAULT_CHANNEL_HASH: `0x${string}` = (process.env.NEXT_PUBLIC_DEFAULT_CHA
     (account) => account.type === "farcaster"
   );
 
-const createCast = useCastCreateMutation();
-const messagesEndRef = useRef<HTMLDivElement>(null);
+  const createCast = useCastCreateMutation();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-const loadCasts = async () => {
-  const enriched = await fetchCastByHash();
-  // Attach a timestamp to each cast if it doesn't already have one
-  const enrichedWithTimestamp = enriched.map(cast => ({
-    ...cast,
-    timestamp: cast.timestamp || Date.now()
-  }));
-  setCasts(enrichedWithTimestamp);
+  const loadCasts = async () => {
+    const enriched = await fetchCastByHash(roomHash);  // Attach a timestamp to each cast if it doesn't already have one
+    const enrichedWithTimestamp = enriched.map(cast => ({
+      ...cast,
+      timestamp: cast.timestamp || Date.now()
+    }));
+    setCasts(enrichedWithTimestamp);
 
-  if (chatContainerRef.current) {
-    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
-    if (isAtBottom) {
-      chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
+      if (isAtBottom) {
+        chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+      }
     }
-  }
-};
+  };
   
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -360,11 +373,6 @@ const loadCasts = async () => {
   
   useEffect(() => {
     loadCasts();
-  }, []);
-
-
-  useEffect(() => {
-    fetchCastByHash();
   }, []);
 
   const postMessage = async () => {
@@ -394,7 +402,7 @@ const loadCasts = async () => {
             value: message,
             embeds: [],
           },
-          parent: { type: "cast", hash: DEFAULT_CHANNEL_HASH, fid: BigInt(fid) },
+          parent: { type: "cast", hash: roomHash as `0x${string}`, fid: BigInt(fid) },
           isLong: false,
         },
       }, {
@@ -435,20 +443,7 @@ const loadCasts = async () => {
       
       {/* Room name - shown above casts */}
       <div className="flex justify-start gap-2 mb-2 text-md">
-          🏟️ The Gantry
-    {/*     <button
-          onClick={() => {
-            setChannel("football");
-            loadCasts("football");
-          }}
-          className={`px-3 py-1 rounded text-sm ${
-            channel === "football"
-              ? "bg-deepPink text-black font-bold"
-              : "bg-gray-700 text-white"
-          }`}
-        >
-          ⚽ General Chat
-        </button> */}
+        {roomHash === DEFAULT_CHANNEL_HASH ? '🏟️ The Gantry' : `🏟️ ${teamName}`}
       </div>
 
       {/* Room casts */}

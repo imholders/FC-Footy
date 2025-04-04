@@ -34,7 +34,7 @@ const ContentTab = () => {
       </div>
 
       <div className="bg-purplePanel text-lightPurple rounded-lg p-2 h-[380px] overflow-hidden">        
-        {selectedTab === "liveChat" && <ContentLiveChat />}
+        {selectedTab === "liveChat" && <ContentLiveChat teamId="NA"/>}
         {selectedTab === "falseNine" && <ContentFalseNine />}
       </div>
     </div>

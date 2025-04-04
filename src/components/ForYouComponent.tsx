@@ -7,6 +7,7 @@ import { getFansForTeam } from '../lib/kvPerferences'; // Assuming these functio
 import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchMutualFollowers } from './utils/fetchCheckIfFollowing';
 import SettingsFollowClubs from './SettingsFollowClubs';
+import ContentLiveChat from './ContentLiveChat';
 
 type TeamLink = {
   href: string;
@@ -14,7 +15,7 @@ type TeamLink = {
   shortText?: string;
 };
 
-const ForYouComponent: React.FC = () => {
+const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: boolean) => void }> = ({ showLiveChat, setShowLiveChat }) => {
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ const ForYouComponent: React.FC = () => {
   const [loadingFollowers, setLoadingFollowers] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
   const [cachedTeamFollowers, setCachedTeamFollowers] = useState<Record<string, Array<{ fid: number; pfp: string; mutual: boolean }>>>({});
-
+  
   const fetchFavoriteTeams = async () => {
     try {
       const farcasterAccount = user?.linkedAccounts.find(
@@ -100,15 +101,15 @@ const ForYouComponent: React.FC = () => {
         const mutualMap = await fetchMutualFollowers(currentFid, numericFids);
         
         const userDatas = await Promise.all(numericFids.map(fid => fetchFanUserData(fid)));
-        const fans = numericFids.map((fid, index) => {
+        const fans = numericFids.reduce<Array<{ fid: number; pfp: string; mutual: boolean }>>((acc, fid, index) => {
           const userData = userDatas[index];
           const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
           if (pfp) {
             const mutual = mutualMap[fid];
-            return { fid, pfp, mutual };
+            acc.push({ fid, pfp, mutual });
           }
-          return null;
-        }).filter(Boolean);
+          return acc;
+        }, []);
         
         if (!cancelled) {
           // Cache the fetched fans for this team
@@ -207,18 +208,26 @@ const ForYouComponent: React.FC = () => {
       </div>
     );
   }
-
+  if (showLiveChat && selectedTeam) {
+    return (      
+      <div className="h-[380px] overflow-hidden rounded-lg relative">
+        <ContentLiveChat teamId={selectedTeam} />
+      </div>
+    );
+  }
   return (
-    <div>
+    <div className="bg-purplePanel text-lightPurple rounded-lg p-1 overflow-hidden">
       <h2 className='text-notWhite'>Teams you follow</h2>
-      <div className="flex overflow-x-auto gap-4 py-4">
+      <div className="flex overflow-x-auto gap-4 py-2">
         {favoriteTeams.map((teamId) => {
           return (
             <div
               key={teamId}
               onClick={() => setSelectedTeam(teamId)}
-              className={`flex-none w-[120px] border ${
-                teamId === selectedTeam ? "border-limeGreenOpacity shadow-[0_0_10px_2px_rgba(173,255,47,0.5)]" : "border-lightPurple"
+              className={`relative flex-none w-[120px] border ${
+                teamId === selectedTeam
+                  ? "border-limeGreenOpacity shadow-[0_0_10px_2px_rgba(173,255,47,0.5)]"
+                  : "border-lightPurple"
               } rounded-lg p-2 text-center bg-purplePanel cursor-pointer`}
             >
               <img
@@ -245,11 +254,11 @@ const ForYouComponent: React.FC = () => {
         return (
           <div className="relative rounded-lg overflow-hidden">
             <div className="mt-2">
-              <h3 className="text-notWhite mb-1">Team Followers ({fanCount})</h3>
+              <h3 className="text-notWhite mb-1 m">Team Followers ({fanCount})</h3>
               {loadingFollowers ? (
                 <div className="text-sm text-gray-400 animate-pulse">Loading followers...</div>
               ) : (
-                <div className="grid grid-cols-10 gap-1">
+                <div className="grid grid-cols-10 gap-1 ml-1 mr-1">
                   {favoriteTeamFans.length > 0 ? (
                     favoriteTeamFans.map((fan) => (
                       <button
@@ -270,35 +279,23 @@ const ForYouComponent: React.FC = () => {
                 </div>
               )}
             </div>
-{/*             <div className="mt-6">
-              <h3 className="text-notWhite mb-1">Fan memorabilia (8) mints</h3>
-            </div>
-            <div className="aspect-w-16 aspect-h-9 w-full">
-               <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/JvkcfYolhAw?si=2EkYxV2lxjeMydAp"
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <h3 className="text-notWhite mt-2 mb-2">AI context-container (soon tm)</h3>
-            <div className="space-y-1">
-              {links.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-lightPurple hover:underline block text-sm"
-                >
-                  {link.text || link.shortText}
-                </a>
-              ))}
-            </div> */}
-          </div>
+                    {/* New affordance added below the team followers */}
+        <div className="mt-4 text-center">
+          <p className="text-lightPurple text-sm">
+            Connect with fellow fans and share your passion for the beautiful game!
+          </p>
+          <button
+            onClick={() => {
+              // Optionally, you can extract league/abbr or log them
+              setShowLiveChat(true);
+            }}
+            className="mt-2 inline-block px-4 py-2 bg-deepPink hover:bg-fontRed text-white rounded-lg"
+          >
+            Join the chat
+          </button>
+        </div>
+        {showLiveChat && selectedTeam && <ContentLiveChat teamId={selectedTeam} />}
+      </div>
         );
       })()}
     </div>
