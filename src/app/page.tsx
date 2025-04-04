@@ -33,8 +33,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       },
     },
   };
-
-  console.log(frame);
   
   return {
     title: "Footy App",

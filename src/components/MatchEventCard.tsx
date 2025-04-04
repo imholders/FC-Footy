@@ -239,72 +239,90 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
   };
 
   // Fetch team fan avatars.
-  useEffect(() => {
-    const fetchTeamFanAvatars = async () => {
-      setIsLoadingFans(true);
-      const team1 = event.competitions[0]?.competitors[0]?.team;
-      const team2 = event.competitions[0]?.competitors[1]?.team;
-      if (team1 && team2) {
-        try {
-          const team1Data = teams.find(
-            (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
-          );
-          const team2Data = teams.find(
-            (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
-          );
-          const team1UniqueId = team1Data
-            ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}`
-            : team1.abbreviation.toLowerCase();
-          const team2UniqueId = team2Data
-            ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}`
-            : team2.abbreviation.toLowerCase();
+// Fetch team fan avatars (refactored for speed)
+useEffect(() => {
+  const fetchTeamFanAvatars = async () => {
+    setIsLoadingFans(true);
+    const team1 = event.competitions[0]?.competitors[0]?.team;
+    const team2 = event.competitions[0]?.competitors[1]?.team;
+    if (!team1 || !team2) {
+      console.error("Match teams not defined.");
+      setIsLoadingFans(false);
+      return;
+    }
+    try {
+      // Determine unique IDs using league info if available.
+      const team1Data = teams.find(
+        (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
+      );
+      const team2Data = teams.find(
+        (t) => t.abbreviation.toLowerCase() === team2.abbreviation.toLowerCase()
+      );
+      const team1UniqueId = team1Data
+        ? `${team1Data.league}-${team1Data.abbreviation.toLowerCase()}`
+        : team1.abbreviation.toLowerCase();
+      const team2UniqueId = team2Data
+        ? `${team2Data.league}-${team2Data.abbreviation.toLowerCase()}`
+        : team2.abbreviation.toLowerCase();
 
-          const fanFidsTeam1 = await getFansForTeam(team1UniqueId);
-          if (fanCacheTeam1.current.size > 0) {
-            setMatchFanAvatarsTeam1(Array.from(fanCacheTeam1.current.entries()).map(([fid, pfp]) => ({ fid, pfp })));
-          } else {
-            setMatchFanAvatarsTeam1([]);
-            for (const fid of fanFidsTeam1) {
-              const userData = await fetchFanUserData(fid);
-              const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
-              if (userData && pfp) {
-                fanCacheTeam1.current.set(fid, pfp);
-                setMatchFanAvatarsTeam1((prev) => [...prev, { fid, pfp }]);
-              }
-            }
-          }
+      // Fetch fan FIDs for both teams in parallel.
+      const [fanFidsTeam1Raw, fanFidsTeam2Raw] = await Promise.all([
+        getFansForTeam(team1UniqueId),
+        getFansForTeam(team2UniqueId),
+      ]);
 
-          const fanFidsTeam2 = await getFansForTeam(team2UniqueId);
-          if (fanCacheTeam2.current.size > 0) {
-            setMatchFanAvatarsTeam2(Array.from(fanCacheTeam2.current.entries()).map(([fid, pfp]) => ({ fid, pfp })));
-          } else {
-            setMatchFanAvatarsTeam2([]);
-            for (const fid of fanFidsTeam2) {
-              const userData = await fetchFanUserData(fid);
-              const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
-              if (userData && pfp) {
-                fanCacheTeam2.current.set(fid, pfp);
-                setMatchFanAvatarsTeam2((prev) => [...prev, { fid, pfp }]);
-            }
-          }
+      // Ensure fan IDs are numbers.
+      const fanFidsTeam1 = fanFidsTeam1Raw.map(fid => Number(fid));
+      const fanFidsTeam2 = fanFidsTeam2Raw.map(fid => Number(fid));
 
-          hasLoadedFans.current = true;
+      // Combine both arrays and deduplicate.
+      const allFids = Array.from(new Set([...fanFidsTeam1, ...fanFidsTeam2]));
+
+      // Fetch all user data concurrently.
+      const userDataResults = await Promise.all(
+        allFids.map((fid) => fetchFanUserData(fid))
+      );
+
+      // Build a map from fid to profile picture.
+      const fidToPfp = new Map<number, string>();
+      userDataResults.forEach((userData, index) => {
+        const fid = allFids[index];
+        const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
+        if (userData && pfp) {
+          fidToPfp.set(fid, pfp);
         }
-      } catch (error) {
-          console.error("Error fetching match fan avatars:", error);
-        } finally {
-          setIsLoadingFans(false);
-        }
-      } else {
-        console.error("Match teams not defined.");
-        setIsLoadingFans(false);
+      });
+
+      // Rebuild avatars for each team using the combined map.
+      const team1Avatars = fanFidsTeam1
+        .filter((fid) => fidToPfp.has(fid))
+        .map((fid) => ({ fid, pfp: fidToPfp.get(fid)! }));
+      const team2Avatars = fanFidsTeam2
+        .filter((fid) => fidToPfp.has(fid))
+        .map((fid) => ({ fid, pfp: fidToPfp.get(fid)! }));
+
+      // Update caches if not already populated.
+      if (fanCacheTeam1.current.size === 0) {
+        team1Avatars.forEach(({ fid, pfp }) => fanCacheTeam1.current.set(fid, pfp));
       }
-    };
+      if (fanCacheTeam2.current.size === 0) {
+        team2Avatars.forEach(({ fid, pfp }) => fanCacheTeam2.current.set(fid, pfp));
+      }
+
+      setMatchFanAvatarsTeam1(team1Avatars);
+      setMatchFanAvatarsTeam2(team2Avatars);
+      hasLoadedFans.current = true;
+    } catch (error) {
+      console.error("Error fetching match fan avatars:", error);
+    } finally {
+      setIsLoadingFans(false);
+    }
+  };
 
   if (showDetails && !hasLoadedFans.current) {
     fetchTeamFanAvatars();
   }
-  }, [showDetails, event, teams]);
+}, [showDetails, event, teams]);
 
   const combinedFanAvatars = Array.from(
     new Map(
@@ -314,6 +332,15 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
       ])
     ).values()
   );
+
+  const getBorderColor = (fid: number): string => {
+    const inTeam1 = matchFanAvatarsTeam1.some((fan) => fan.fid === fid);
+    const inTeam2 = matchFanAvatarsTeam2.some((fan) => fan.fid === fid);
+    if (inTeam1 && inTeam2) return 'border-purple-500'; // Shared follower color
+    if (inTeam1) return 'border-blue-500'; // Team 1 color Home
+    if (inTeam2) return 'border-yellow-500';  // Team 2 color Away
+    return 'border-gray-400'; // Fallback
+  };
 
   return (
     <div key={event.id} className="sidebar">
@@ -406,6 +433,20 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
             <h3 className="text-notWhite font-semibold mb-1">
               Following ({combinedFanAvatars.length})
             </h3>
+          <div className="flex items-center gap-4 text-xs text-lightPurple mb-2">
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 border-2 border-blue-500 rounded-full"></span>
+              <span>Home</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 border-2 border-yellow-500 rounded-full"></span>
+              <span>Away</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 border-2 border-purple-500 rounded-full"></span>
+              <span>Both</span>
+            </div>
+          </div>
           <div className="grid grid-cols-10 gap-1">
               {isLoadingFans ? (
                 <span className="text-sm text-gray-400">Loading{loadingDots}</span>
@@ -413,13 +454,15 @@ const MatchEventCard: React.FC<EventCardProps> = ({ event, sportId }) => {
                 combinedFanAvatars.length > 0 ? (
                   combinedFanAvatars.map((fan) => (
                     <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
-                      <Image
-                        src={fan.pfp}
-                        alt={`Fan ${fan.fid}`}
-                        width={20}
-                        height={20}
-                        className="rounded-full"
-                      />
+                      <div className={`rounded-full border-2 ${getBorderColor(fan.fid)}`}>
+                        <Image
+                          src={fan.pfp}
+                          alt={`Fan ${fan.fid}`}
+                          width={20}
+                          height={20}
+                          className="rounded-full aspect-square object-cover"
+                        />
+                      </div>
                     </Link>
                   ))
                 ) : (

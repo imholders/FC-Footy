@@ -101,3 +101,13 @@ export async function getFansForTeamAbbr(teamAbbr: string): Promise<number[]> {
   //console.log(`Found ${fanFids.length} unique fans for "${teamAbbr}"`);
   return fanFids;
 }
+
+/**
+ * Get the number of fans for a given team using Redis's SCARD command.
+ * @param teamId - The unique team ID (e.g. "eng.1-ars")
+ * @returns The count of fan FIDs
+ */
+export async function getFanCountForTeam(teamId: string): Promise<number> {
+  const count = await redis.scard(`fc-footy:team-fans:${teamId}`);
+  return count;
+}

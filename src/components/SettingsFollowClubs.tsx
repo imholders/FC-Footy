@@ -13,18 +13,21 @@ interface Team {
   league: string;
   logoUrl: string;
 }
+
+interface SettingsFollowClubsProps {
+  onSave?: (newFavorites: string[]) => void;
+}
+
 const appUrl = process.env.NEXT_PUBLIC_URL;
 const altImage =`${appUrl}/512.png`
 
 // Helper function to generate a unique ID for each team.
 const getTeamId = (team: Team) => `${team.league}-${team.abbreviation}`;
 
-const Settings = () => {
+const SettingsFollowClubs: React.FC<SettingsFollowClubsProps> = ({ onSave }) => {
   const [teams, setTeams] = useState<Team[]>([]);
-  // favTeams now stores unique team IDs (e.g. "eng.1-ars")
   const [favTeams, setFavTeams] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  // loadingTeamIds will store the team IDs currently processing an update.
   const [loadingTeamIds, setLoadingTeamIds] = useState<string[]>([]);
   const { user } = usePrivy();
   const farcasterAccount = user?.linkedAccounts.find(
@@ -36,7 +39,6 @@ const Settings = () => {
       const fid = Number(farcasterAccount.fid);
       getTeamPreferences(fid)
         .then((teamsFromRedis) => {
-          // console.log("Existing team preferences:", teamsFromRedis);
           if (teamsFromRedis) {
             setFavTeams(teamsFromRedis);
           }
@@ -56,29 +58,30 @@ const Settings = () => {
     const teamId = getTeamId(team);
     const fid = Number(farcasterAccount.fid);
 
-    // Prevent new clicks if any update is already in progress.
+    // Prevent new clicks if any update is in progress
     if (loadingTeamIds.length > 0) return;
 
-    // Mark this team as loading.
+    // Mark this team as loading
     setLoadingTeamIds((prev) => [...prev, teamId]);
 
     let updatedFavTeams: string[];
 
     if (favTeams.includes(teamId)) {
-      // console.log(`Removing ${team.name} (${teamId}) from notifications`);
+      // Remove team
       updatedFavTeams = favTeams.filter((id) => id !== teamId);
     } else {
-      // console.log(`Adding ${team.name} (${teamId}) as favorite`);
+      // Add team
       updatedFavTeams = [...favTeams, teamId];
     }
 
     await setTeamPreferences(fid, updatedFavTeams);
     setFavTeams(updatedFavTeams);
-
-    // Remove the loading state for this team.
+    onSave?.(updatedFavTeams);
+    
+    // Remove the loading state for this team
     setLoadingTeamIds((prev) => prev.filter((id) => id !== teamId));
-
-    // Clear the search term if any.
+    
+    // Clear search term if needed
     if (searchTerm.trim() !== "") {
       setSearchTerm("");
     }
@@ -141,7 +144,7 @@ const Settings = () => {
             <thead className="bg-darkPurple">
               <tr className="text-fontRed text-center border-b border-limeGreenOpacity">
                 <th className="py-1 text-left font-medium">
-                  Select clubs to get notifications
+                  Select your favorite team first
                 </th>
                 <th className="py-1 text-center font-medium"></th>
                 <th className="py-1 text-right font-medium"></th>
@@ -171,13 +174,6 @@ const Settings = () => {
                       {favTeams.includes(teamId) && (
                         <span role="img" aria-label="notification" className="ml-2">
                           🔔
-                          {/* <Image
-                            src="/banny_goal.png"
-                            alt="goal emoji"
-                            className="inline-block w-6 h-6"
-                            width={30}
-                            height={30}
-                          /> */}
                         </span>
                       )}
                     </div>
@@ -209,4 +205,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default SettingsFollowClubs;

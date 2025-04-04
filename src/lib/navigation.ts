@@ -1,4 +1,5 @@
 export const tabDisplayMap: Record<string, string> = {
+    forYou: "For You",
     matches: "Matches",
     contests: "Contests",
     scoutPlayers: "Scout Players",

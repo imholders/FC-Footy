@@ -11,22 +11,22 @@ import ContentTab from "./ContentTab";
 import Scout from "./Scout";
 import Settings from "./Settings";
 import MoneyGames from "./MoneyGames";
+import ForYou from "./ForYou";
 import { tabDisplayMap } from "../lib/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
 // import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
-import { FrameContext } from "@farcaster/frame-node";
+// import { FrameContext } from "@farcaster/frame-node";
 
 export default function Main() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { ready, authenticated, user, createWallet, login} = usePrivy();
   const { initLoginToFrame, loginToFrame } = useLoginToFrame();
-  const [showH2, setShowH2] = useState(true); // State to control visibility of h2
   const searchParams = useSearchParams();
   const router = useRouter();
   const [customSearchParams, setCustomSearchParams] = useState<URLSearchParams | null>(null);
   const effectiveSearchParams = searchParams || customSearchParams;
-  const selectedTab = effectiveSearchParams?.get("tab") || "matches";
+  const selectedTab = effectiveSearchParams?.get("tab") || "forYou";
   const selectedLeague = effectiveSearchParams?.get("league") || "eng.1";
 
   // Now handleTabChange matches React.Dispatch<SetStateAction<string>>
@@ -38,12 +38,12 @@ export default function Main() {
   };
 
   const handleLeagueChange = (league: string) => {
-    const tab = effectiveSearchParams?.get("tab") || "matches";
+    const tab = effectiveSearchParams?.get("tab") || "forYou";
     router.push(`/?tab=${tab}&league=${league}`);
   };
 
 // UI state
-const [context, setContext] = useState<FrameContext>();
+//const [context, setContext] = useState<FrameContext>();
 const [errorMessage, setErrorMessage] = useState("");
 
 // Loading states
@@ -51,11 +51,12 @@ const [isSDKLoaded, setIsSDKLoaded] = useState(false);
  
 useEffect(() => {
   const load = async () => {
-    const ctx = (await frameSdk.context) as FrameContext;
-    setContext(ctx);
+    // const ctx = (await frameSdk.context) as FrameContext;
+    //setContext(ctx);
+
     // Temporarily disable ctx.location logic
     // if (ctx.location && ctx.location?.type === "cast_embed") {
-    //   console.log("frame context:", ctx);
+      // console.log("frame context:", ctx);
     //   const url = new URL(ctx.location.type);
     //   const params = new URLSearchParams(url.search);
     //   const newParams = new URLSearchParams();
@@ -98,16 +99,6 @@ useEffect(() => {
   }, [ready, authenticated, initLoginToFrame, loginToFrame]);
 
   useEffect(() => {
-    if (showH2) {
-      const timer = setTimeout(() => {
-        setShowH2(false); // Hide h2 after 3 seconds
-      }, 3000);
-
-      return () => clearTimeout(timer); // Cleanup the timer if component is unmounted
-    }
-  }, [showH2]);
-
-  useEffect(() => {
     if (
       authenticated &&
       ready &&
@@ -141,11 +132,6 @@ useEffect(() => {
   // Render main app UI
   return (
     <div className="w-[380px] mx-auto py-4 px-2">
-      {context === undefined && showH2 && (
-        <h2 className="text-2xl font-bold text-center text-notWhite">
-          The Footy App. Match previews, summaries, fantasy EPL, analysis and money games.
-        </h2>
-      )}
       {!authenticated ? (
         <div className="text-center text-lg text-fontRed">
           <button
@@ -161,8 +147,6 @@ useEffect(() => {
       <TabNavigation
           selectedTab={selectedTab}
           setSelectedTab={handleTabChange}
-          selectedLeague={selectedLeague}
-          setSelectedLeague={handleLeagueChange}
           tabDisplayMap={tabDisplayMap}
         />
         <div className="bg-darkPurple p-4 rounded-md text-white">
@@ -178,7 +162,8 @@ useEffect(() => {
           {selectedTab === "moneyGames" && <MoneyGames />}
           {selectedTab === "extraTime" && <ContentTab />}
           {selectedTab === "settings" && <Settings />}
-          {!["matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"].includes(selectedTab) && (
+          {selectedTab === "forYou" && <ForYou />}
+          {!["forYou", "matches", "contests", "scoutPlayers", "moneyGames", "extraTime", "settings"].includes(selectedTab) && (
             <div className="text-center text-lg text-fontRed">Coming soon...</div>
           )}
       </div>

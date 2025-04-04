@@ -3,79 +3,80 @@ interface Team {
   abbreviation: string;
   league: string;
   logoUrl: string;
+  roomHash: string;
 }
 
 // Team abbreviations and names grouped by league
-export const teamsByLeague: { [league: string]: { team: string; abbr: string }[] } = {
+export const teamsByLeague: { [league: string]: { team: string; abbr: string; roomHash?: string }[] } = {
   "eng.1": [
-    { team: "Arsenal", abbr: "ars" },
-    { team: "Aston Villa", abbr: "avl" },
-    { team: "Bournemouth", abbr: "bou" },
-    { team: "Brentford", abbr: "bre" },
-    { team: "Brighton", abbr: "bha" },
-    { team: "Chelsea", abbr: "che" },
-    { team: "Crystal Palace", abbr: "cry" },
-    { team: "Everton", abbr: "eve" },
-    { team: "Fulham", abbr: "ful" },
-    { team: "Ipswich", abbr: "ips" },
-    { team: "Leicester", abbr: "lei" },
-    { team: "Liverpool", abbr: "liv" },
-    { team: "Man City", abbr: "mnc" },
-    { team: "Man Utd", abbr: "man" },
-    { team: "Newcastle", abbr: "new" },
-    { team: "Nott'm Forest", abbr: "nfo" },
-    { team: "Southampton", abbr: "sou" },
-    { team: "Spurs", abbr: "tot" },
-    { team: "West Ham", abbr: "whu" },
-    { team: "Wolves", abbr: "wol" }
+    { team: "Arsenal", abbr: "ars", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Aston Villa", abbr: "avl", roomHash: "0xec615487f9c2c53263b4fd548ea298814c70343a" },
+    { team: "Bournemouth", abbr: "bou", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Brentford", abbr: "bre", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Brighton", abbr: "bha", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Chelsea", abbr: "che", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Crystal Palace", abbr: "cry", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Everton", abbr: "eve", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Fulham", abbr: "ful", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Ipswich", abbr: "ips", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Leicester", abbr: "lei", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Liverpool", abbr: "liv", roomHash: "0x8e54d2497fbc73f1c8ff40ad8338afacef692364" },
+    { team: "Man City", abbr: "mnc", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Man Utd", abbr: "man", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Newcastle", abbr: "new", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Nott'm Forest", abbr: "nfo", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Southampton", abbr: "sou", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Spurs", abbr: "tot", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "West Ham", abbr: "whu", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Wolves", abbr: "wol", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" }
   ],
-  "eng.2": [
-  { team: "Burnley", abbr: "bur" },
-  { team: "Luton Town", abbr: "lut" },
-  { team: "Sheffield United", abbr: "shu" },
-  { team: "Sunderland", abbr: "sun" },
-  { team: "West Bromwich Albion", abbr: "wba" },
-  { team: "Leeds United", abbr: "lee" },
-  { team: "Norwich City", abbr: "nor" },
-  { team: "Middlesbrough", abbr: "mid" },
-  { team: "Coventry City", abbr: "cov" },
-  { team: "Hull City", abbr: "hul" },
-  { team: "Preston North End", abbr: "pre" },
-  { team: "Stoke City", abbr: "sto" },
-  { team: "Queens Park Rangers", abbr: "qpr" },
-  { team: "Swansea City", abbr: "swa" },
-  { team: "Blackburn Rovers", abbr: "bla" },
-  { team: "Bristol City", abbr: "bri" },
-  { team: "Watford", abbr: "wat" },
-  { team: "Cardiff City", abbr: "car" },
-  { team: "Millwall", abbr: "mil" },
-  { team: "Plymouth Argyle", abbr: "ply" },
-  { team: "Sheffield Wednesday", abbr: "shw" },
-  { team: "Derby County", abbr: "der" },
-  { team: "Oxford United", abbr: "oxf" },
-  { team: "Portsmouth", abbr: "por" }
+"eng.2": [
+  { team: "Burnley", abbr: "bur", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Luton Town", abbr: "lut", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Sheffield United", abbr: "shu", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Sunderland", abbr: "sun", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "West Bromwich Albion", abbr: "wba", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Leeds United", abbr: "lee", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Norwich City", abbr: "nor", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Middlesbrough", abbr: "mid", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Coventry City", abbr: "cov", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Hull City", abbr: "hul", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Preston North End", abbr: "pre", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Stoke City", abbr: "sto", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Queens Park Rangers", abbr: "qpr", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Swansea City", abbr: "swa", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Blackburn Rovers", abbr: "bla", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Bristol City", abbr: "bri", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Watford", abbr: "wat", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Cardiff City", abbr: "car", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Millwall", abbr: "mil", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Plymouth Argyle", abbr: "ply", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Sheffield Wednesday", abbr: "shw", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Derby County", abbr: "der", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Oxford United", abbr: "oxf", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+  { team: "Portsmouth", abbr: "por", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" }
 ],
   "esp.1": [
-    { team: "Athletic Bilbao", abbr: "ath" },
-    { team: "Atlético de Madrid", abbr: "atm" },
-    { team: "CA Osasuna", abbr: "osa" },
-    { team: "CD Leganés", abbr: "leg" },
-    { team: "Celta de Vigo", abbr: "cel" },
-    { team: "Deportivo Alavés", abbr: "alv" },
-    { team: "FC Barcelona", abbr: "bar" },
-    { team: "Getafe CF", abbr: "get" },
-    { team: "Girona FC", abbr: "gir" },
-    { team: "RCD Espanyol Barcelona", abbr: "esp" },
-    { team: "RCD Mallorca", abbr: "mal" },
-    { team: "Rayo Vallecano", abbr: "ray" },
-    { team: "Real Betis Balompié", abbr: "bet" },
-    { team: "Real Madrid", abbr: "rma" },
-    { team: "Real Sociedad", abbr: "rso" },
-    { team: "Real Valladolid CF", abbr: "vll" },
-    { team: "Sevilla FC", abbr: "sev" },
-    { team: "UD Las Palmas", abbr: "lpa" },
-    { team: "Valencia CF", abbr: "val" },
-    { team: "Villarreal CF", abbr: "vil" }
+    { team: "Athletic Bilbao", abbr: "ath", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Atlético de Madrid", abbr: "atm", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "CA Osasuna", abbr: "osa", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "CD Leganés", abbr: "leg", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Celta de Vigo", abbr: "cel", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Deportivo Alavés", abbr: "alv", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "FC Barcelona", abbr: "bar", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Getafe CF", abbr: "get", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Girona FC", abbr: "gir", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "RCD Espanyol Barcelona", abbr: "esp", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "RCD Mallorca", abbr: "mal", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Rayo Vallecano", abbr: "ray", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Real Betis Balompié", abbr: "bet", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Real Madrid", abbr: "rma", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Real Sociedad", abbr: "rso", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Real Valladolid CF", abbr: "vll", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Sevilla FC", abbr: "sev", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "UD Las Palmas", abbr: "lpa", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Valencia CF", abbr: "val", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Villarreal CF", abbr: "vil", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" }
   ],
   "fra.1": [
     { team: "AJ Auxerre", abbr: "aja" },
@@ -98,24 +99,24 @@ export const teamsByLeague: { [league: string]: { team: string; abbr: string }[]
     { team: "Stade Rennais FC", abbr: "ren" }
   ],
   "ger.1": [
-    { team: "1.FC Heidenheim 1846", abbr: "hei" },
-    { team: "1.FC Union Berlin", abbr: "ubn" },
-    { team: "1.FSV Mainz 05", abbr: "mai" },
-    { team: "Bayer 04 Leverkusen", abbr: "lev" },
-    { team: "Bayern Munich", abbr: "bay" },
-    { team: "Borussia Dortmund", abbr: "dor" },
-    { team: "Borussia Mönchengladbach", abbr: "mgl" },
-    { team: "Eintracht Frankfurt", abbr: "eff" },
-    { team: "FC Augsburg", abbr: "aug" },
-    { team: "FC St. Pauli", abbr: "stp" },
-    { team: "Holstein Kiel", abbr: "kie" },
-    { team: "RB Leipzig", abbr: "rbl" },
-    { team: "SC Freiburg", abbr: "fri" },
-    { team: "SV Werder Bremen", abbr: "wer" },
-    { team: "TSG 1899 Hoffenheim", abbr: "tsg" },
-    { team: "VfB Stuttgart", abbr: "stu" },
-    { team: "VfL Bochum", abbr: "boc" },
-    { team: "VfL Wolfsburg", abbr: "wol" }
+    { team: "1.FC Heidenheim 1846", abbr: "hei", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "1.FC Union Berlin", abbr: "ubn", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "1.FSV Mainz 05", abbr: "mai", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Bayer 04 Leverkusen", abbr: "lev", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Bayern Munich", abbr: "bay", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Borussia Dortmund", abbr: "dor", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Borussia Mönchengladbach", abbr: "mgl", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Eintracht Frankfurt", abbr: "eff", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "FC Augsburg", abbr: "aug", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "FC St. Pauli", abbr: "stp", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "Holstein Kiel", abbr: "kie", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "RB Leipzig", abbr: "rbl", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "SC Freiburg", abbr: "fri", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "SV Werder Bremen", abbr: "wer", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "TSG 1899 Hoffenheim", abbr: "tsg", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "VfB Stuttgart", abbr: "stu", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "VfL Bochum", abbr: "boc", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" },
+    { team: "VfL Wolfsburg", abbr: "wol", roomHash: "0x09c73260a2d39cb44fac1f488751fddd6b9fc0c0" }
   ],
   "ita.1": [
     { team: "AC Milan", abbr: "mil" },
@@ -165,7 +166,7 @@ export const teamsByLeague: { [league: string]: { team: string; abbr: string }[]
     { team: "Portland Timbers", abbr: "por" },
     { team: "Real Salt Lake", abbr: "rsl" },
     { team: "San Jose Earthquakes", abbr: "sj" },
-    { team: "Seattle Sounders", abbr: "sea" },
+    { team: "Seattle Sounders", abbr: "sea", roomHash: "0x43c00e7cc2e247a924da0360134884736192e34b" },
     { team: "Sporting Kansas City", abbr: "skc" },
     { team: "St. Louis City SC", abbr: "stl" },
     { team: "Toronto FC", abbr: "tor" },
@@ -481,13 +482,14 @@ export const fetchTeamLogos = async (): Promise<Team[]> => {
 
     // Iterate over each league and its teams.
     for (const [league, teams] of Object.entries(teamsByLeague)) {
-      teams.forEach(({ team, abbr }) => {
-        // Use the getTeamLogo function to get the logo URL
+    teams.forEach(({ team, abbr, roomHash }) => {
         const logoUrl = getTeamLogo(abbr, league);
-        
-        // Push the team data, including the league.
-        teamData.push({ name: team, abbreviation: abbr, league, logoUrl });
-      });
+        if (roomHash) {
+          teamData.push({ name: team, abbreviation: abbr, league, logoUrl, roomHash });
+        } else {
+          teamData.push({ name: team, abbreviation: abbr, league, logoUrl, roomHash: "0x0000000000000000000000000000000000000000" });
+        }
+    });
     }
 
     return teamData;
