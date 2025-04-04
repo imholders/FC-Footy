@@ -23,11 +23,11 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   const { user } = usePrivy();
   const currentFid = user?.linkedAccounts.find((a) => a.type === "farcaster")?.fid;
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
-  const [favoriteTeamFans, setFavoriteTeamFans] = useState<Array<{ fid: number; pfp: string; mutual: boolean }>>([]);
+  const [favoriteTeamFans, setFavoriteTeamFans] = useState<Array<{ fid: number; pfp: string; mutual: boolean; youFollow?: boolean }>>([]);
   const [fanCount, setFanCount] = useState<number>(0);
   const [loadingFollowers, setLoadingFollowers] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [cachedTeamFollowers, setCachedTeamFollowers] = useState<Record<string, Array<{ fid: number; pfp: string; mutual: boolean }>>>({});
+  const [cachedTeamFollowers, setCachedTeamFollowers] = useState<Record<string, Array<{ fid: number; pfp: string; mutual: boolean; youFollow?: boolean }>>>({});
   
   const fetchFavoriteTeams = async () => {
     try {
@@ -101,12 +101,13 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
         const mutualMap = await fetchMutualFollowers(currentFid, numericFids);
         
         const userDatas = await Promise.all(numericFids.map(fid => fetchFanUserData(fid)));
-        const fans = numericFids.reduce<Array<{ fid: number; pfp: string; mutual: boolean }>>((acc, fid, index) => {
+        const fans = numericFids.reduce<Array<{ fid: number; pfp: string; mutual: boolean; youFollow?: boolean }>>((acc, fid, index) => {
           const userData = userDatas[index];
           const pfp = userData?.USER_DATA_TYPE_PFP?.[0];
           if (pfp) {
             const mutual = mutualMap[fid];
-            acc.push({ fid, pfp, mutual });
+            const youFollow = fid === currentFid; // Determine if the current user follows this fan
+            acc.push({ fid, pfp, mutual, youFollow });
           }
           return acc;
         }, []);
@@ -255,6 +256,20 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
           <div className="relative rounded-lg overflow-hidden">
             <div className="mt-2">
               <h3 className="text-notWhite mb-1 m">Team Followers ({fanCount})</h3>
+              <div className="flex items-center gap-4 text-xs text-lightPurple mb-2 ml-1">
+                <div className="flex items-center gap-1">
+                  <span className="w-3 h-3 ring-2 ring-limeGreen rounded-full inline-block"></span>
+                  <span>You follow</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-3 h-3 ring-2 ring-fontRed rounded-full inline-block"></span>
+                  <span>You don’t follow</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-3 h-3 ring-2 ring-purple-500 rounded-full inline-block"></span>
+                  <span>Mutual</span>
+                </div>
+              </div>
               {loadingFollowers ? (
                 <div className="text-sm text-gray-400 animate-pulse">Loading followers...</div>
               ) : (
@@ -269,7 +284,12 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
                         <img
                           src={fan.pfp}
                           alt={`Fan ${fan.fid}`}
-                          className={`rounded-full w-7 h-7 ${fan.fid === currentFid ? '' : `ring-2 ${fan.mutual ? 'ring-limeGreen' : 'ring-fontRed'}`}`}
+                          className={`rounded-full w-7 h-7 ${
+                            fan.fid === currentFid ? '' :
+                            fan.mutual ? 'ring-2 ring-purple-500' :
+                            fan.youFollow ? 'ring-2 ring-limeGreen' :
+                            'ring-2 ring-fontRed'
+                          }`}
                         />
                       </button>
                     ))

@@ -433,6 +433,20 @@ useEffect(() => {
             <h3 className="text-notWhite font-semibold mb-1">
               Following ({combinedFanAvatars.length})
             </h3>
+          <div className="flex items-center gap-4 text-xs text-lightPurple mb-2">
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 border-2 border-blue-500 rounded-full"></span>
+              <span>Home</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 border-2 border-yellow-500 rounded-full"></span>
+              <span>Away</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 border-2 border-purple-500 rounded-full"></span>
+              <span>Both</span>
+            </div>
+          </div>
           <div className="grid grid-cols-10 gap-1">
               {isLoadingFans ? (
                 <span className="text-sm text-gray-400">Loading{loadingDots}</span>
@@ -446,7 +460,7 @@ useEffect(() => {
                           alt={`Fan ${fan.fid}`}
                           width={20}
                           height={20}
-                          className="rounded-full"
+                          className="rounded-full aspect-square object-cover"
                         />
                       </div>
                     </Link>
