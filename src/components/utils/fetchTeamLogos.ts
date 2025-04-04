@@ -3,7 +3,7 @@ interface Team {
   abbreviation: string;
   league: string;
   logoUrl: string;
-  roomHash: `0x${string}`;
+  roomHash: string;
 }
 
 // Team abbreviations and names grouped by league
@@ -484,7 +484,11 @@ export const fetchTeamLogos = async (): Promise<Team[]> => {
     for (const [league, teams] of Object.entries(teamsByLeague)) {
     teams.forEach(({ team, abbr, roomHash }) => {
         const logoUrl = getTeamLogo(abbr, league);
-        teamData.push({ name: team, abbreviation: abbr, league, logoUrl, roomHash });
+        if (roomHash) {
+          teamData.push({ name: team, abbreviation: abbr, league, logoUrl, roomHash });
+        } else {
+          teamData.push({ name: team, abbreviation: abbr, league, logoUrl, roomHash: "0x0000000000000000000000000000000000000000" });
+        }
     });
     }
 
