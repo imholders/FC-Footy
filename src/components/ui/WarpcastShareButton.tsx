@@ -16,7 +16,7 @@ async function generateCompositeImage(
   
   const canvas = document.createElement('canvas');
   canvas.width = 480;  
-  canvas.height = 240; 
+  canvas.height = 320; // Adjusted to maintain 3:2 aspect ratio
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas context not available.');
 
@@ -78,7 +78,20 @@ async function generateCompositeImage(
     }
   }
 
-  ctx.fillText(displayClock, rectCenterX, rectCenterY + 70);
+  ctx.fillText(displayClock, rectCenterX, rectCenterY + 100);
+
+  // New code to load and draw the spinner image
+  try {
+    const spinnerImg = await loadImage('/assets/banny_background.png'); // Adjust the path to your spinner image
+    const spinnerSize = 120; // Adjust spinner size as needed
+    const spinnerX = (canvas.width - spinnerSize) / 2;
+    const spinnerY = (canvas.height - spinnerSize) / 1.5;
+    ctx.globalAlpha = 0.2; // Set partial transparency
+    ctx.drawImage(spinnerImg, spinnerX, spinnerY, spinnerSize, spinnerSize);
+    ctx.globalAlpha = 1; // Reset transparency
+  } catch (error) {
+    console.error("Error loading spinner image:", error);
+  }
 
   return canvas.toDataURL('image/png');
 }
@@ -142,7 +155,6 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
 
       // Use useSearchParams to get the current query string
       const currentQuery = searchParams?.toString() ? `?${searchParams.toString()}` : "";
-      console.log("Current query:", currentQuery);
 
       // Build the base mini app URL from frameUrl and current query string.
       let miniAppUrl = `${frameUrl}${currentQuery}`;
@@ -164,7 +176,6 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
           });
           const uploadResult = await uploadRes.json();
           if (!uploadRes.ok) throw new Error('Image upload failed');
-          console.log("Upload IPFS hash:", uploadResult.ipfsHash);
           const ipfsUrl = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${uploadResult.ipfsHash}`);
           
           const ipfsHashParam = `ipfsHash=${uploadResult.ipfsHash}`;
@@ -183,9 +194,9 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
           } else {
             window.history.replaceState({}, '', miniAppUrl);
           }
-          console.log("Updated miniAppUrl:", miniAppUrl);
+          // console.log("Updated miniAppUrl:", miniAppUrl);
           encodedMiniAppUrl = encodeURIComponent(miniAppUrl);
-          url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodedMiniAppUrl}&embeds[]=${ipfsUrl}`;
+          url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodedMiniAppUrl}`;
         } catch (error) {
           console.error("Error generating composite image:", error);
           encodedMiniAppUrl = encodeURIComponent(miniAppUrl);
@@ -196,7 +207,7 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
         url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodedMiniAppUrl}&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
       }
 
-      console.log(context);
+      // console.log(context);
       if (context === undefined) {
         window.open(url, '_blank');
       } else {
