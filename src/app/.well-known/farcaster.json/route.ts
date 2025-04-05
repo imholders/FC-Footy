@@ -13,10 +13,10 @@ export async function GET() {
     },
     frame: {
       version: "0.0.1",
-      name: "FC Footy",
+      name: "Footy App",
       iconUrl: `${appUrl}/512.png`,
       splashImageUrl: `${appUrl}/defifa_spinner.gif`,
-      splashBackgroundColor: "#BD195D",
+      splashBackgroundColor: "#010513",
       homeUrl: appUrl,
       webhookUrl: `${appUrl}/api/webhook`,
     },

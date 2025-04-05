@@ -6,6 +6,7 @@ import {
   getTeamPreferences,
   setTeamPreferences,
 } from "../lib/kvPerferences";
+import { sdk } from '@farcaster/frame-sdk'
 
 interface Team {
   name: string;
@@ -51,6 +52,11 @@ const SettingsFollowClubs: React.FC<SettingsFollowClubsProps> = ({ onSave }) => 
   }, [farcasterAccount]);
 
   const handleRowClick = async (team: Team) => {
+    await sdk.actions.addFrame()
+    if (!user) {
+      console.error("User not authenticated");
+      return;
+    }
     if (!farcasterAccount) {
       console.error("User not authenticated");
       return;
