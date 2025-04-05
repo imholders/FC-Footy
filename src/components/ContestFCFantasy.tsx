@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import { useWriteContract } from 'wagmi';
 import { CONTRACT_ADDRESS_FEPL, CONTRACT_ABI_FEPL } from '../constants/contracts';
 
-const testing = true; // Toggle this for testing - will not mint NFTs
+const testing = false; // Toggle this for testing - will not mint NFTs
 
 
 const ContestFCFantasy = () => {
@@ -150,7 +150,7 @@ const ContestFCFantasy = () => {
       setStatusMessage('🌐 Uploading image to IPFS...');
       const blob = await (await fetch(dataUrl)).blob();
       const response = await fetch('/api/upload', { method: 'POST', body: blob });
-      const result = await response.json();
+      const result: { ipfsHash: string } = await response.json();
 
       if (!response.ok) {
         throw new Error('Image upload failed');
@@ -252,7 +252,7 @@ const ContestFCFantasy = () => {
         method: 'POST',
         body: metadataBlob,
       });
-      const result = await response.json();
+      const result: { ipfsHash: string } = await response.json();
       return response.ok ? result.ipfsHash : null;
     } catch (error) {
       console.error('Metadata upload failed', error);
@@ -288,7 +288,7 @@ const ContestFCFantasy = () => {
         setStatusMessage('🌐 Uploading image to IPFS...');
         const blob = await (await fetch(dataUrl)).blob();
         const response = await fetch('/api/upload', { method: 'POST', body: blob });
-        const result = await response.json();
+        const result: { ipfsHash: string } = await response.json();
   
         if (!response.ok) {
           throw new Error('Image upload failed');
@@ -460,7 +460,7 @@ const ContestFCFantasy = () => {
 
                     const blob = await (await fetch(dataUrl)).blob();
                     const response = await fetch('/api/upload', { method: 'POST', body: blob });
-                    const result = await response.json();
+                    const result: { ipfsHash: string } = await response.json();
 
                     if (!response.ok) {
                       throw new Error('Image upload failed');
@@ -470,7 +470,7 @@ const ContestFCFantasy = () => {
                     setImageCid(localImageCid);
                   }
 
-                  const castText = `🏆 Fantasy Football Card for @${cardEntry.manager}!\n📊 Rank: ${cardEntry.rank}\n⚽ Points: ${cardEntry.total}\nCheck out the latest dickbutt FC Fantasy League manager cards. \nThe dickbutt FC Fantasy League is moving on @base 🚀 rsn`;
+                  const castText = `🏆 Fantasy Football Card for @${cardEntry?.manager}!\n📊 Rank: ${cardEntry?.rank}\n⚽ Points: ${cardEntry?.total}\nCheck out the latest dickbutt FC Fantasy League manager cards. \nFC Fantasy League is on @base 🚀`;
                   const encodedText = encodeURIComponent(castText);
                   const encodedEmbed1 = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${localImageCid}`);
                   const encodedEmbed2 = encodeURIComponent(`https://fc-footy.vercel.app?tab=contests`);
