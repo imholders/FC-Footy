@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import frameSdk from "@farcaster/frame-sdk";
 import FantasyRow from './ContestFantasyRow';
 import { fetchFantasyData } from './utils/fetchFantasyData';
@@ -224,11 +223,13 @@ const ContestFCFantasy = () => {
   
     const handleRowSelect = async (selected: FantasyEntry) => {
       setSelectedEntry(selected);
-      setStatusMessage(''); // Clear previous message
-      setRenderKey((prev) => prev + 1); // Force a re-render
+      setImageCid(null);        // 👈 Reset image CID
+      setMetadataCid(null);     // 👈 Reset metadata CID
+      setStatusMessage('');
+      setRenderKey((prev) => prev + 1);
     
-      await forceDOMUpdate(); // Wait for DOM updates
-      await waitForImagesToLoad(cardRef); // Wait for images to load
+      await forceDOMUpdate();
+      await waitForImagesToLoad(cardRef);
     
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -357,23 +358,22 @@ const ContestFCFantasy = () => {
 
           {/* Manager Info */}
           <div className="flex items-center space-x-4 relative z-10">
-            <div className="relative">
+            <div
+              className="border-4 border-white overflow-hidden"
+              style={{ width: '96px', height: '96px', borderRadius: '9999px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
               <img
                 src={cardEntry.pfp || '/defifa_spinner.gif'}
                 alt="Manager Avatar"
-                className="rounded-full w-24 h-24 border-4 border-white"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '9999px',
+                }}
                 onLoad={() => console.log(`✅ Image loaded for: ${cardEntry.manager}`)}
                 onError={() => console.log(`🔄 Fallback image used for: ${cardEntry.manager}`)}
               />
-              <div className="absolute bottom-0 right-0">
-                <Image
-                  src="/defifa_spinner.gif"
-                  alt="Defifa Logo"
-                  width={20}
-                  height={20}
-                  className="rounded-full object-cover"
-                />
-              </div>
             </div>
             <div>
               <p className="text-white font-pixel text-2xl tracking-wider">
@@ -432,7 +432,7 @@ const ContestFCFantasy = () => {
           </div>
 
           {/* Share Button */}
-          {!loadingFantasy && (
+          {txReceipt && (
             <button
               onClick={async () => {
                 if (!cardRef.current) {
