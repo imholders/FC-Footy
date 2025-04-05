@@ -211,10 +211,6 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
         window.open(url, '_blank');
       } else {
         frameSdk.actions.openUrl(url);
-        await frameSdk.actions.composeCast({ 
-          encodedSummary,
-          encodedMiniAppUrl,
-        })
       }
     }
   }, [selectedMatch, context, searchParams, compositeImage]);
