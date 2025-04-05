@@ -12,16 +12,28 @@ type Props = {
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const url = new URL('/', appUrl);
+  let imgUrl = `${appUrl}/opengraph-image`;
   
+  const params = await searchParams;
+  console.log("Incoming searchParams:", params);
+
   Object.entries(await searchParams).forEach(([key, value]) => {
     if (typeof value === 'string') {
       url.searchParams.append(key, value);
     }
   });
-  
+
+  if (url.searchParams.has('ipfsHash')) {
+    const ipfsHash = url.searchParams.get('ipfsHash');
+    if (ipfsHash) {
+      imgUrl = `https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${ipfsHash}`;
+    }
+  }
+
+  console.log('kmm', url, imgUrl);
   const frame = {
     version: "next",
-    imageUrl: `${appUrl}/opengraph-image`,
+    imageUrl: imgUrl,
     button: {
       title: "FC Footy App",
       action: {

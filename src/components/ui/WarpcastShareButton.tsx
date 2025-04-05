@@ -3,7 +3,85 @@ import { useSearchParams } from "next/navigation";
 import frameSdk from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
 import { FrameContext } from '@farcaster/frame-node';
-// import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+
+async function generateCompositeImage(
+  homeLogo: string,
+  awayLogo: string,
+  homeScore: number,
+  awayScore: number,
+  clock: string
+): Promise<string> {
+  const purplePanel = "#010513"; 
+  const textNotWhite = "#FEA282"; 
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;  
+  canvas.height = 240; 
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available.');
+
+  ctx.fillStyle = purplePanel;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const loadImage = (src: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
+  const [homeImg, awayImg] = await Promise.all([loadImage(homeLogo), loadImage(awayLogo)]);
+
+  const logoSize = 160; 
+  const logoY = (canvas.height - logoSize) / 2; 
+
+  ctx.drawImage(homeImg, 0, logoY, logoSize, logoSize);
+  ctx.drawImage(awayImg, canvas.width - logoSize, logoY, logoSize, logoSize);
+
+  const centerX = logoSize;
+  const centerWidth = canvas.width - 2 * logoSize; 
+  ctx.fillStyle = purplePanel;
+  ctx.fillRect(centerX, logoY, centerWidth, logoSize);
+
+  ctx.fillStyle = textNotWhite;
+  ctx.font = 'bold 48px Arial'; 
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const rectCenterX = centerX + centerWidth / 2;
+  const rectCenterY = logoY + logoSize / 2;
+
+  const scoreText = `${homeScore} - ${awayScore}`;
+  ctx.fillText(scoreText, rectCenterX, rectCenterY - 32);
+  
+  ctx.font = 'bold 24px Arial';
+
+  let displayClock = clock;
+  if (clock.startsWith("0'")) {
+    const match = clock.match(/Sat, .* at \d{1,2}:\d{2} [AP]M [A-Z]+/);
+    if (match) {
+      const dateMatch = match[0].match(/([A-Za-z]+) (\d+)[a-z]{2} at (\d{1,2}:\d{2} [AP]M) ([A-Z]+)/);
+      if (dateMatch) {
+        const month = dateMatch[1];
+        const day = dateMatch[2];
+        const time = dateMatch[3];
+        const tz = dateMatch[4];
+        const shortDate = `${new Date(`${month} 1`).getMonth() + 1}/${day}`;
+        displayClock = `${shortDate} at ${time} ${tz}`;
+      }
+    }
+  } else {
+    const parts = clock.trim().split(' ');
+    if (parts.length === 2 && parts[0] === parts[1]) {
+      displayClock = parts[0];
+    }
+  }
+
+  ctx.fillText(displayClock, rectCenterX, rectCenterY + 70);
+
+  return canvas.toDataURL('image/png');
+}
 
 interface SelectedMatch {
   competitorsLong: string;
@@ -22,9 +100,10 @@ interface WarpcastShareButtonProps {
   selectedMatch: SelectedMatch;
   targetElement?: HTMLElement | null;
   buttonText?: string;
+  compositeImage?: boolean;
 }
 
-export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShareButtonProps) {
+export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage }: WarpcastShareButtonProps) {
   const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
   const searchParams = useSearchParams();
@@ -44,19 +123,16 @@ export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShare
     }
   }, [isContextLoaded]);
 
-  const openWarpcastUrl = useCallback(() => {
+  const openWarpcastUrl = useCallback(async () => {
     if (selectedMatch) {
       const frameUrl = BASE_URL || 'fc-footy.vercel.app';
       const {
         competitorsLong,
-        homeTeam,
-        awayTeam,
         homeScore,
         awayScore,
         clock,
         homeLogo,
         awayLogo,
-        eventStarted,
         keyMoments,
       } = selectedMatch;
 
@@ -66,18 +142,60 @@ export function WarpcastShareButton({ selectedMatch, buttonText }: WarpcastShare
 
       // Use useSearchParams to get the current query string
       const currentQuery = searchParams?.toString() ? `?${searchParams.toString()}` : "";
-      console.log(currentQuery);
-      // Append the query string to the mini‑app URL
-      const miniAppUrl = `https://warpcast.com/~/frames/launch?url=${frameUrl}${currentQuery}`;
+      console.log("Current query:", currentQuery);
 
-      const matchSummary = `${competitorsLong}
-${homeTeam} ${eventStarted ? homeScore : ''} - ${eventStarted ? awayScore : ''} ${awayTeam.toUpperCase()}
-${eventStarted ? `Clock: ${clock}` : `Kickoff: ${clock}`}${keyMomentsText}
+      // Build the base mini app URL from frameUrl and current query string.
+      let miniAppUrl = `${frameUrl}${currentQuery}`;
 
-Using the FC Footy mini-app ${miniAppUrl} cc @gabedev.eth @kmacb.eth`;
-
+      // Build the match summary and encode it
+      const matchSummary = `${competitorsLong} ${keyMomentsText}\n\n@gabedev.eth @kmacb.eth are you watching this one?`;
       const encodedSummary = encodeURIComponent(matchSummary);
-      const url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
+
+      let url = '';
+      let encodedMiniAppUrl = "";
+
+      if (compositeImage) {
+        try {
+          const dataUrl = await generateCompositeImage(homeLogo, awayLogo, homeScore, awayScore, clock);
+          const blob = await (await fetch(dataUrl)).blob();
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            body: blob,
+          });
+          const uploadResult = await uploadRes.json();
+          if (!uploadRes.ok) throw new Error('Image upload failed');
+          console.log("Upload IPFS hash:", uploadResult.ipfsHash);
+          const ipfsUrl = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${uploadResult.ipfsHash}`);
+          
+          const ipfsHashParam = `ipfsHash=${uploadResult.ipfsHash}`;
+          if (currentQuery) {
+            miniAppUrl += `&${ipfsHashParam}`;
+          } else {
+            miniAppUrl += `?${ipfsHashParam}`;
+          }
+          // Ensure the URL has the current origin.
+          const currentOrigin = window.location.origin;
+          const miniAppUrlObj = new URL(miniAppUrl);
+          if (miniAppUrlObj.origin !== currentOrigin) {
+            // Use a relative URL if origins differ.
+            const relativeUrl = miniAppUrlObj.pathname + miniAppUrlObj.search;
+            window.history.replaceState({}, '', relativeUrl);
+          } else {
+            window.history.replaceState({}, '', miniAppUrl);
+          }
+          console.log("Updated miniAppUrl:", miniAppUrl);
+          encodedMiniAppUrl = encodeURIComponent(miniAppUrl);
+          url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodedMiniAppUrl}&embeds[]=${ipfsUrl}`;
+        } catch (error) {
+          console.error("Error generating composite image:", error);
+          encodedMiniAppUrl = encodeURIComponent(miniAppUrl);
+          url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodedMiniAppUrl}&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
+        }
+      } else {
+        encodedMiniAppUrl = encodeURIComponent(miniAppUrl);
+        url = `https://warpcast.com/~/compose?text=${encodedSummary}&channelKey=football&embeds[]=${encodedMiniAppUrl}&embeds[]=${homeLogo}&embeds[]=${awayLogo}`;
+      }
+
       console.log(context);
       if (context === undefined) {
         window.open(url, '_blank');
@@ -85,7 +203,7 @@ Using the FC Footy mini-app ${miniAppUrl} cc @gabedev.eth @kmacb.eth`;
         frameSdk.actions.openUrl(url);
       }
     }
-  }, [selectedMatch, context, searchParams]);
+  }, [selectedMatch, context, searchParams, compositeImage]);
 
   return (
     <button
