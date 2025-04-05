@@ -176,7 +176,6 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
           });
           const uploadResult = await uploadRes.json();
           if (!uploadRes.ok) throw new Error('Image upload failed');
-          const ipfsUrl = encodeURIComponent(`https://tan-hidden-whippet-249.mypinata.cloud/ipfs/${uploadResult.ipfsHash}`);
           
           const ipfsHashParam = `ipfsHash=${uploadResult.ipfsHash}`;
           if (currentQuery) {
