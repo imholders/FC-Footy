@@ -1,4 +1,4 @@
-import React from 'react';
+/* import React from 'react';
 import { useMintNFT } from '../../hooks/useMintNft';
 
 interface MintButtonProps {
@@ -37,3 +37,4 @@ const MintButton: React.FC<MintButtonProps> = ({ metadataCID }) => {
 };
 
 export default MintButton;
+*/
