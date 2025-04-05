@@ -510,7 +510,8 @@ useEffect(() => {
 
             <WarpcastShareButton
               selectedMatch={selectedMatch}
-              targetElement={elementRef.current}
+              compositeImage={true}
+              buttonText="Share Match"
             />
           </div>
           {showGameContext && gameContext && (

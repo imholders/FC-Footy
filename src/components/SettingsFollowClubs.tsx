@@ -51,6 +51,7 @@ const SettingsFollowClubs: React.FC<SettingsFollowClubsProps> = ({ onSave }) => 
   }, [farcasterAccount]);
 
   const handleRowClick = async (team: Team) => {
+    
     if (!farcasterAccount) {
       console.error("User not authenticated");
       return;

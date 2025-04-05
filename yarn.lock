@@ -746,10 +746,10 @@
     "@farcaster/frame-core" "^0.0.19"
     ox "^0.4.0"
 
-"@farcaster/frame-sdk@^0.0.31":
-  version "0.0.31"
-  resolved "https://registry.yarnpkg.com/@farcaster/frame-sdk/-/frame-sdk-0.0.31.tgz#e5e44c02f6bb2a8a5ae16827d3f8423bed5ed861"
-  integrity sha512-ZRFA4HyfE1PIcEi++27ulSqrArv2qdVeYww7juM90DYgvqyGLtX6cTZS0UEoRL7iog2U8Rv2aq1ORLbePCBZuA==
+"@farcaster/frame-sdk@^0.0.32":
+  version "0.0.32"
+  resolved "https://registry.yarnpkg.com/@farcaster/frame-sdk/-/frame-sdk-0.0.32.tgz#d860969809b484fd32a06adf757b5e87f73be35f"
+  integrity sha512-vfofct3kBvSvkGs/644MN0X5HPI0TQfUbEbVR9ARr7vyuWOyosmIlYoONPJaa527DufWPE0lY3iy2XI1uTdA1w==
   dependencies:
     "@farcaster/frame-core" "0.0.29"
     comlink "^4.4.2"
