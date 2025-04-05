@@ -3,6 +3,30 @@ import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 // Re-export the address from config
 export { SCORE_SQUARE_ADDRESS };
 
+// constants/contracts.ts
+export const CONTRACT_ADDRESS_FEPL = '0xdCc32F6Efce28B595f255363ae6EEAA6Cd4B9499';
+export const CONTRACT_ABI_FEPL = [
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "cid",
+        "type": "string"
+      }
+    ],
+    "name": "mintAsWhitelisted",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+];
+
 // ScoreSquare contract ABI
 export const SCORE_SQUARE_ABI = [
   {

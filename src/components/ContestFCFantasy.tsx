@@ -6,41 +6,22 @@ import { fetchFantasyData } from './utils/fetchFantasyData';
 import { usePrivy } from '@privy-io/react-auth';
 import { toPng } from 'html-to-image';
 import dayjs from 'dayjs';
-// import { useWaitForTransactionReceipt } from 'wagmi';
-// import { ethers } from 'ethers';
-// import MintButton from './ui/MintButton';
-// const testing = true; // Toggle this for testing - will not mint NFTs
-//const CONTRACT_ADDRESS = '0xdCc32F6Efce28B595f255363ae6EEAA6Cd4B9499';
-/* const CONTRACT_ABI = [
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "cid",
-        "type": "string"
-      }
-    ],
-    "name": "mintAsWhitelisted",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  }
-];
- */
+import { useWaitForTransactionReceipt } from 'wagmi';
+import { ethers } from 'ethers';
+import { useWriteContract } from 'wagmi';
+import { CONTRACT_ADDRESS_FEPL, CONTRACT_ABI_FEPL } from '../constants/contracts';
+
+const testing = false; // Toggle this for testing - will not mint NFTs
+
+
 const ContestFCFantasy = () => {
   const [fantasyData, setFantasyData] = useState<FantasyEntry[]>([]);
   const [loadingFantasy, setLoadingFantasy] = useState(false);
   const [errorFantasy, setErrorFantasy] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<FantasyEntry | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | JSX.Element>('');
-  // const [setMintingInProgress] = useState(false);
-  // const [txHash, setTxHash] = useState(null);
+  const [mintingInProgress, setMintingInProgress] = useState(false);
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState<boolean>(false);
   const [sharingInProgress, setSharingInProgress] = useState(false);
   const [renderKey, setRenderKey] = useState(0);
@@ -61,20 +42,20 @@ const ContestFCFantasy = () => {
     fid: number | null;
   }
   
-  const cardRef = useRef(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const { user } = usePrivy();
 
   const farcasterAccount = user?.linkedAccounts.find(
     (account) => account.type === 'farcaster'
   );
 
-  // const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
   useEffect(() => {
     const loadContext = async () => {
       try {
         const ctx = await frameSdk.context;
-        console.log("Farcaster context loaded:",JSON.stringify(ctx, null, 2));
+        //console.log("Farcaster context loaded:",JSON.stringify(ctx, null, 2));
         if (!ctx) {
           console.log("Farcaster context returned null or undefined.");
           return;
@@ -109,20 +90,26 @@ const ContestFCFantasy = () => {
     fetchData();
   }, []);
 
-/*   useWaitForTransactionReceipt({
+  const { data: txReceipt, error: txError } = useWaitForTransactionReceipt({
     hash: txHash,
-    onSuccess: (receipt) => {
-      console.log('✅ NFT Minted:', receipt);
-      setStatusMessage(`🎉 NFT Minted! Tx: https://basescan.org/tx/${txHash}`);
-      setMintingInProgress(false); // ✅ Reset minting flag
-      setTxHash(null); // ✅ Clear transaction hash for the next mint
-    },
-    onError: (error) => {
-      console.error('❌ Transaction failed:', error);
+  });
+  
+  useEffect(() => {
+    if (txReceipt) {
+      console.log('✅ NFT Minted:', txReceipt);
+      setStatusMessage(
+        <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="underline text-blue-300">
+          🎉 NFT Minted! View Tx
+        </a>
+      );
+      setMintingInProgress(false);
+      setTxHash(undefined);
+    } else if (txError) {
+      console.error('❌ Transaction failed:', txError);
       setStatusMessage('❌ Transaction failed. Try again.');
-      setMintingInProgress(false); // ✅ Reset minting flag
-    },
-  }); */
+      setMintingInProgress(false);
+    }
+  }, [txReceipt, txError]);
 
   const forceDOMUpdate = (): Promise<void> => {
     return new Promise<void>((resolve) => {
@@ -146,13 +133,15 @@ const ContestFCFantasy = () => {
       const promises: Promise<void>[] = [];
     
       images.forEach((img) => {
-        if (!img.complete || img.naturalHeight === 0) {
-          promises.push(
-            new Promise((resolve) => {
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-            })
-          );
+        if (img.complete && img.naturalHeight !== 0) {
+          promises.push(img.decode().catch(() => {}));
+        } else {
+          promises.push(new Promise((resolve) => {
+            img.onload = () => {
+              img.decode().then(resolve).catch(resolve);
+            };
+            img.onerror = () => resolve();
+          }));
         }
       });
     
@@ -183,17 +172,17 @@ const ContestFCFantasy = () => {
     };
     
   
-/*   const uploadMetadataToIPFS = async (imageCid: any, cardEntry: { manager: any; rank: any; total: any; } | undefined) => {
+  const uploadMetadataToIPFS = async (imageCid: string, cardEntry: FantasyEntry | undefined): Promise<string | null> => {
     try {
       const metadata = {
-        name: `FC Footy NFT - ${cardEntry.manager}`,
-        description: `Fantasy Football rank card for ${cardEntry.manager}.`,
+        name: `FC Footy NFT - ${cardEntry?.manager}`,
+        description: `Fantasy Football rank card for ${cardEntry?.manager}.`,
         image: `ipfs://${imageCid}`,
         attributes: [
           { trait_type: 'License', value: 'CC0' },
           { trait_type: 'Theme', value: 'FC Footy Retro' },
-          { trait_type: 'Rank', value: cardEntry.rank || 'Unranked' },
-          { trait_type: 'Points', value: cardEntry.total || 0 },
+          { trait_type: 'Rank', value: cardEntry?.rank || 'Unranked' },
+          { trait_type: 'Points', value: cardEntry?.total || 0 },
         ],
       };
       const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
@@ -207,9 +196,9 @@ const ContestFCFantasy = () => {
       console.error('Metadata upload failed', error);
       return null;
     }
-  }; */
+  };
 
-/*   const handleMintImage = async () => {
+const handleMintImage = async () => {
     if (!cardRef.current) return;
   
     setMintingInProgress(true);
@@ -219,6 +208,12 @@ const ContestFCFantasy = () => {
       // 1️⃣ Convert the card to PNG
       await waitForDOMUpdate(); // ✅ Ensure DOM updates with selectedEntry
       await waitForImagesToLoad(cardRef); // ✅ Ensure images are loaded
+      await new Promise((resolve) => setTimeout(resolve, 700)); // increased extra delay to allow text to render
+      await document.fonts.ready; // ensure fonts are fully loaded
+      // Force a reflow to ensure text is rendered
+      if (cardRef.current) {
+        cardRef.current.getBoundingClientRect();
+      }
 
       const dataUrl = await toPng(cardRef.current, {
         style: { fontFamily: 'VT323, monospace' },
@@ -256,27 +251,39 @@ const ContestFCFantasy = () => {
       }
   
       setStatusMessage('🚀 Minting NFT... On web? Check external wallet.');
-  
-      // 4️⃣ Mint NFT using `writeContractAsync`
+      
       const tx = await writeContractAsync({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
+        address: CONTRACT_ADDRESS_FEPL,
+        abi: CONTRACT_ABI_FEPL,
         functionName: 'mintAsWhitelisted',
-        args: [`ipfs://${metadataCid}`], // Ensure this includes the full URI
-        value: ethers.parseEther('0.0007'), // Mint fee
+        args: [`ipfs://${metadataCid}`],
+        value: ethers.parseEther('0.0007'),
       });
-  
+      
+      // Check that the transaction returned a valid hash
+      if (!tx) {
+        throw new Error('Transaction did not return a valid hash');
+      }
+
       // 5️⃣ Save the transaction hash for monitoring
-      console.log('📝 Transaction hash:', tx.hash);
-      setTxHash(tx.hash);
-      setStatusMessage(`⏳ Waiting for confirmation... Tx Hash: ${tx.hash}`);
+      console.log('📝 Transaction hash:', tx);
+      setTxHash(tx);
+      setStatusMessage(
+        <a href={`https://basescan.org/tx/${tx}`} target="_blank" rel="noopener noreferrer" className="underline text-blue-300">
+          ⏳ Waiting for confirmation... View Tx
+        </a>
+      );
     } catch (error) {
-      console.error('❌ Minting failed:', error);
-      setStatusMessage(`❌ Minting failed: ${error.message}`);
+       console.error('❌ Minting failed:', error);
+       if (error instanceof Error) {
+         setStatusMessage(`❌ Minting failed: ${error.message}`);
+       } else {
+         setStatusMessage('❌ Minting failed: Unknown error');
+       }
     } finally {
       setMintingInProgress(false);
     }
-  }; */
+  }; 
   
   const cardEntry = selectedEntry || defaultCardEntry;
 
@@ -348,15 +355,15 @@ const ContestFCFantasy = () => {
 
       {!loadingFantasy && (
         <div className="flex space-x-4 mt-4">
-{/*           <button
+          <button
             onClick={handleMintImage}
             disabled={mintingInProgress || !cardEntry}
-            className={`w-full max-w-xs py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg text-lg font-bold ${
+            className={`w-full max-w-xs py-3 bg-deepPink text-white rounded-lg hover:bg-fontRed transition shadow-lg text-lg font-bold ${
               mintingInProgress ? 'opacity-50' : ''
             }`}
           >
             {mintingInProgress ? 'Minting...' : 'Mint NFT'}
-          </button> */}
+          </button>
 
           {/* Share Button */}
           {!loadingFantasy && (
@@ -373,6 +380,8 @@ const ContestFCFantasy = () => {
                   // Convert the card to PNG
                   await waitForDOMUpdate(); // ✅ Ensure the latest selection is rendered
                   await waitForImagesToLoad(cardRef); // ✅ Ensure images are loaded
+                  await new Promise((resolve) => setTimeout(resolve, 500)); // increased extra delay for consistency
+                  await document.fonts.ready; // ensure fonts are fully loaded
                   const dataUrl = await toPng(cardRef.current, {
                     style: { fontFamily: 'VT323, monospace' },
                     cacheBust: true,
@@ -405,7 +414,13 @@ const ContestFCFantasy = () => {
                   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}&channelKey=football&embeds[]=${encodedEmbed1}&embeds[]=${encodedEmbed2}`;
 
                   // Open Warpcast share intent
-                  frameSdk.actions.openUrl(warpcastUrl);
+                  if (isContextLoaded) {
+                    // Use the Farcaster SDK to open the URL
+                    frameSdk.actions.openUrl(warpcastUrl);
+                  } else {
+                    // Fallback to window.open if context is not loaded
+                    window.open(warpcastUrl, '_blank');
+                  }
                   setSharingInProgress(false); // ✅ Start sharing
 
                   setStatusMessage('🚀 Shared on Warpcast! (check popup blocker)');
@@ -420,7 +435,7 @@ const ContestFCFantasy = () => {
                 }
             }}
             disabled={sharingInProgress || !cardEntry}
-            className={`w-full max-w-xs py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg text-lg font-bold ${
+            className={`w-full max-w-xs py-3 bg-deepPink text-white rounded-lg hover:bg-fontRed transition shadow-lg text-lg font-bold ${
               sharingInProgress ? 'opacity-50' : ''
             }`}
           >
