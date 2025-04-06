@@ -112,7 +112,7 @@ export interface GameStatusResponse {
 
 export interface Detail {
   athletesInvolved: { displayName: string }[];
-  type: string;
+  type: { text: string };
   clock: string;
   team: string;
 }
