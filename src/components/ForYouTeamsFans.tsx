@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 import { getTeamPreferences, getFanCountForTeam } from "../lib/kvPerferences";
 import { usePrivy } from "@privy-io/react-auth";
-import { getTeamLogo } from "../components/utils/fetchTeamLogos";
+import { getTeamLogo } from "./utils/fetchTeamLogos";
 import { getFansForTeam } from '../lib/kvPerferences'; // Assuming these functions are imported from a relevant file
 import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchMutualFollowers } from './utils/fetchCheckIfFollowing';
@@ -15,7 +15,7 @@ type TeamLink = {
   shortText?: string;
 };
 
-const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: boolean) => void }> = ({ showLiveChat, setShowLiveChat }) => {
+const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: boolean) => void }> = ({ showLiveChat, setShowLiveChat }) => {
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +169,7 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
 
   const fetchTeamLinksByLeague = async (league: string, teamAbbrs: string[]) => {
     try {
+      console.log(`Fetching team links for league ${league} with abbreviations: ${teamAbbrs.join(", ")}`);
       const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams`);
       const data = await res.json();
       const teams = data?.sports?.[0]?.leagues?.[0]?.teams || [];
@@ -216,6 +217,7 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
       </div>
     );
   }
+  console.log("teamLinks", teamLinks);
   return (
     <div className="bg-purplePanel text-lightPurple rounded-lg p-1 overflow-hidden">
       <h2 className='text-notWhite'>Teams you follow</h2>
@@ -248,10 +250,6 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
         </div>
       </div>
         {selectedTeam && favoriteTeams.includes(selectedTeam) && (() => {
-          const [, abbr] = selectedTeam.split("-");
-          const links = teamLinks[abbr];
-        if (!links) return null;
-
         return (
           <div className="relative rounded-lg overflow-hidden">
             <div className="mt-2">
@@ -322,4 +320,4 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   );
 };
 
-export default ForYouComponent;
+export default ForYouTeamsFans;

@@ -63,6 +63,7 @@ export async function getFansForTeam(uniqueTeamId: string): Promise<number[]> {
  * of FIDs for which the stored preferences include any of the given unique team IDs.
  */
 export async function getFansForTeams(uniqueTeamIds: string[]): Promise<number[]> {
+console.log("getFansForTeams", uniqueTeamIds);
   const fanFidsSet = new Set<number>();
 
   for (const teamId of uniqueTeamIds) {
@@ -72,8 +73,27 @@ export async function getFansForTeams(uniqueTeamIds: string[]): Promise<number[]
 
   return Array.from(fanFidsSet);
 }
+
 // List of supported leagues (add more as needed)
-const SUPPORTED_LEAGUES = ["eng.1", "eng.2", "uefa.champions", "usa.1", "esp.1", "ger.1", "ita.1", "fra.1", "eng.league_cup", "uefa.europa", "eng.fa"];
+const SUPPORTED_LEAGUES = [
+  "eng.1",
+  "eng.2",
+  "uefa.champions",
+  "usa.1",
+  "esp.1",
+  "ger.1",
+  "ita.1",
+  "fra.1",
+  "eng.league_cup",
+  "uefa.europa",
+  "eng.fa",
+  "fifa.worldq.concacaf",
+  "fifa.worldq.conmebol",
+  "fifa.worldq.uefa",
+  "fifa.worldq.afc",
+  "fifa.worldq.caf",
+  "fifa.worldq.ofc"
+];
 
 /**
  * Fetches fans for a team using its abbreviation, checking all supported leagues.

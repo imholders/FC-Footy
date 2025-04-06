@@ -114,9 +114,11 @@ interface WarpcastShareButtonProps {
   targetElement?: HTMLElement | null;
   buttonText?: string;
   compositeImage?: boolean;
+  fallbackLeague?: string;
+  leagueId?: string;
 }
 
-export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage }: WarpcastShareButtonProps) {
+export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage, fallbackLeague, leagueId }: WarpcastShareButtonProps) {
   const [context, setContext] = useState<FrameContext | undefined>(undefined);
   const [isContextLoaded, setIsContextLoaded] = useState(false);
   const searchParams = useSearchParams();
@@ -153,8 +155,14 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
         ? `\n\nKey Moments:\n${keyMoments.join('\n')}`
         : "";
 
-      // Use useSearchParams to get the current query string
-      const currentQuery = searchParams?.toString() ? `?${searchParams.toString()}` : "";
+      const search = new URLSearchParams();
+
+      search.set("tab", "matches");
+      if (leagueId) {
+        search.set("league", leagueId);
+      }
+
+      const currentQuery = search.toString() ? `?${search.toString()}` : "";
 
       // Build the base mini app URL from frameUrl and current query string.
       let miniAppUrl = `${frameUrl}${currentQuery}`;
@@ -213,7 +221,7 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage 
         frameSdk.actions.openUrl(url);
       }
     }
-  }, [selectedMatch, context, searchParams, compositeImage]);
+  }, [selectedMatch, context, searchParams, compositeImage, fallbackLeague, leagueId]);
 
   return (
     <button
