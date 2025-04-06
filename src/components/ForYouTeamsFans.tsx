@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 import { getTeamPreferences, getFanCountForTeam } from "../lib/kvPerferences";
 import { usePrivy } from "@privy-io/react-auth";
-import { getTeamLogo } from "../components/utils/fetchTeamLogos";
+import { getTeamLogo } from "./utils/fetchTeamLogos";
 import { getFansForTeam } from '../lib/kvPerferences'; // Assuming these functions are imported from a relevant file
 import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchMutualFollowers } from './utils/fetchCheckIfFollowing';
@@ -15,7 +15,7 @@ type TeamLink = {
   shortText?: string;
 };
 
-const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: boolean) => void }> = ({ showLiveChat, setShowLiveChat }) => {
+const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: boolean) => void }> = ({ showLiveChat, setShowLiveChat }) => {
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -322,4 +322,4 @@ const ForYouComponent: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   );
 };
 
-export default ForYouComponent;
+export default ForYouTeamsFans;

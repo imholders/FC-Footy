@@ -109,3 +109,35 @@ export interface GameStatusResponse {
   eventId: string;
   refunded: boolean;
 }
+
+interface Detail {
+  athletesInvolved: unknown;
+  type: unknown;
+  clock: unknown;
+  team: unknown;
+}
+
+export interface MatchEvent {
+  id: string;
+  shortName: string;
+  name: string;
+  date: string;
+  status: {
+    displayClock: string;
+    type: {
+      detail: string;
+    };
+  };
+  competitions: {
+    competitors: {
+      team: {
+        logo: string;
+        id: string;
+        abbreviation: string;
+      };
+      score: number;
+    }[];
+    details: Detail[];
+  }[];
+}
+

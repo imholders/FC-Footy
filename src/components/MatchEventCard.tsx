@@ -252,6 +252,7 @@ useEffect(() => {
     }
     try {
       // Determine unique IDs using league info if available.
+      console.log("Teams:", teams);
       const team1Data = teams.find(
         (t) => t.abbreviation.toLowerCase() === team1.abbreviation.toLowerCase()
       );
@@ -510,8 +511,15 @@ useEffect(() => {
 
             <WarpcastShareButton
               selectedMatch={selectedMatch}
-              compositeImage={true}
               buttonText="Share Match"
+              compositeImage={true}
+              leagueId={(() => {
+                const homeAbbr = event.competitions[0]?.competitors[0]?.team.abbreviation.toLowerCase();
+                const awayAbbr = event.competitions[0]?.competitors[1]?.team.abbreviation.toLowerCase();
+                const homeTeamData = teams.find((t) => t.abbreviation.toLowerCase() === homeAbbr);
+                const awayTeamData = teams.find((t) => t.abbreviation.toLowerCase() === awayAbbr);
+                return homeTeamData?.league || awayTeamData?.league || '';
+              })()}
             />
           </div>
           {showGameContext && gameContext && (
