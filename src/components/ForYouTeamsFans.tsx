@@ -19,7 +19,7 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [setTeamLinks] = useState<Record<string, TeamLink[]>>({});
+  const [teamLinks, setTeamLinks] = useState<Record<string, TeamLink[]>>({});
   const { user } = usePrivy();
   const currentFid = user?.linkedAccounts.find((a) => a.type === "farcaster")?.fid;
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
@@ -217,6 +217,7 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
       </div>
     );
   }
+  console.log("teamLinks", teamLinks);
   return (
     <div className="bg-purplePanel text-lightPurple rounded-lg p-1 overflow-hidden">
       <h2 className='text-notWhite'>Teams you follow</h2>
