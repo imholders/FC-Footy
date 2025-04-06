@@ -110,11 +110,11 @@ export interface GameStatusResponse {
   refunded: boolean;
 }
 
-interface Detail {
-  athletesInvolved: unknown;
-  type: unknown;
-  clock: unknown;
-  team: unknown;
+export interface Detail {
+  athletesInvolved: { displayName: string }[];
+  type: string;
+  clock: string;
+  team: string;
 }
 
 export interface MatchEvent {
