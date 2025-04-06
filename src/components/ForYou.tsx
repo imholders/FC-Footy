@@ -71,8 +71,6 @@ const ForYou = () => {
         <div>
           {/* Placeholder for Matches tab content */}
           <ForYouWhosPlaying
-            showLiveChat={showLiveChat}
-            setShowLiveChat={setShowLiveChat}
         />
         </div>
       )}
