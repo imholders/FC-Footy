@@ -84,6 +84,7 @@ const ChatInput = ({
   showPackDropdown,
   setShowPackDropdown,
   addEmoji,
+  isPosting,
 }: {
   message: string;
   setMessage: (msg: string) => void;
@@ -97,6 +98,7 @@ const ChatInput = ({
   showPackDropdown: boolean;
   setShowPackDropdown: React.Dispatch<React.SetStateAction<boolean>>;
   addEmoji: (emojiCode: string) => void;
+  isPosting: boolean;
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -236,7 +238,8 @@ const ChatInput = ({
       />
       <button
         onClick={onSubmit}
-        className="absolute bottom-2 right-4 h-10 px-4 rounded-md bg-deepPink text-black font-bold flex items-center justify-center"
+        disabled={isPosting}
+        className={`absolute bottom-2 right-4 h-10 px-4 rounded-md font-bold flex items-center justify-center ${isPosting ? 'bg-gray-400 cursor-not-allowed' : 'bg-deepPink text-black'}`}
         title="Send message"
       >
         <img
@@ -267,6 +270,7 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
   console.log("ContentLiveChat received roomHash:", roomHash);
   const [channel, setChannel] = useState(`match:${roomHash}`);
   console.log("Initial channel state:", `match:${roomHash}`);
@@ -376,14 +380,16 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
   }, []);
 
   const postMessage = async () => {
-  if (!authenticated) {
-    login();
-    return;
-  }
-  if (channel.startsWith("hash:") && !parentCastUrl) {
-    console.error("Error: cannot post reply without a valid cast hash.");
-    return;
-  }
+    if (!authenticated) {
+      login();
+      return;
+    }
+    if (channel.startsWith("hash:") && !parentCastUrl) {
+      console.error("Error: cannot post reply without a valid cast hash.");
+      return;
+    }
+    if (isPosting) return;
+    setIsPosting(true);
     if (farcasterAccount) {
       const fid = Number(farcasterAccount.fid);
       const signer = {
@@ -408,12 +414,14 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
       }, {
         onSuccess: () => {
           console.log("Cast sent successfully!");
-            setMessage("");
-            setShowEmojiPanel(false);
-            setTimeout(fetchCastByHash, 3000);
+          setMessage("");
+          setShowEmojiPanel(false);
+          setIsPosting(false);
+          setTimeout(fetchCastByHash, 3000);
         },
         onError: (error) => {
           console.error("Error sending cast:", error);
+          setIsPosting(false);
         }
       });
     } else {
@@ -529,6 +537,7 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
             showPackDropdown={showPackDropdown}
             setShowPackDropdown={setShowPackDropdown}
             addEmoji={addEmoji}
+            isPosting={isPosting}
           />
         </div>
         {/* <div className="flex justify-around">
