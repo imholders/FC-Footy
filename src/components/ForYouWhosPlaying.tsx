@@ -64,7 +64,15 @@ const ForYouWhosPlaying: React.FC = () => {
           const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard`);
           const data = await res.json();
           const events = data?.events || [];
-          allMatches.push(...events);
+          
+          // @ts-expect-error waiting to clean up types
+          const filtered = events.filter(event => {
+            const shortName = event?.shortName || '';
+            const home = shortName.slice(6, 9).toLowerCase();
+            const away = shortName.slice(0, 3).toLowerCase();
+            return leagueMap[league].includes(home) || leagueMap[league].includes(away);
+          });
+          allMatches.push(...filtered);
         }));
         setMatchData(allMatches);
       } catch (err) {
@@ -82,11 +90,19 @@ const ForYouWhosPlaying: React.FC = () => {
       <h2 className='text-notWhite mb-2'>Matches for Teams You Follow</h2>
       {matchData
         .filter(event => {
+          const eventDate = new Date(event.date);
+          const now = new Date();
+          const twoDaysAgo = new Date();
+          twoDaysAgo.setDate(now.getDate() - 2);
+
+          if (eventDate < twoDaysAgo) return false;
+
           const shortName = event?.shortName || '';
           const home = shortName.slice(6, 9).toLowerCase();
           const away = shortName.slice(0, 3).toLowerCase();
           return favoriteTeams.some(fav => fav.includes(home) || fav.includes(away));
         })
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .map(event => (
           // @ts-expect-error: Ignoring type issues for the event prop for now
           <MatchEventCard key={event.id} event={event} sportId={event.competitions?.[0]?.id || ''} />

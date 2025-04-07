@@ -4,10 +4,12 @@ import { getTeamPreferences, getFanCountForTeam } from "../lib/kvPerferences";
 import { usePrivy } from "@privy-io/react-auth";
 import { getTeamLogo } from "./utils/fetchTeamLogos";
 import { getFansForTeam } from '../lib/kvPerferences'; // Assuming these functions are imported from a relevant file
-import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchMutualFollowers } from './utils/fetchCheckIfFollowing';
 import SettingsFollowClubs from './SettingsFollowClubs';
 import ContentLiveChat from './ContentLiveChat';
+import { getAlikeFanMatches } from "./utils/getAlikeFanMatches";
+import type { FanPair } from "./utils/getAlikeFanMatches";
+import { fetchFanUserData } from './utils/fetchFCProfile';
 
 type TeamLink = {
   href: string;
@@ -28,7 +30,10 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   const [loadingFollowers, setLoadingFollowers] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
   const [cachedTeamFollowers, setCachedTeamFollowers] = useState<Record<string, Array<{ fid: number; pfp: string; mutual: boolean; youFollow?: boolean }>>>({});
-  
+  const [showMatchUps, setShowMatchUps] = useState(false);
+  const [matchUps, setMatchUps] = useState<FanPair[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+
   const fetchFavoriteTeams = async () => {
     try {
       const farcasterAccount = user?.linkedAccounts.find(
@@ -83,6 +88,9 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
     
     // Clear out previous fans and show loading state
     setFavoriteTeamFans([]);
+    setShowMatchUps(false);
+    setMatchUps([]);
+    setLoadingMatches(false);
     setLoadingFollowers(true);
 
     const fetchFans = async () => {
@@ -302,17 +310,63 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
           <p className="text-lightPurple text-sm">
             Connect with fellow fans and share your passion for the beautiful game!
           </p>
-          <button
-            onClick={() => {
-              // Optionally, you can extract league/abbr or log them
-              setShowLiveChat(true);
-            }}
-            className="mt-2 inline-block px-4 py-2 bg-deepPink hover:bg-fontRed text-white rounded-lg"
-          >
-            Join the chat
-          </button>
+          <div className="mt-2 flex gap-2 justify-center">
+            <button
+              onClick={() => {
+                setShowLiveChat(true);
+              }}
+              className="px-4 py-2 bg-deepPink hover:bg-fontRed text-white rounded-lg"
+            >
+              Join the chat
+            </button>
+            <button
+              disabled={loadingMatches}
+              onClick={async () => {
+                setLoadingMatches(true);
+                const matches = await getAlikeFanMatches(
+                  currentFid ? Number(currentFid) : undefined,
+                  favoriteTeamFans.map(fan => fan.fid)
+                );
+                setMatchUps(matches);
+                setShowMatchUps(true);
+                setLoadingMatches(false);
+              }}
+              className={`px-4 py-2 rounded-lg text-white ${
+                loadingMatches ? 'bg-purple-400 cursor-not-allowed' : 'bg-deepPink hover:bg-fontRed'
+              }`}
+            >
+              {loadingMatches ? 'Loading...' : 'Fans like you'}
+            </button>
+          </div>
         </div>
-        {showLiveChat && selectedTeam && <ContentLiveChat teamId={selectedTeam} />}
+        {showMatchUps && (
+          <div className="mt-4">
+            <h2 className="text-notWhite text-md font-semibold mb-2">Fans Most Like You</h2>
+            <ul className="space-y-2">
+              {matchUps.slice(0, 8).map((pair, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm">
+                  <button
+                    onClick={() => sdk.actions.viewProfile({ fid: pair.fid2 })}
+                    className="focus:outline-none"
+                  >
+                    <img
+                      src={pair.pfp}
+                      alt={`Fan ${pair.fid2}`}
+                      className="w-8 h-8 rounded-full border"
+                    />
+                  </button>
+                  <div>
+                    <div className="flex gap-1">
+                      {pair.teamLogos?.map((logo, idx) => (
+                        <img key={idx} src={logo} alt="Team" className="w-5 h-5 rounded-md" />
+                      ))}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
         );
       })()}

@@ -11,6 +11,7 @@ import { fetchFanUserData } from './utils/fetchFCProfile';
 import { fetchTeamLogos } from './utils/fetchTeamLogos';
 import { GET_SS_GAMES } from '../lib/graphql/queries';
 import FarcasterAvatar from './FarcasterAvatar';
+import sdk from '@farcaster/frame-sdk';
 // import ContestScoreSquare from './ContestScoreSquare';
 // import ContestScoreSquareCreate from './ContestScoreSquareCreate';
 
@@ -454,17 +455,19 @@ useEffect(() => {
               ) : (
                 combinedFanAvatars.length > 0 ? (
                   combinedFanAvatars.map((fan) => (
-                    <Link key={fan.fid} href={`https://warpcast.com/~/profiles/${fan.fid}`}>
-                      <div className={`rounded-full border-2 ${getBorderColor(fan.fid)}`}>
-                        <Image
-                          src={fan.pfp}
-                          alt={`Fan ${fan.fid}`}
-                          width={20}
-                          height={20}
-                          className="rounded-full aspect-square object-cover"
-                        />
-                      </div>
-                    </Link>
+                    <button
+                      key={fan.fid}
+                      onClick={() => sdk.actions.viewProfile({ fid: fan.fid })}
+                      className={`rounded-full border-2 ${getBorderColor(fan.fid)} focus:outline-none`}
+                    >
+                      <Image
+                        src={fan.pfp}
+                        alt={`Fan ${fan.fid}`}
+                        width={20}
+                        height={20}
+                        className="rounded-full aspect-square object-cover"
+                      />
+                    </button>
                   ))
                 ) : (
                   <span className="text-sm text-gray-400">No fans found.</span>
