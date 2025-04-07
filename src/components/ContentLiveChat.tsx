@@ -172,31 +172,32 @@ const ChatInput = ({
             />
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
-            {(searchTerm
-              ? emojiPacks.flatMap((pack) =>
-                  pack.emojis
-                    .filter((emoji) =>
-                      emoji.code.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((emoji): EmojiItem => ({
-                      ...emoji,
-                      packLabel: pack.label,
-                    }))
-                )
-              : (() => {
-                  const selected = emojiPacks.find((pack) => pack.name === selectedPack);
-                  if (!selected || !selected.emojis.length) {
-                    return [{
-                      type: 'message',
-                      content: "No emojis found for your team. Ask KMac to add them!"
-                    }] as EmojiItem[];
-                  }
-                  return selected.emojis.map((emoji): EmojiItem => ({
-                    ...emoji,
-                    packLabel: selected.label,
-                  }));
-                })()
-            ).map((item, idx) => {
+            {(() => {
+              const basePacks = emojiPacks.filter(pack =>
+                pack.name === "footy" || pack.name === selectedPack
+              );
+              const emojis = basePacks.flatMap((pack) =>
+                pack.emojis.map((emoji) => ({
+                  ...emoji,
+                  packLabel: pack.label,
+                }))
+              );
+
+              const filteredEmojis = searchTerm
+                ? emojis.filter((emoji) =>
+                    emoji.code.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                : emojis;
+
+              if (filteredEmojis.length === 0) {
+                return [{
+                  type: 'message',
+                  content: "No emojis found. Try searching again!"
+                }] as EmojiItem[];
+              }
+
+              return filteredEmojis;
+            })().map((item, idx) => {
                 if ('type' in item && item.type === 'message') {
                   return (
                     <span key={idx} className="text-white text-sm italic">{item.content}</span>
@@ -358,6 +359,62 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
       timestamp: cast.timestamp || Date.now()
     }));
     setCasts(enrichedWithTimestamp);
+    if (enrichedWithTimestamp.length > 0) {
+      const latestCast = enrichedWithTimestamp[enrichedWithTimestamp.length - 1];
+      const emojiRegex = /([a-zA-Z0-9]+::[a-zA-Z0-9_]+)/g;
+      let match;
+      while ((match = emojiRegex.exec(latestCast.text)) !== null) {
+        const emojiCode = match[1];
+        const foundEmoji = Object.values(emojiPacks)
+          .flatMap(pack => pack.emojis)
+          .find(emoji => emoji.code === emojiCode);
+        if (foundEmoji) {
+          const zoomImg = document.createElement("img");
+          zoomImg.src = foundEmoji.url;
+          zoomImg.className = "w-20 h-20 fixed z-50 pointer-events-none";
+          zoomImg.style.left = `${window.innerWidth / 2 - 40}px`;
+          zoomImg.style.top = `${window.innerHeight / 2 - 40}px`;
+          zoomImg.style.opacity = "0";
+          zoomImg.style.transition = "transform 0.4s ease-out, opacity 0.4s ease-out";
+          document.body.appendChild(zoomImg);
+          requestAnimationFrame(() => {
+            zoomImg.style.transform = "scale(3)";
+            zoomImg.style.opacity = "1";
+          });
+          setTimeout(() => {
+            zoomImg.remove();
+          }, 450);
+
+          setTimeout(() => {
+            for (let i = 0; i < 20; i++) {
+              const img = document.createElement("img");
+              img.src = foundEmoji.url;
+              img.className = "w-10 h-10 fixed z-50 pointer-events-none";
+              const angle = (2 * Math.PI * i) / 20;
+              const radius = 200 + Math.random() * 100;
+              const startX = window.innerWidth / 2;
+              const startY = window.innerHeight / 2;
+              const endX = startX + radius * Math.cos(angle);
+              const endY = startY + radius * Math.sin(angle);
+
+              img.style.left = `${startX}px`;
+              img.style.top = `${startY}px`;
+              img.style.transition = `all 1.2s ease-out`;
+              document.body.appendChild(img);
+
+              requestAnimationFrame(() => {
+                img.style.transform = `translate(${endX - startX}px, ${endY - startY}px) scale(0.8) rotate(${Math.random() * 720}deg)`;
+                img.style.opacity = "0";
+              });
+
+              setTimeout(() => {
+                img.remove();
+              }, 1300);
+            }
+          }, 450);
+        }
+      }
+    }
 
     if (chatContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
@@ -432,7 +489,9 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
   // Append an emoji code to the current message
   const addEmoji = (emojiCode: string) => {
     setMessage((prev) => {
-      const newMessage = prev + `${emojiCode} `;
+      const needsSpace = prev.length > 0 && !/\s$/.test(prev);
+      const spacer = needsSpace ? " " : "";
+      const newMessage = prev + spacer + emojiCode + " ";
       return newMessage.length <= 390 ? newMessage : prev;
     });
   };
