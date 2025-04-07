@@ -4,6 +4,7 @@ import ForYouWhosPlaying from "./ForYouWhosPlaying";
 import { usePrivy } from "@privy-io/react-auth";
 import { getTeamPreferences } from "../lib/kvPerferences";
 
+
 const ForYou = () => {
   const { user } = usePrivy();
   const [selectedTab, setSelectedTab] = useState<string>("matches");
@@ -27,6 +28,7 @@ const ForYou = () => {
       {/* Horizontal Scrollable Menu for Tabs */}
       <h2 className="font-2xl text-notWhite font-bold mb-4">Fan Experience</h2>        
       <div className="flex overflow-x-auto space-x-4 mb-4">
+        {/* Conditional if there are fav teams being followed */}
         {showLiveChat ? (
             <button
             onClick={() => setShowLiveChat(false)}
@@ -62,14 +64,15 @@ const ForYou = () => {
 
       <div className="bg-purplePanel text-lightPurple rounded-lg p-2 overflow-hidden">        
       {selectedTab === "fellowFollowers" && (
-        <ForYouTeamsFans
-            showLiveChat={showLiveChat}
-            setShowLiveChat={setShowLiveChat}
-        />
-        )}
+        <>
+          <ForYouTeamsFans
+              showLiveChat={showLiveChat}
+              setShowLiveChat={setShowLiveChat}
+          />
+        </>
+      )}
       {selectedTab === "matches" && (
         <div>
-          {/* Placeholder for Matches tab content */}
           <ForYouWhosPlaying
         />
         </div>
