@@ -213,6 +213,7 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
                 <div>
                   <div className="text-lightPurple">Prize Pool</div>
                   <div className="text-lg font-bold text-limeGreenOpacity">{finalPrizePool.toFixed(4)} ETH</div>
+                  <div className="text-xs text-gray-400 mt-1">Game ID: {game.gameId}</div>
                 </div>
   
                 <div className="flex flex-col items-end">
