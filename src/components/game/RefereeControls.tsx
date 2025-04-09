@@ -29,6 +29,7 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
 
   // ✅ Use game context instead of managing state separately
   const { gameDataState } = useGameContext();
+  const ticketsSold = gameDataState?.ticketsSold ?? 0;
 
   const { writeContractAsync } = useWriteContract();
 
@@ -183,7 +184,64 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
       setTxStatus("error");
     }
   };
-  
+
+  // ✅ Refund Functionality
+  const handleRefundGame = async () => {
+    try {
+      setTxStatus("pending");
+
+      const tx = await writeContractAsync({
+        address: SCORE_SQUARE_ADDRESS as `0x${string}`,
+        abi: [
+          {
+            name: "finalizeGame",
+            type: "function",
+            stateMutability: "nonpayable",
+            inputs: [
+              { name: "gameId", type: "uint256" },
+              { name: "winningSquares", type: "uint8[]" },
+              { name: "winnerPercentages", type: "uint8[]" },
+            ],
+            outputs: [],
+          },
+        ],
+        functionName: "finalizeGame",
+        args: [BigInt(gameId), [], []],
+      });
+
+      setTxHash(tx);
+    } catch (error) {
+      console.error("❌ Error calling refund finalizeGame:", error);
+      setTxStatus("error");
+    }
+  };
+
+  const handleDistributeRefund = async () => {
+    try {
+      setTxStatus("pending");
+
+      const tx = await writeContractAsync({
+        address: SCORE_SQUARE_ADDRESS as `0x${string}`,
+        abi: [
+          {
+            name: "distribute",
+            type: "function",
+            stateMutability: "nonpayable",
+            inputs: [{ name: "gameId", type: "uint256" }],
+            outputs: [],
+          },
+        ],
+        functionName: "distribute",
+        args: [BigInt(gameId)],
+      });
+
+      setTxHash(tx);
+    } catch (error) {
+      console.error("❌ Error calling distribute refund:", error);
+      setTxStatus("error");
+    }
+  };
+
   // console.log("🎯 showDistributePrizes:", showDistributePrizes);
 
   return (
@@ -194,8 +252,28 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
       {txStatus === "success" && <p className="text-limeGreen">✅ Transaction confirmed!</p>}
       {txStatus === "error" && <p className="text-fontRed">❌ Transaction failed.</p>}
 
+      {/* Show Refund Buttons if tickets sold are between 1 and 24 */}
+      {!showDistributePrizes &&
+        ticketsSold > 0 &&
+        ticketsSold < 25 && (
+          <div className="flex flex-col gap-2 mt-4">
+            <button
+              onClick={handleRefundGame}
+              className="w-full py-2 px-4 rounded bg-indigo-700 text-white hover:bg-indigo-800"
+            >
+              Abort Game 1st
+            </button>
+            <button
+              onClick={handleDistributeRefund}
+              className="w-full py-2 px-4 rounded bg-yellow-700 text-white hover:bg-yellow-800"
+            >
+              Distribute Refund 2nd
+            </button>
+          </div>
+      )}
+
       {/* Show Finalize Game & Cancel Buttons if game is active */}
-      {!showDistributePrizes && (
+      {!showDistributePrizes && ticketsSold === 25 && (
         <>
         {(selectedWinners.halftime !== null || selectedWinners.final !== null) && (
           <div className="mb-4">

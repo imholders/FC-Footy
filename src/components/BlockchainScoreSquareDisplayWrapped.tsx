@@ -219,40 +219,6 @@ useEffect(() => {
     }
   };
 
-const handleFinalizeRefund = async () => {
-  if (!gameDataState) return;
-  try {
-    setTxStatus("Finalizing refund...");
-    const txResponse = await writeContractAsync({
-      address: SCORE_SQUARE_ADDRESS as `0x${string}`,
-      abi: ABI,
-      functionName: "finalizeGame",
-      args: [[], []],
-    });
-    if (txResponse) setTxHash(txResponse);
-  } catch (err) {
-    console.error("Finalize refund failed:", err);
-    setTxStatus("❌ Finalize refund failed.");
-  }
-};
-
-const handleDistributeRefund = async () => {
-  if (!gameDataState) return;
-  try {
-    setTxStatus("Distributing refund...");
-    const txResponse = await writeContractAsync({
-      address: SCORE_SQUARE_ADDRESS as `0x${string}`,
-      abi: ABI,
-      functionName: "distribute",
-      args: [BigInt(gameDataState.gameId)],
-    });
-    if (txResponse) setTxHash(txResponse);
-  } catch (err) {
-    console.error("Distribute refund failed:", err);
-    setTxStatus("❌ Distribute refund failed.");
-  }
-};
-
 const handleShareClick = async () => {
   if (!gameDataState || !gameDataState.gameId) {
     alert("Game ID is not available.");
@@ -369,7 +335,7 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
               </p>
             )}
     
-            {isReferee && gameState === "waiting for VAR" && gameDataState.ticketsSold === 25 && (
+            {isReferee && gameState === "waiting for VAR" && gameDataState.ticketsSold > 0 && (
               <RefereeControls
                 gameId={gameDataState.gameId}
                 squareOwners={derivedPlayers}
@@ -380,22 +346,7 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
                 }
               />
             )}
-            {isReferee && gameState === "waiting for VAR" && (
-              <div className="flex gap-2 mt-2 ml-6">
-                <button
-                  onClick={handleFinalizeRefund}
-                  className="bg-indigo-700 text-white px-4 py-2 rounded-lg hover:bg-indigo-800"
-                >
-                  Abort Game 1st
-                </button>
-                <button
-                  onClick={handleDistributeRefund}
-                  className="bg-yellow-700 text-white px-4 py-2 rounded hover:bg-yellow-800"
-                >
-                  Distribute Refund 2nd
-                </button>
-              </div>
-            )}
+
             <div className="flex items-center gap-2 mt-2 mb-2 ml-6">
               <Info className="w-5 h-5 text-deepPink" />
 
