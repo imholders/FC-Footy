@@ -83,7 +83,12 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
 
   const isReferee = gameDataState?.referee?.toLowerCase() === address?.toLowerCase();
   const isFinalizationRequired = isReferee && gameDataState?.ticketsSold === 25 && !gameDataState?.prizeClaimed && !gameDataState?.refunded;
-  const isRefundEligible = isReferee && gameDataState?.ticketsSold < 25 && !gameDataState?.refunded && !gameDataState?.prizeClaimed;
+  const isRefundEligible =
+    isReferee &&
+    typeof gameDataState?.ticketsSold === "number" &&
+    gameDataState.ticketsSold < 25 &&
+    !gameDataState?.refunded &&
+    !gameDataState?.prizeClaimed;
   const gameState = gameDataState
     ? gameDataState.refunded
       ? "cancelled"
