@@ -407,6 +407,7 @@ const BlockchainScoreSquareCreateDetails: React.FC<BlockchainScoreSquareCreateDe
             required
           >
             <option value="eng.1">EPL (eng.1)</option>
+            <option value="uefa.champions">Champions league (uefa.champions)</option>
           </select>
         </div>
         
