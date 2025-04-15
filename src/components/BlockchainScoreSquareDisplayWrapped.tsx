@@ -42,6 +42,7 @@ const ABI = [
     type: "function",
     stateMutability: "nonpayable",
     inputs: [
+      { name: "gameId", type: "uint256" },
       { name: "winningSquares", type: "uint8[]" },
       { name: "winnerPercentages", type: "uint8[]" }
     ],
@@ -81,12 +82,14 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
   const metadataRef = useRef<HTMLDivElement>(null); 
 
   const isReferee = gameDataState?.referee?.toLowerCase() === address?.toLowerCase();
+  const isFinalizationRequired = isReferee && gameDataState?.ticketsSold === 25 && !gameDataState?.prizeClaimed && !gameDataState?.refunded;
+  const isRefundEligible = isReferee && gameDataState?.ticketsSold < 25 && !gameDataState?.refunded && !gameDataState?.prizeClaimed;
   const gameState = gameDataState
     ? gameDataState.refunded
       ? "cancelled"
       : gameDataState.prizeClaimed
       ? "completed"
-      : gameDataState.ticketsSold > 0
+      : gameDataState.ticketsSold === 25
       ? "waiting for VAR"
       : "active"
     : "loading";
@@ -328,6 +331,11 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
             {!isReferee && gameDataState.ticketsSold < 25 && (
               <RefereeCard referee={gameDataState.referee} />
             )}
+            {isReferee && gameDataState.ticketsSold === 0 && (
+              <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-md mb-4 text-sm">
+                You are the referee for this game. Once tickets are sold, you will be responsible for either refunding the game (if it does not sell out) or finalizing and distributing the prize when all 25 tickets are sold.
+              </div>
+            )}
 
             {txStatus && (
               <p className="text-center text-lg font-semibold text-blue-500">
@@ -335,7 +343,7 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
               </p>
             )}
     
-            {isReferee && gameState === "waiting for VAR" && gameDataState.ticketsSold > 0 && (
+            {(isFinalizationRequired || (isRefundEligible && gameDataState.ticketsSold > 0)) && (
               <RefereeControls
                 gameId={gameDataState.gameId}
                 squareOwners={derivedPlayers}

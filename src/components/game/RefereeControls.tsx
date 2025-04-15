@@ -224,14 +224,14 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
         address: SCORE_SQUARE_ADDRESS as `0x${string}`,
         abi: [
           {
-            name: "distribute",
+            name: "distributeWinnings",
             type: "function",
             stateMutability: "nonpayable",
             inputs: [{ name: "gameId", type: "uint256" }],
             outputs: [],
           },
         ],
-        functionName: "distribute",
+        functionName: "distributeWinnings",
         args: [BigInt(gameId)],
       });
 
@@ -275,36 +275,36 @@ const RefereeControls: React.FC<RefereeControlsProps> = ({
       {/* Show Finalize Game & Cancel Buttons if game is active */}
       {!showDistributePrizes && ticketsSold === 25 && (
         <>
-        {(selectedWinners.halftime !== null || selectedWinners.final !== null) && (
           <div className="mb-4">
-            <p className="text-lightPurple font-semibold mb-2">Selected Winners:</p>
-            <div className="grid grid-cols-2 gap-4">
-              {['halftime', 'final'].map((key) => {
-                const squareIndex = selectedWinners[key as 'halftime' | 'final'];
-                if (squareIndex === null) return null;
-                const address = squareOwners?.[squareIndex] ?? null;
-                // console.log("🏆 Selected Winner:", key, "Square Index:", squareIndex, "Address:", address);
-                return (
-                  <div key={key} className="bg-gray-800 p-3 rounded-lg flex flex-col items-center space-y-2">
-                    <FarcasterAvatar address={address || ''} size={40} className="min-w-[40px] min-h-[40px]" />
+            {(selectedWinners.halftime !== null || selectedWinners.final !== null) && (
+              <div>
+                <p className="text-lightPurple font-semibold mb-2">Selected Winners:</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {['halftime', 'final'].map((key) => {
+                    const squareIndex = selectedWinners[key as 'halftime' | 'final'];
+                    if (squareIndex === null) return null;
+                    const address = squareOwners?.[squareIndex] ?? null;
+                    // console.log("🏆 Selected Winner:", key, "Square Index:", squareIndex, "Address:", address);
+                    return (
+                      <div key={key} className="bg-gray-800 p-3 rounded-lg flex flex-col items-center space-y-2">
+                        <FarcasterAvatar address={address || ''} size={40} className="min-w-[40px] min-h-[40px]" />
+                        
+                        <p className="text-lightPurple text-xs break-all text-center">
+                          {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown'}
+                        </p>
                     
-                    <p className="text-lightPurple text-xs break-all text-center">
-                      {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown'}
-                    </p>
-                
-                    <div className="text-center">
-                      <p className="text-notWhite text-sm font-bold capitalize">{key}</p>
-                      <p className="text-yellow-400 text-xs">Square #{squareIndex}</p>
-                      <p className="text-lightPurple text-xs">{formatScoreFromSquare(squareIndex)}</p>
-                    </div>
-                  </div>
-                );
-                
-                
-              })}
-            </div>
+                        <div className="text-center">
+                          <p className="text-notWhite text-sm font-bold capitalize">{key}</p>
+                          <p className="text-yellow-400 text-xs">Square #{squareIndex}</p>
+                          <p className="text-lightPurple text-xs">{formatScoreFromSquare(squareIndex)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
           <div className="mt-4">
             <span className="text-lightPurple">
