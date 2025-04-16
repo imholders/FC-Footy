@@ -450,30 +450,43 @@ useEffect(() => {
             </div>
           </div>
           <div className="grid grid-cols-10 gap-1">
-              {isLoadingFans ? (
-                <span className="text-sm text-gray-400">Loading{loadingDots}</span>
-              ) : (
-                combinedFanAvatars.length > 0 ? (
-                  combinedFanAvatars.map((fan) => (
-                    <button
-                      key={fan.fid}
-                      onClick={() => sdk.actions.viewProfile({ fid: fan.fid })}
-                      className={`rounded-full border-2 ${getBorderColor(fan.fid)} focus:outline-none`}
-                    >
-                      <Image
-                        src={fan.pfp}
-                        alt={`Fan ${fan.fid}`}
-                        width={20}
-                        height={20}
-                        className="rounded-full aspect-square object-cover"
-                      />
-                    </button>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-400">No fans found.</span>
-                )
-              )}
-            </div>
+  {isLoadingFans ? (
+    <span className="text-sm text-gray-400">Loading{loadingDots}</span>
+  ) : combinedFanAvatars.length > 0 ? (
+    combinedFanAvatars
+      .sort((a, b) => {
+        const borderColorA = getBorderColor(a.fid);
+        const borderColorB = getBorderColor(b.fid);
+
+        // Define the order: purple (Both) > blue (Home) > yellow (Away)
+        const colorPriority: { [key: string]: number } = {
+          'border-purple-500': 1, // Both (highest priority)
+          'border-blue-500': 2,   // Home
+          'border-yellow-500': 3, // Away
+          'border-gray-400': 4,   // Fallback (lowest priority)
+        };
+
+        return colorPriority[borderColorA] - colorPriority[borderColorB];
+      })
+      .map((fan) => (
+        <button
+          key={fan.fid}
+          onClick={() => sdk.actions.viewProfile({ fid: fan.fid })}
+          className={`rounded-full border-2 ${getBorderColor(fan.fid)} focus:outline-none`}
+        >
+          <Image
+            src={fan.pfp}
+            alt={`Fan ${fan.fid}`}
+            width={20}
+            height={20}
+            className="rounded-full aspect-square object-cover"
+          />
+        </button>
+      ))
+  ) : (
+    <span className="text-sm text-gray-400">No fans found.</span>
+  )}
+</div>
           </div>
 
           {/* AI Summary Section */}
