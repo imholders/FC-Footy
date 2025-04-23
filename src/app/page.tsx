@@ -14,9 +14,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const url = new URL('/', appUrl);
   let imgUrl = `${appUrl}/opengraph-image`;
   
-  const params = await searchParams;
-  console.log("Incoming searchParams:", params);
-
   Object.entries(await searchParams).forEach(([key, value]) => {
     if (typeof value === 'string') {
       url.searchParams.append(key, value);

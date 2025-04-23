@@ -51,20 +51,45 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
   const [showInstructions, setShowInstructions] = useState(false);
 
   const { data, loading, error } = useGames(20, 0);
+  
+  if (data?.games) {
+    console.log("Raw prize pool values:", data.games.map((g: SubgraphGame) => ({
+      id: g.id,
+      prizePool: g.prizePool,
+      refunded: g.refunded,
+      prizeClaimed: g.prizeClaimed,
+      ticketsSold: g.ticketsSold,
+      squarePrice: g.squarePrice,
+      createdAt: g.createdAt,
+      eventId: g.eventId,
+    })));
+  }
+
   const activeGames = data?.games
-  ? data.games
-      .filter((game: SubgraphGame) => !game.prizeClaimed && !game.refunded && game.eventId.startsWith("eng_1"))
-      .sort((a: SubgraphGame, b: SubgraphGame) => {
-        const leagueA = parseEventId(a.eventId)?.leagueId || "";
-        const leagueB = parseEventId(b.eventId)?.leagueId || "";
-        
-        if (leagueA !== leagueB) {
-          return leagueB.localeCompare(leagueA); // Sort alphabetically by league
-        }
-        
-        return parseInt(a.createdAt) - parseInt(b.createdAt); // Newest first within each league
-      })
-  : [];
+    ? data.games
+    .filter((game: SubgraphGame) => {
+      const createdAtMs = parseInt(game.createdAt) * 1000;
+      const tenMinutesAgo = Date.now() - 100 * 60 * 1000;
+      const isNewlyDeployed = createdAtMs > tenMinutesAgo;
+    
+      return (
+        !game.prizeClaimed &&
+        !game.refunded &&
+        BigInt(game.squarePrice) > 0n &&
+        (game.ticketsSold > 0 || isNewlyDeployed)
+      );
+    })
+        .sort((a: SubgraphGame, b: SubgraphGame) => {
+          const leagueA = parseEventId(a.eventId)?.leagueId || "";
+          const leagueB = parseEventId(b.eventId)?.leagueId || "";
+          
+          if (leagueA !== leagueB) {
+            return leagueB.localeCompare(leagueA); // Sort alphabetically by league
+          }
+          
+          return parseInt(a.createdAt) - parseInt(b.createdAt); // Newest first within each league
+        })
+    : [];
 
   const handleGameSelect = (gameId: string) => {
     setSelectedGame(gameId); // ✅ Update state before navigating
@@ -213,6 +238,7 @@ const ActiveGamesBrowser: React.FC<ActiveGamesBrowserProps> = ({ initialGameId }
                 <div>
                   <div className="text-lightPurple">Prize Pool</div>
                   <div className="text-lg font-bold text-limeGreenOpacity">{finalPrizePool.toFixed(4)} ETH</div>
+                  <div className="text-xs text-gray-400 mt-1">Game ID: {game.gameId}</div>
                 </div>
   
                 <div className="flex flex-col items-end">

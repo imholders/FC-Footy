@@ -1,12 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useContractRead } from 'wagmi';
-// At the top of the file (with other imports), add:
 import { toPng } from 'html-to-image';
-import { useRef } from 'react';
-// Import context
 import { useGameContext } from '../context/GameContext';
-
-// Import components
 import GameMetadataCard from './game/GameMetadataCard';
 import SquareGrid from './game/SquareGrid';
 import CartSection from './game/CartSection';
@@ -16,8 +11,6 @@ import NoGameData from './game/NoGameData';
 import RefereeCard from './game/RefereeCard';
 import RefereeControls from './game/RefereeControls';
 import UserInstructions from './UserInstructions';
-
-// Import contract config
 import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 import SquareGridPlaceholder from './game/SquareGridPlaceholder';
 import { Info } from 'lucide-react';
@@ -36,6 +29,31 @@ const ABI = [
       { name: "ticketNumbers", type: "uint8[]" },
       { name: "owners", type: "address[]" }
     ],
+  },
+  {
+    name: "buyTickets",
+    type: "function",
+    stateMutability: "payable",
+    inputs: [{ name: "gameId", type: "uint256" }, { name: "numTickets", type: "uint8" }],
+    outputs: [],
+  },
+  {
+    name: "finalizeGame",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "gameId", type: "uint256" },
+      { name: "winningSquares", type: "uint8[]" },
+      { name: "winnerPercentages", type: "uint8[]" }
+    ],
+    outputs: [],
+  },
+  {
+    name: "distribute",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "gameId", type: "uint256" }],
+    outputs: [],
   },
 ];
 
@@ -64,6 +82,13 @@ const BlockchainScoreSquareDisplayWrapped: React.FC<BlockchainScoreSquareDisplay
   const metadataRef = useRef<HTMLDivElement>(null); 
 
   const isReferee = gameDataState?.referee?.toLowerCase() === address?.toLowerCase();
+  const isFinalizationRequired = isReferee && gameDataState?.ticketsSold === 25 && !gameDataState?.prizeClaimed && !gameDataState?.refunded;
+  const isRefundEligible =
+    isReferee &&
+    typeof gameDataState?.ticketsSold === "number" &&
+    gameDataState.ticketsSold < 25 &&
+    !gameDataState?.refunded &&
+    !gameDataState?.prizeClaimed;
   const gameState = gameDataState
     ? gameDataState.refunded
       ? "cancelled"
@@ -184,15 +209,7 @@ useEffect(() => {
 
       const txResponse = await writeContractAsync({
         address: SCORE_SQUARE_ADDRESS as `0x${string}`,
-        abi: [
-          {
-            name: "buyTickets",
-            type: "function",
-            stateMutability: "payable",
-            inputs: [{ name: "gameId", type: "uint256" }, { name: "numTickets", type: "uint8" }],
-            outputs: [],
-          },
-        ],
+        abi: ABI,
         functionName: "buyTickets",
         args: [BigInt(gameDataState.gameId), cart.length],
         value: BigInt(gameDataState.squarePrice) * BigInt(cart.length),
@@ -319,6 +336,11 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
             {!isReferee && gameDataState.ticketsSold < 25 && (
               <RefereeCard referee={gameDataState.referee} />
             )}
+            {isReferee && gameDataState.ticketsSold === 0 && (
+              <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-3 rounded-md mb-4 text-sm">
+                You are the referee for this game. Once tickets are sold, you will be responsible for either refunding the game (if it does not sell out) or finalizing and distributing the prize when all 25 tickets are sold.
+              </div>
+            )}
 
             {txStatus && (
               <p className="text-center text-lg font-semibold text-blue-500">
@@ -326,7 +348,7 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
               </p>
             )}
     
-            {isReferee && gameState === "waiting for VAR" && (
+            {(isFinalizationRequired || (isRefundEligible && gameDataState.ticketsSold > 0)) && (
               <RefereeControls
                 gameId={gameDataState.gameId}
                 squareOwners={derivedPlayers}
@@ -337,6 +359,7 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
                 }
               />
             )}
+
             <div className="flex items-center gap-2 mt-2 mb-2 ml-6">
               <Info className="w-5 h-5 text-deepPink" />
 
