@@ -18,6 +18,7 @@ export async function GET() {
       splashImageUrl: `${appUrl}/defifa_spinner.gif`,
       splashBackgroundColor: "#010513",
       homeUrl: appUrl,
+      heroImageUrl: `${appUrl}/opengraph-image`,
       webhookUrl: `${appUrl}/api/webhook`,
       subtitle: "⚽️ footy fun in farcaster",
       description: "⚽️ match previews, summaries, Farcaster fantasy league, money games & onchain fan experiences",
@@ -26,6 +27,7 @@ export async function GET() {
       tagline: "The beautiful game onchain",
       ogTitle: "Footy App",
       ogDescription: "⚽️ match previews, summaries, Farcaster fantasy league, money games & onchain fan experiences",
+      ogImageUrl: `${appUrl}/opengraph-image`,
     },
   };
 
