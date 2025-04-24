@@ -19,6 +19,13 @@ export async function GET() {
       splashBackgroundColor: "#010513",
       homeUrl: appUrl,
       webhookUrl: `${appUrl}/api/webhook`,
+      subtitle: "⚽️ footy fun in farcaster",
+      description: "⚽️ match previews, summaries, Farcaster fantasy league, money games & onchain fan experiences",
+      primaryCategory: "entertainment",
+      tags: ["sports", "soccer", "football", "fantasy", "games"],
+      tagline: "The beautiful game onchain",
+      ogTitle: "Footy App",
+      ogDescription: "⚽️ match previews, summaries, Farcaster fantasy league, money games & onchain fan experiences",
     },
   };
 
