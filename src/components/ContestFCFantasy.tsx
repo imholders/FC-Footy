@@ -409,15 +409,15 @@ const ContestFCFantasy = () => {
       {!loadingFantasy && (
         <div className="flex space-x-4 mt-4">
           <div className="flex space-x-4 w-full max-w-xs">
-            <button
+            {/* <button
               onClick={handleMintImage}
               disabled={mintingInProgress || !cardEntry}
               className={`flex-1 py-3 bg-deepPink text-white rounded-lg hover:bg-fontRed transition shadow-lg text-lg font-bold ${
                 mintingInProgress ? 'opacity-50' : ''
               }`}
             >
-              {mintingInProgress ? 'Minting...' : 'Mint NFT'}
-            </button>
+              {mintingInProgress ? 'Minting...' : 'Mint NFTs'}
+            </button> */}
             {testing && (
               <button
                 onClick={handleCheckHash}
