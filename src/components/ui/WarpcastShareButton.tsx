@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from "next/navigation";
-import frameSdk from "@farcaster/frame-sdk";
+import frameSdk, { sdk } from "@farcaster/frame-sdk";
 import { BASE_URL } from '~/lib/config';
 import { FrameContext } from '@farcaster/frame-node';
 
@@ -216,9 +216,10 @@ export function WarpcastShareButton({ selectedMatch, buttonText, compositeImage,
 
       // console.log(context);
       if (context === undefined) {
-        window.open(url, '_blank');
+        // window.open(url, '_blank');
+        sdk.actions.openUrl(url);
       } else {
-        frameSdk.actions.openUrl(url);
+        sdk.actions.openUrl(url);
       }
     }
   }, [selectedMatch, context, searchParams, compositeImage, fallbackLeague, leagueId]);

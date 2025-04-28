@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import frameSdk from "@farcaster/frame-sdk";
+import frameSdk, { sdk } from "@farcaster/frame-sdk";
 import { fetchFarcasterProfileByAddress, getDefaultProfilePicture } from '../utils/fetchFarcasterProfile';
 import { formatAddress } from '../utils/formatters';
 
@@ -130,15 +130,19 @@ const FarcasterAvatar: React.FC<FarcasterAvatarProps> = ({
         await frameSdk.actions.viewProfile({ fid });
         return;
       } catch {
-        window.open(`https://basescan.org/address/${address}`, '_blank');
+        // window.open(`https://basescan.org/address/${address}`, '_blank');
+        await sdk.actions.openUrl(`https://basescan.org/address/${address}`);
         return;
       }
     }
 
     if (username) {
-      window.open(`https://warpcast.com/${username}`, '_blank');
+      // window.open(`https://warpcast.com/${username}`, '_blank');
+      await sdk.actions.openUrl(`https://warpcast.com/${username}`);
     } else {
-      window.open(`https://basescan.org/address/${address}`, '_blank');
+      // window.open(`https://basescan.org/address/${address}`, '_blank');
+      await sdk.actions.openUrl(`https://basescan.org/address/${address}`);
+
     }
   };
 
