@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef } from 'react';
-import frameSdk from "@farcaster/frame-sdk";
+import frameSdk, { sdk } from "@farcaster/frame-sdk";
 import FantasyRow from './ContestFantasyRow';
 import { fetchFantasyData } from './utils/fetchFantasyData';
 import { usePrivy } from '@privy-io/react-auth';
@@ -483,7 +483,8 @@ const ContestFCFantasy = () => {
                   if (isContextLoaded) {
                     frameSdk.actions.openUrl(warpcastUrl);
                   } else {
-                    window.open(warpcastUrl, '_blank');
+                    // window.open(warpcastUrl, '_blank');
+                        await sdk.actions.openUrl(warpcastUrl);
                   }
                   
                   setStatusMessage('🚀 Shared on Warpcast! (check popup blocker)');

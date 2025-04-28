@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import frameSdk from "@farcaster/frame-sdk";
+import frameSdk, { sdk } from "@farcaster/frame-sdk";
 import FarcasterAvatar from '../FarcasterAvatar';
 import { formatAddress } from '../../utils/formatters';
 import { fetchFarcasterProfileByAddress } from '../../utils/fetchFarcasterProfile';
@@ -68,12 +68,15 @@ const RefereeCard: React.FC<RefereeCardProps> = ({ referee }) => {
         await frameSdk.actions.viewProfile({ fid });
       } catch (error) {
         console.error('Error opening Farcaster profile:', error);
-        window.open(`https://basescan.org/address/${referee}`, '_blank');
+        // window.open(`https://basescan.org/address/${referee}`, '_blank');
+        await sdk.actions.openUrl(`https://basescan.org/address/${referee}`);
       }
     } else if (username) {
-      window.open(`https://warpcast.com/${username}`, '_blank');
+      // window.open(`https://warpcast.com/${username}`, '_blank');
+      await sdk.actions.openUrl(`https://warpcast.com/${username}`);
     } else {
-      window.open(`https://basescan.org/address/${referee}`, '_blank');
+      // window.open(`https://basescan.org/address/${referee}`, '_blank');
+      await sdk.actions.openUrl(`https://basescan.org/address/${referee}`);
     }
   };
 

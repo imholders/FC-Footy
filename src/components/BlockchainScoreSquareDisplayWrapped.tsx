@@ -14,6 +14,7 @@ import UserInstructions from './UserInstructions';
 import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 import SquareGridPlaceholder from './game/SquareGridPlaceholder';
 import { Info } from 'lucide-react';
+import sdk from '@farcaster/frame-sdk';
 
 interface BlockchainScoreSquareDisplayProps {
   eventId: string;
@@ -287,7 +288,8 @@ Try your luck. Halftime score gets 25 percent of the pool, final score winner ge
     imageUrl ? `&embeds[]=${imageUrl}` : ''
   }`;
   
-  window.open(castIntentUrl, '_blank');
+  // window.open(castIntentUrl, '_blank');
+  await sdk.actions.openUrl(castIntentUrl)
 };
 // ... (rest of the file code)
 

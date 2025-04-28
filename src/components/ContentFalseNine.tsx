@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useReadTFN } from './utils/readTFN'; // Adjust import path if necessary
+import sdk from '@farcaster/frame-sdk';
 
 interface ContentFalseNineItem {
   title: string;
@@ -68,9 +69,10 @@ const ContentFalseNine = () => {
   );
 
   // Handle subscription click (for now, it's just a placeholder link)
-  const handleSubscribeClick = () => { //TODO: Replace with actual subscription link and FC Footy address
+  const handleSubscribeClick = async() => { //TODO: Replace with actual subscription link and FC Footy address
     const subscriptionLink = `${ContentFalseNine[currentIndex]?.link}?referrer=0x8b80755C441d355405CA7571443Bb9247B77Ec16`;
-    window.open(subscriptionLink, "_blank", "noopener noreferrer allow-popups");
+    // window.open(subscriptionLink, "_blank", "noopener noreferrer allow-popups");
+    await sdk.actions.openUrl(subscriptionLink)
   };
 
   // Function to handle card click and scroll to the top
