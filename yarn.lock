@@ -6316,6 +6316,13 @@ pinata-web3@^0.5.4:
     is-ipfs "^8.0.4"
     node-fetch "^3.3.1"
 
+pingem-sdk@^0.1.14:
+  version "0.1.14"
+  resolved "https://registry.yarnpkg.com/pingem-sdk/-/pingem-sdk-0.1.14.tgz#81827a81702b9402badf2644c70881e4fd9ab345"
+  integrity sha512-964Iz2ha+pZjoVQ66WivjsPrIAFFW39ow8QaJjk1m+s4I0rC87/shvYJNwZK7m7ly8nSuEznRJBZvA2ezymT1Q==
+  dependencies:
+    cross-fetch "^4.0.0"
+
 pino-abstract-transport@^1.0.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/pino-abstract-transport/-/pino-abstract-transport-1.2.0.tgz#97f9f2631931e242da531b5c66d3079c12c9d1b5"
