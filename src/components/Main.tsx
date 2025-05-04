@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import frameSdk from "@farcaster/frame-sdk";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Dispatch, SetStateAction } from "react";
-
 import TabNavigation from "./TabNavigation";
 import MatchesTab from "./MatchesTab";
 import Contests from "./Contests";
@@ -17,6 +16,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useLoginToFrame } from "@privy-io/react-auth/farcaster";
 // import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 // import { FrameContext } from "@farcaster/frame-node";
+import { Pingem } from 'pingem-sdk';
 
 export default function Main() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -28,6 +28,7 @@ export default function Main() {
   const effectiveSearchParams = searchParams || customSearchParams;
   const selectedTab = effectiveSearchParams?.get("tab") || "forYou";
   const selectedLeague = effectiveSearchParams?.get("league") || "eng.1";
+  const pingem = new Pingem();
 
   // Now handleTabChange matches React.Dispatch<SetStateAction<string>>
   const handleTabChange: Dispatch<SetStateAction<string>> = (value) => {
@@ -73,7 +74,19 @@ useEffect(() => {
       setCustomSearchParams(new URLSearchParams(window.location.search));
     }
 
+    let domain = "";
+    if (typeof window !== "undefined") {
+      domain = window.location.hostname;
+      if (domain.startsWith("www.")) {
+        domain = domain.slice(4);
+      }
+    }
+
     frameSdk.actions.ready({});
+    await pingem.init(frameSdk, domain);
+    await frameSdk.actions.addFrame();
+    await pingem.ping('view'); 
+    console.log("Pingem initialized and frame added");
   };
 
   if (frameSdk && !isSDKLoaded) {
