@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
 
   for (const event of liveEvents) {
     const matchId = event.id;
+    console.log(`Processing match ID: ${matchId}`);
     const competition = event.competitions?.[0];
     if (!competition) {
       console.warn(`No competition data for match ${matchId}. Skipping.`);
