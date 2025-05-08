@@ -1,38 +1,36 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import axios from "axios";
 import { sendFrameNotification } from "~/lib/notifications";
-import { getFansForTeams } from "~/lib/kvPerferences";
+import { getFansForTeamAbbr } from "~/lib/kvPerferences";
+import { ApiResponse, Competition, Competitor, MatchDetail, MatchEvent } from "../../lib/types";
 
-// Ensure that your environment variables are correctly set.
-// Consider renaming them if they are meant for server-only usage.
 const redis = new Redis({
   url: process.env.NEXT_PUBLIC_KV_REST_API_URL,
   token: process.env.NEXT_PUBLIC_KV_REST_API_TOKEN,
 });
 
 export async function POST(request: NextRequest) {
-  // ESPN Scoreboard endpoint for laliga
   const scoreboardUrl =
     "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard";
-
-  let liveEvents;
   const leagueId = "esp.1";
+
+  let liveEvents: MatchEvent[];
   try {
-    const response = await axios.get(scoreboardUrl);
+    const response = await axios.get<ApiResponse>(scoreboardUrl);
     if (!response.data.events) {
       throw new Error("No events data returned from API");
     }
-    // Filter events for live matches (state === "in")
+    // Include both "in" and "post" matches to catch full-time events
     liveEvents = response.data.events.filter(
-      (event: any) =>
-        event.competitions?.[0]?.status?.type?.state === "in"
+      (event) =>
+        event.competitions?.[0]?.status?.type?.state === "in" ||
+        event.competitions?.[0]?.status?.type?.state === "post"
     );
-    console.log(`Found ${liveEvents.length} live event(s).`);
+    console.log(`Found ${liveEvents.length} live or completed event(s) in La Liga.`);
   } catch (error) {
-    console.error("Error fetching scoreboard:", error);
+    console.error("Error fetching La Liga scoreboard:", error);
     return new NextResponse(
       JSON.stringify({ success: false, error: "Failed to fetch scoreboard" }),
       { status: 500 }
@@ -40,22 +38,22 @@ export async function POST(request: NextRequest) {
   }
 
   const goalNotifications: string[] = [];
+  const otherNotifications: string[] = []; // Track kickoff, halftime, full-time notifications
 
-  // Loop through each live event
   for (const event of liveEvents) {
     const matchId = event.id;
-    const competition = event.competitions?.[0];
+    console.log(`Processing match ID: ${matchId}`);
+    const competition: Competition | undefined = event.competitions?.[0];
     if (!competition) {
       console.warn(`No competition data for match ${matchId}. Skipping.`);
       continue;
     }
 
-    // Extract home and away teams
     const homeTeam = competition.competitors?.find(
-      (c: any) => c.homeAway === "home"
+      (c: Competitor) => c.homeAway === "home"
     );
     const awayTeam = competition.competitors?.find(
-      (c: any) => c.homeAway === "away"
+      (c: Competitor) => c.homeAway === "away"
     );
     if (!homeTeam || !awayTeam) {
       console.warn(`Missing team data for match ${matchId}. Skipping.`);
@@ -64,25 +62,160 @@ export async function POST(request: NextRequest) {
     const homeScore = parseInt(homeTeam.score, 10);
     const awayScore = parseInt(awayTeam.score, 10);
 
-    // Fetch previous scores from Redis
-    let previousScore;
+    const homeTeamAbbr = homeTeam.team?.abbreviation?.toLowerCase();
+    const awayTeamAbbr = awayTeam.team?.abbreviation?.toLowerCase();
+    const matchName = `${
+      homeTeam.team?.shortDisplayName || homeTeam.team?.displayName
+    } vs ${
+      awayTeam.team?.shortDisplayName || awayTeam.team?.displayName
+    } (La Liga)`;
+
+    // Fetch fans for notifications
+    let homeFans: number[] = [];
+    let awayFans: number[] = [];
+    try {
+      if (homeTeamAbbr) {
+        homeFans = await getFansForTeamAbbr(homeTeamAbbr);
+      }
+      if (awayTeamAbbr) {
+        awayFans = await getFansForTeamAbbr(awayTeamAbbr);
+      }
+      console.log(
+        `Fans for ${homeTeamAbbr || "unknown"}: ${
+          homeFans.length
+        }, ${awayTeamAbbr || "unknown"}: ${awayFans.length}`
+      );
+    } catch (err) {
+      console.error(`Error fetching fans for La Liga match ${matchId}`, err);
+    }
+    const uniqueFansToNotify = new Set([...homeFans, ...awayFans]);
+    const fidsToNotify = Array.from(uniqueFansToNotify);
+
+    // --- New Logic: Kickoff, Halftime, Full-Time Notifications ---
+    let notificationFlags: {
+      kickoff_notified?: string;
+      halftime_notified?: string;
+      fulltime_notified?: string;
+    } | null;
+    try {
+      notificationFlags = await redis.hgetall(`fc-footy:esp:notifications:${matchId}`);
+    } catch (err) {
+      console.error(`Error fetching notification flags for match ${matchId}`, err);
+      notificationFlags = null;
+    }
+
+    // Kickoff Notification
+    if (
+      competition.status?.type?.state === "in" &&
+      (!notificationFlags || !notificationFlags.kickoff_notified)
+    ) {
+      const message = `Kickoff: ${matchName}`;
+      otherNotifications.push(message);
+      console.log(`Kickoff detected for match ${matchId}: ${message}`);
+
+      const batchSize = 40;
+      for (let i = 0; i < fidsToNotify.length; i += batchSize) {
+        const batch = fidsToNotify.slice(i, i + batchSize);
+        const notificationPromises = batch.map(async (fid) => {
+          try {
+            await sendFrameNotification({
+              fid,
+              title: "Match Started! (La Liga)",
+              body: message,
+            });
+          } catch (error) {
+            console.error(`Failed to send kickoff notification to FID: ${fid}`, error);
+          }
+        });
+        await Promise.all(notificationPromises);
+      }
+
+      await redis.hset(`fc-footy:esp:notifications:${matchId}`, {
+        kickoff_notified: "true",
+      });
+    }
+
+    // Halftime Notification
+    if (
+      competition.status?.type?.name === "STATUS_HALFTIME" &&
+      (!notificationFlags || !notificationFlags.halftime_notified)
+    ) {
+      const message = `Halftime: ${matchName} | Score: ${homeScore}-${awayScore}`;
+      otherNotifications.push(message);
+      console.log(`Halftime detected for match ${matchId}: ${message}`);
+
+      const batchSize = 40;
+      for (let i = 0; i < fidsToNotify.length; i += batchSize) {
+        const batch = fidsToNotify.slice(i, i + batchSize);
+        const notificationPromises = batch.map(async (fid) => {
+          try {
+            await sendFrameNotification({
+              fid,
+              title: "Halftime! (La Liga)",
+              body: message,
+            });
+          } catch (error) {
+            console.error(`Failed to send halftime notification to FID: ${fid}`, error);
+          }
+        });
+        await Promise.all(notificationPromises);
+      }
+
+      await redis.hset(`fc-footy:esp:notifications:${matchId}`, {
+        halftime_notified: "true",
+      });
+    }
+
+    // Full-Time Notification
+    if (
+      (competition.status?.type?.state === "post" ||
+        competition.status?.type?.name === "STATUS_FULL_TIME") &&
+      (!notificationFlags || !notificationFlags.fulltime_notified)
+    ) {
+      const message = `Full Time: ${matchName} | Final Score: ${homeScore}-${awayScore}`;
+      otherNotifications.push(message);
+      console.log(`Full-time detected for match ${matchId}: ${message}`);
+
+      const batchSize = 40;
+      for (let i = 0; i < fidsToNotify.length; i += batchSize) {
+        const batch = fidsToNotify.slice(i, i + batchSize);
+        const notificationPromises = batch.map(async (fid) => {
+          try {
+            await sendFrameNotification({
+              fid,
+              title: "Match Ended! (La Liga)",
+              body: message,
+            });
+          } catch (error) {
+            console.error(`Failed to send full-time notification to FID: ${fid}`, error);
+          }
+        });
+        await Promise.all(notificationPromises);
+      }
+
+      await redis.hset(`fc-footy:esp:notifications:${matchId}`, {
+        fulltime_notified: "true",
+      });
+    }
+    // --- End New Logic ---
+
+    // --- Existing Goal Notification Logic ---
+    let previousScore: { homeScore?: string; awayScore?: string } | null;
     try {
       previousScore = await redis.hgetall(`fc-footy:esp:match:${matchId}`);
     } catch (err) {
-      console.error(`Error fetching Redis data for match ${matchId}`, err);
+      console.error(`Error fetching Redis data for La Liga match ${matchId}`, err);
       continue;
     }
 
-    // Initialize match in Redis if not found
     if (!previousScore || Object.keys(previousScore).length === 0) {
       console.log(
-        `Initializing Redis for match ${matchId} with scores: ${homeScore}-${awayScore}`
+        `Initializing Redis for La Liga match ${matchId} with scores: ${homeScore}-${awayScore}`
       );
       await redis.hset(`fc-footy:esp:match:${matchId}`, { homeScore, awayScore });
-      continue; // Skip notification on first data record
+      continue;
     }
 
-    // If scores have not changed, skip notification
     if (
       Number(previousScore.homeScore) === homeScore &&
       Number(previousScore.awayScore) === awayScore
@@ -90,12 +223,10 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    // Extract goal details if available
     let scoringPlayer = "Baller";
     let clockTime = "00:00";
     if (competition.details && Array.isArray(competition.details)) {
-      // Sort details by clock time (converted to seconds)
-      const keyMoments = competition.details.sort((a: any, b: any) => {
+      const keyMoments = competition.details.sort((a: MatchDetail, b: MatchDetail) => {
         const timeA = a.clock?.displayValue || "00:00";
         const timeB = b.clock?.displayValue || "00:00";
         const secondsA = timeA
@@ -118,50 +249,18 @@ export async function POST(request: NextRequest) {
           latestMoment.athletesInvolved?.[0]?.displayName || scoringPlayer;
         clockTime = latestMoment.clock?.displayValue || clockTime;
       }
-    } else {
-      console.warn(`No detailed moments found for match ${matchId}.`);
     }
 
-    // Create a notification message
     const message = `${
       homeTeam.team?.shortDisplayName || homeTeam.team?.displayName
     } ${homeScore} - ${awayScore} ${
       awayTeam.team?.shortDisplayName || awayTeam.team?.displayName
-    } | ${scoringPlayer} scored at ${clockTime}`;
+    } | ${scoringPlayer} scored at ${clockTime} (La Liga)`;
     goalNotifications.push(message);
-    console.log(`Goal detected in match ${matchId}: ${message}`);
+    console.log(`Goal detected in La Liga match ${matchId}: ${message}`);
 
-    // Fetch fans for both teams
-    let homeFans: number[] = [];
-    let awayFans: number[] = [];
-    const homeTeamId =  `${leagueId}-${homeTeam.team?.abbreviation}`;
-    const awayTeamId =  `${leagueId}-${awayTeam.team?.abbreviation}`;
+    console.log(`Notifying ${fidsToNotify.length} fans for La Liga match ${matchId}`);
 
-    console.log(`Fetching fans for teams: ${homeTeamId}, ${awayTeamId}`);
-
-    try {
-      homeFans = await getFansForTeams([(homeTeamId).toLowerCase()]);
-      awayFans = await getFansForTeams([(awayTeamId).toLowerCase()]);
-      console.log(homeFans, awayFans);
-    } catch (err) {
-      console.error(`Error fetching fans for match ${matchId}`, err);
-    }
-    const uniqueFansToNotify = new Set([...homeFans, ...awayFans]);
-
-    // Get all subscribed user keys from Redis
-    let userKeys: string[] = [];
-    try {
-      userKeys = await redis.keys("fc-footy:user:*");
-    } catch (err) {
-      console.error("Error fetching user keys from Redis", err);
-    }
-    // Filter fans to notify based on user key patterns
-    const fidsToNotify = Array.from(uniqueFansToNotify).filter((fid) =>
-      userKeys.some((key) => key.endsWith(`:${fid}`))
-    );
-    console.log(`Notifying ${fidsToNotify.length} fans for match ${matchId}`);
-
-    // Send notifications in batches
     const batchSize = 40;
     for (let i = 0; i < fidsToNotify.length; i += batchSize) {
       const batch = fidsToNotify.slice(i, i + batchSize);
@@ -169,25 +268,26 @@ export async function POST(request: NextRequest) {
         try {
           await sendFrameNotification({
             fid,
-            title: "Goal! Goal! Goal!",
+            title: "Goal! Goal! Goal! (La Liga)",
             body: message,
           });
         } catch (error) {
-          console.error(`Failed to send notification to FID: ${fid}`, error);
+          console.error(`Failed to send La Liga notification to FID: ${fid}`, error);
         }
       });
       await Promise.all(notificationPromises);
     }
 
-    // Update Redis with the new scores after sending notifications
     await redis.hset(`fc-footy:esp:match:${matchId}`, { homeScore, awayScore });
+    // --- End Existing Goal Notification Logic ---
   }
 
   return new NextResponse(
     JSON.stringify({
       success: true,
-      notificationsSent: goalNotifications.length,
+      notificationsSent: goalNotifications.length + otherNotifications.length,
       goalNotifications,
+      otherNotifications, // Include for debugging or logging
     }),
     { status: 200 }
   );
