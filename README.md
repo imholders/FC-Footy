@@ -1,7 +1,7 @@
 # 🖼️ frames-v2
-# Footy – Mini App on Warpcast
+# Footy App – Mini App on Warpcast
 
-**Footy** is a fun and engaging mini app built for Warpcast that brings football fans together. Users can select their favorite football team and join a dedicated group chat to connect with fellow supporters.
+**Footy App** is a fun and engaging mini app built for Warpcast that brings football fans together. Users can select their favorite football team and join a dedicated group chat to connect with fellow supporters.
 
 ## Features
 
@@ -11,7 +11,7 @@
 
 ## How It Works
 
-1. Open Footy on Warpcast.
+1. Open Footy App on Warpcast.
 2. Pick your favorite football team.
 3. Enter the team’s chatroom and start engaging with other fans!
 
@@ -22,11 +22,13 @@
 
 ## Getting Started
 
-To try Footy:
+To try Footy App:
 
-1. Make sure you have access to Warpcast.
-2. Find the Footy mini app in the app drawer or via direct link.
-3. Select your team and start chatting!
+1. Login With Your Gmail or Warpcast Account!
+2. Find the Footy mini app in the app drawer or via direct link
+ https://fc-footy.vercel.app/
+3. Login With Your Farcaster Account! 
+4. Select your favorite teams to goal notifications and start chatting!
 
 ## Future Improvements
 
