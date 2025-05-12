@@ -1,4 +1,4 @@
-import { useState } from 'react';
+/* import { useState } from 'react';
 import { ExternalEd25519Signer } from '@standard-crypto/farcaster-js';
 import { usePrivy, useFarcasterSigner } from '@privy-io/react-auth';
 import { Message, makeCastAdd, HubResult } from '@farcaster/core';
@@ -135,3 +135,4 @@ export default function Cast() {
     </>
   );
 }
+ */
