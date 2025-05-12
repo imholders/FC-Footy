@@ -3,6 +3,9 @@ import { SCORE_SQUARE_ADDRESS } from '../lib/config';
 // Re-export the address from config
 export { SCORE_SQUARE_ADDRESS };
 
+// Juicebox terminal and project constants
+export const TERMINAL_ADDRESS = '0xDB9644369c79C3633cDE70D2Df50d827D7dC7Dbc';
+export const PROJECT_ID = 53n;
 // constants/contracts.ts
 export const CONTRACT_ADDRESS_FEPL = '0xdCc32F6Efce28B595f255363ae6EEAA6Cd4B9499';
 export const CONTRACT_ABI_FEPL = [

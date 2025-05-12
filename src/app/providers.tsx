@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { JBProjectProvider, JBChainId } from 'juice-sdk-react';
+import { OPEN_IPFS_GATEWAY_HOSTNAME } from '~/lib/ipfs';
 import { SessionProvider } from 'next-auth/react';
 import { createConfig, http, WagmiProvider } from 'wagmi';
 import { base, degen, mainnet, optimism } from 'wagmi/chains';
@@ -57,7 +59,13 @@ export function Providers({
         <QueryClientProvider client={queryClient}>
           <ApolloProvider client={apolloClient}>
             <PrivyProvider>
-              {children}
+              <JBProjectProvider
+                projectId={53n}
+                chainId={8453 as JBChainId}
+                ctxProps={{ metadata: { ipfsGatewayHostname: OPEN_IPFS_GATEWAY_HOSTNAME } }}
+              >
+                {children}
+              </JBProjectProvider>
             </PrivyProvider>
           </ApolloProvider>
         </QueryClientProvider>

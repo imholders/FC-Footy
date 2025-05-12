@@ -156,13 +156,13 @@ useEffect(() => {
           {errorMessage && <p className="text-red-500 mt-2">{errorMessage}</p>}
         </div>
       ) : (
-          <div className="w-[380px] mx-auto py-4 px-2">
+          <div className="w-[380px] mx-auto py-1 px-2">
       <TabNavigation
           selectedTab={selectedTab}
           setSelectedTab={handleTabChange}
           tabDisplayMap={tabDisplayMap}
         />
-        <div className="bg-darkPurple p-4 rounded-md text-white">
+        <div className="bg-darkPurple p-2 rounded-md text-white">
           {selectedTab === "matches" && (
             <MatchesTab
               league={selectedLeague}
