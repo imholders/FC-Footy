@@ -30,6 +30,25 @@ To try Footy App:
 3. Login With Your Farcaster Account! 
 4. Select your favorite teams to goal notifications and start chatting!
 
+## 🛠️ Installation Guide
+
+To run the Footy App locally:
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/footy-fc/FC-Footy
+   cd FC-Footy
+2. **Install dependencies using Yarn:**
+    ```bash
+    yarn install
+3. **Set up environment variables:**
+    ```bash
+    cp env.example .env.local
+4. **Start the development server:**
+    ```bash
+    yarn dev
+5. **Open your browser and visit: http://localhost:3000**
+
 ## Future Improvements
 
 * Real-time match updates
