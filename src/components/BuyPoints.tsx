@@ -1,3 +1,5 @@
+
+import { config } from '~/components/providers/WagmiProvider';
 import React, { useState, useEffect } from 'react';
 import { PriceIncreaseCountdown } from '~/components/points/PriceIncreaseCountdown';
 import ScoresInfo from '~/components/ScoresInfo';
@@ -9,6 +11,7 @@ import { parseEther } from 'viem';
 import { usePrivy } from '@privy-io/react-auth';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { TERMINAL_ADDRESS, PROJECT_ID } from '~/constants/contracts';
+import { waitForTransactionReceipt } from 'wagmi/actions';
 
 export default function BuyPoints() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +32,7 @@ export default function BuyPoints() {
   });
 
   const [hasAgreed, setHasAgreed] = useState(false);
+  const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'confirmed' | 'failed'>('idle');
 
   const getIssuedPoints = (eth: number) => {
     const pointsPerEth = Number(issuance?.replace(/[^\d.]/g, '') ?? 0);
@@ -62,10 +66,13 @@ export default function BuyPoints() {
     if (!address) return;
 
     setIsSubmitting(true);
+    setTxStatus('pending');
+
     try {
       const weiAmount = parseEther(ethAmount);
       const finalMemo = favClub ? `${memo} I support ${favClub}` : memo;
-      await writeContractAsync({
+
+      const txHash = await writeContractAsync({
         args: [
           PROJECT_ID,
           '0x000000000000000000000000000000000000EEEe',
@@ -78,8 +85,14 @@ export default function BuyPoints() {
         address: TERMINAL_ADDRESS,
         value: weiAmount,
       });
+
+      await waitForTransactionReceipt(config, { hash: txHash });
+      setTxStatus('confirmed');
+      setTimeout(() => setTxStatus('idle'), 5000);
     } catch (err) {
       console.error('Contract call failed', err);
+      setTxStatus('failed');
+      setTimeout(() => setTxStatus('idle'), 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -238,12 +251,18 @@ export default function BuyPoints() {
           onClick={() => handleBuyPack(ethAmount)}
           disabled={isSubmitting || !ethAmount || !hasAgreed}
           className={`w-full mt-4 py-2 px-4 rounded transition-colors ${
-            isSubmitting
+            txStatus === 'pending'
               ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
               : 'bg-deepPink text-white hover:bg-fontRed'
           }`}
         >
-          {isSubmitting ? 'Processing...' : `Buy for ${ethAmount || '...'} ETH`}
+          {txStatus === 'pending'
+            ? 'Waiting for confirmation...'
+            : txStatus === 'confirmed'
+            ? 'Confirmed ✅'
+            : txStatus === 'failed'
+            ? 'Failed ❌ — Try again'
+            : `Buy for ${ethAmount || '...'} ETH`}
         </button>
       </div>
     </div>
