@@ -55,14 +55,10 @@ export const fetchFantasyData = async (): Promise<FantasyEntry[]> => {
           fid = parseInt(last_name, 10);
 
           if (Number.isInteger(fid)) {
-            const server = "https://hubs.airstack.xyz";
+            const server = "https://snapchain.pinnable.xyz";
             try {
               // Fetch user data by fid
               const response = await axios.get(`${server}/v1/userDataByFid?fid=${fid}`, {
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-airstack-hubs": openAiApiKey
-                }
               });
 
               // Extract profile image, username, and location from response
