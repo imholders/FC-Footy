@@ -21,7 +21,7 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [teamLinks, setTeamLinks] = useState<Record<string, TeamLink[]>>({});
+  const [ setTeamLinks] = useState<Record<string, TeamLink[]>>({});
   const { user } = usePrivy();
   const currentFid = user?.linkedAccounts.find((a) => a.type === "farcaster")?.fid;
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
@@ -177,7 +177,6 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
 
   const fetchTeamLinksByLeague = async (league: string, teamAbbrs: string[]) => {
     try {
-      console.log(`Fetching team links for league ${league} with abbreviations: ${teamAbbrs.join(", ")}`);
       const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams`);
       const data = await res.json();
       const teams = data?.sports?.[0]?.leagues?.[0]?.teams || [];
@@ -225,7 +224,6 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
       </div>
     );
   }
-  console.log("teamLinks", teamLinks);
   return (
     <div className="bg-purplePanel text-lightPurple rounded-lg p-1 overflow-hidden">
       <h2 className='text-notWhite'>Teams you follow</h2>

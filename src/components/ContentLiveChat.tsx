@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { usePrivy, useLogin, useFarcasterSigner } from "@privy-io/react-auth";
-import * as Account from "fhub/Account";
-import { useCastCreateMutation } from "~/hooks/fhub/useCastCreateMutation";
+import {HubRestAPIClient} from '@standard-crypto/farcaster-js';
+
+import { ExternalEd25519Signer } from "@standard-crypto/farcaster-js";
 import { emojiPacks } from "~/components/utils/customEmojis";
 import { getTeamPreferences } from "~/lib/kv";
-import { fetchCastByHash } from "./utils/fetchCasts";
 import { teamsByLeague, getTeamFullName } from "./utils/fetchTeamLogos";
+import { useFetchCastsParentUrl } from "./utils/useFetchCastsParentUrls";
+import { fetchFanUserData } from "./utils/fetchFCProfile";
 
 interface CastType {
   timestamp: number;
@@ -264,7 +266,7 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
   const roomHash =
     teamsByLeague[leagueKey]?.find((t) => t.abbr === abbr)?.roomHash ??
     DEFAULT_CHANNEL_HASH;
-  const [casts, setCasts] = useState<CastType[]>([]);  
+  // const [casts, setCasts] = useState<CastType[]>([]);  
   const [message, setMessage] = useState("");
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const [selectedPack, setSelectedPack] = useState(emojiPacks[0].name);
@@ -272,15 +274,60 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
   const [showPackDropdown, setShowPackDropdown] = useState(false);
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
-  console.log("ContentLiveChat received roomHash:", roomHash);
+  //console.log("ContentLiveChat received roomHash:", roomHash);
   const [channel, setChannel] = useState(`match:${roomHash}`);
-  console.log("Initial channel state:", `match:${roomHash}`);
+  //console.log("Initial channel state:", `match:${roomHash}`);
+  const {casts: footyChat } = useFetchCastsParentUrl("https://d33m.com/gantry", "https://snapchain.pinnable.xyz");
+  const [enrichedChat, setEnrichedChat] = useState<CastType[]>([]);
+
+  const { login } = useLogin();
+  const { getFarcasterSignerPublicKey, signFarcasterMessage } = useFarcasterSigner();
+  const { requestFarcasterSignerFromWarpcast } = useFarcasterSigner();
+  const { authenticated, user } = usePrivy();
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const enrichWithUserData = async () => {
+      const enriched = await Promise.all(
+        footyChat.map(async (cast): Promise<CastType> => {
+          const fan = await fetchFanUserData(cast.data?.fid || 0);
+          const fid = cast.data?.fid?.toString() ?? "0";
+          const teamIds = await getTeamPreferences(fid);
+          const teamId = teamIds?.[0];
+          const teamBadgeUrl = teamId ? getTeamLogoFromId(teamId) : null;
+
+          const username =
+            Array.isArray(fan?.USER_DATA_TYPE_USERNAME)
+              ? fan.USER_DATA_TYPE_USERNAME[0]
+              : fan?.USER_DATA_TYPE_USERNAME ?? fid;
+
+          const pfp_url =
+            Array.isArray(fan?.USER_DATA_TYPE_PFP)
+              ? fan.USER_DATA_TYPE_PFP[0]
+              : fan?.USER_DATA_TYPE_PFP ?? "/default-pfp.png";
+
+          return {
+            author: {
+              fid: fid,
+              username,
+              pfp_url,
+            },
+            text: cast.data?.castAddBody?.text ?? "",
+            timestamp: cast.data?.timestamp ?? 0,
+            teamBadgeUrl,
+          };
+        })
+      );
+      setEnrichedChat(enriched);
+    };
+    if (footyChat.length > 0) enrichWithUserData();
+  }, [footyChat]);
   
   useEffect(() => {
-    console.log("Updating channel from roomHash:", roomHash);
     setChannel(`match:${roomHash}`);
   }, [roomHash]);
-  const [parentCastUrl, setParentCastUrl] = useState<string | null>(null);
+  const [setParentCastUrl] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -292,24 +339,17 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
     }
   }, [channel]);
 
-  const { authenticated, user } = usePrivy();
-  
+ 
   useEffect(() => {
     const fetchUserTeamLogoAndEmoji = async () => {
       if (user?.farcaster?.fid) {
-        //console.log("Fetching team preferences for FID:", user.farcaster.fid);
         const teamIds = await getTeamPreferences(user.farcaster.fid.toString());
-        //console.log("Team IDs returned:", teamIds);
-
         const teamId = teamIds?.[0];
         if (teamId) {
           const logo = getTeamLogoFromId(teamId);
           setBackgroundLogo(logo);
-          //console.log("Setting background logo:", logo);
-
           const matchingPack = emojiPacks.find((pack) => pack.teamId === teamId);
           if (matchingPack) {
-            //console.log("Found matching emoji pack:", matchingPack.name);
             setSelectedPack(matchingPack.name);
           } else {
             console.log("No matching emoji pack found for teamId:", teamId);
@@ -333,156 +373,53 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
       }
     }, 50);
     return () => clearTimeout(timer);
-  }, [casts]);
-  
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-    return () => clearTimeout(timeout);
-  }, [casts]);
-  
-  const { login } = useLogin();
-  const { getFarcasterSignerPublicKey, signFarcasterMessage } = useFarcasterSigner();
-  const { requestFarcasterSignerFromWarpcast } = useFarcasterSigner();
-  const farcasterAccount = user?.linkedAccounts.find(
-    (account) => account.type === "farcaster"
-  );
-
-  const createCast = useCastCreateMutation();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const loadCasts = async () => {
-    const enriched = await fetchCastByHash(roomHash);  // Attach a timestamp to each cast if it doesn't already have one
-    const enrichedWithTimestamp = enriched.map(cast => ({
-      ...cast,
-      timestamp: cast.timestamp || Date.now()
-    }));
-    setCasts(enrichedWithTimestamp);
-    if (enrichedWithTimestamp.length > 0) {
-      const latestCast = enrichedWithTimestamp[enrichedWithTimestamp.length - 1];
-      const emojiRegex = /([a-zA-Z0-9]+::[a-zA-Z0-9_]+)/g;
-      let match;
-      while ((match = emojiRegex.exec(latestCast.text)) !== null) {
-        const emojiCode = match[1];
-        const foundEmoji = Object.values(emojiPacks)
-          .flatMap(pack => pack.emojis)
-          .find(emoji => emoji.code === emojiCode);
-        if (foundEmoji) {
-          const zoomImg = document.createElement("img");
-          zoomImg.src = foundEmoji.url;
-          zoomImg.className = "w-20 h-20 fixed z-50 pointer-events-none";
-          zoomImg.style.left = `${window.innerWidth / 2 - 40}px`;
-          zoomImg.style.top = `${window.innerHeight / 2 - 40}px`;
-          zoomImg.style.opacity = "0";
-          zoomImg.style.transition = "transform 0.4s ease-out, opacity 0.4s ease-out";
-          document.body.appendChild(zoomImg);
-          requestAnimationFrame(() => {
-            zoomImg.style.transform = "scale(3)";
-            zoomImg.style.opacity = "1";
-          });
-          setTimeout(() => {
-            zoomImg.remove();
-          }, 450);
-
-          setTimeout(() => {
-            for (let i = 0; i < 20; i++) {
-              const img = document.createElement("img");
-              img.src = foundEmoji.url;
-              img.className = "w-10 h-10 fixed z-50 pointer-events-none";
-              const angle = (2 * Math.PI * i) / 20;
-              const radius = 200 + Math.random() * 100;
-              const startX = window.innerWidth / 2;
-              const startY = window.innerHeight / 2;
-              const endX = startX + radius * Math.cos(angle);
-              const endY = startY + radius * Math.sin(angle);
-
-              img.style.left = `${startX}px`;
-              img.style.top = `${startY}px`;
-              img.style.transition = `all 1.2s ease-out`;
-              document.body.appendChild(img);
-
-              requestAnimationFrame(() => {
-                img.style.transform = `translate(${endX - startX}px, ${endY - startY}px) scale(0.8) rotate(${Math.random() * 720}deg)`;
-                img.style.opacity = "0";
-              });
-
-              setTimeout(() => {
-                img.remove();
-              }, 1300);
-            }
-          }, 450);
-        }
-      }
-    }
-
-    if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
-      if (isAtBottom) {
-        chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
-      }
-    }
-  };
-  
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      loadCasts(); // respect current selected channel
-    }, 5000);
-    return () => clearInterval(intervalId);
-  }, [channel]);
-  
-  useEffect(() => {
-    loadCasts();
-  }, []);
+  }, [footyChat]);
 
   const postMessage = async () => {
     if (!authenticated) {
       login();
       return;
     }
-    if (channel.startsWith("hash:") && !parentCastUrl) {
-      console.error("Error: cannot post reply without a valid cast hash.");
+
+    const farcasterAccount = user?.linkedAccounts.find((account) => account.type === "farcaster");
+    if (!farcasterAccount?.signerPublicKey) {
+      console.error("Farcaster signer not authorized yet");
+      await requestFarcasterSignerFromWarpcast();
+      setIsPosting(false);
       return;
     }
+
     if (isPosting) return;
     setIsPosting(true);
-    if (farcasterAccount) {
-      const fid = Number(farcasterAccount.fid);
-      const signer = {
-        getSignerKey: getFarcasterSignerPublicKey,
-        signMessageHash: (messageHash: Uint8Array) =>
-          signFarcasterMessage(messageHash),
-      };
-      console.log("createCast:", createCast);
-      createCast.mutate({
-        account: Account.fromEd25519Signer({
-          fid: BigInt(fid),
-          signer,
-        }),
-        cast: {
-          text: {
-            value: message,
-            embeds: [],
-          },
-          parent: { type: "cast", hash: roomHash as `0x${string}`, fid: BigInt(fid) },
-          isLong: false,
-        },
-      }, {
-        onSuccess: () => {
-          console.log("Cast sent successfully!");
-          setMessage("");
-          setShowEmojiPanel(false);
-          setIsPosting(false);
-          setTimeout(fetchCastByHash, 3000);
-        },
-        onError: (error) => {
-          console.error("Error sending cast:", error);
-          setIsPosting(false);
-        }
+
+    try {
+      const fid = Number(user?.farcaster?.fid);
+      const signer = new ExternalEd25519Signer(
+        signFarcasterMessage,
+        getFarcasterSignerPublicKey
+      );
+
+      const client = new HubRestAPIClient({
+        hubUrl: "https://snapchain-grpc.pinnable.xyz",
       });
-    } else {
-      console.log("Failed to auth");
+
+      const response = await client.submitCast(
+        {
+          text: message,
+          embeds: [],
+          // parentUrl: parentCastUrl || undefined, // optional
+        },
+        fid,
+        signer
+      );
+
+      console.log("Submitted cast:", response);
+      setMessage("");
+      setShowEmojiPanel(false);
+    } catch (error) {
+      console.error("Error sending cast:", error);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -514,9 +451,9 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
       </div>
 
       {/* Room casts */}
-      <div ref={chatContainerRef} className="w-full flex-1 overflow-y-auto space-y-3 scroll-pb-44 scroll-smooth overscroll-contain">        
-      {casts.map((cast) => (
-        <div key={`${cast.author.fid}-${cast.timestamp}`} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
+      <div ref={chatContainerRef} className="w-full flex-1 overflow-y-auto space-y-3 scroll-pb-44 scroll-smooth overscroll-contain">
+      {enrichedChat.map((cast) => (
+        <div key={`${cast.author?.fid}-${cast.timestamp}`} className="flex items-start text-sm text-white space-x-3 transition-all duration-300 ease-out">
           <div className="relative w-6 h-6">
                 <img src={cast.author.pfp_url} alt="pfp" className="w-6 h-6 rounded-full" />
                 {cast.teamBadgeUrl && (
@@ -528,7 +465,7 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
                 )}
               </div>
               <div className="flex-1 text-lightPurple break-words">
-                <span className="font-bold text-notWhite">@{cast.author.username}</span>{" "}
+                <span className="font-bold text-notWhite">{cast.author.username}</span>{" "}
                 {cast.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
                   part.match(/https?:\/\/[^\s]+/) ? (
                     <a
