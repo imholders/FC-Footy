@@ -21,7 +21,7 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [ setTeamLinks] = useState<Record<string, TeamLink[]>>({});
+  const [teamLinks, setTeamLinks] = useState<Record<string, TeamLink[]>>({});
   const { user } = usePrivy();
   const currentFid = user?.linkedAccounts.find((a) => a.type === "farcaster")?.fid;
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
@@ -169,6 +169,8 @@ const ForYouTeamsFans: React.FC<{ showLiveChat: boolean; setShowLiveChat: (val: 
       setSelectedTeam(favoriteTeams[0]);
     }
   }, [favoriteTeams]);
+
+  console.log(teamLinks); // TEMP: avoid lint error
 
   const getTeamLogoUrl = (teamId: string): string => {
     const [league, abbr] = teamId.split("-");
