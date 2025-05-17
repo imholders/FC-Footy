@@ -275,7 +275,7 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
   const [backgroundLogo, setBackgroundLogo] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   //console.log("ContentLiveChat received roomHash:", roomHash);
-  const [channel, setChannel] = useState(`match:${roomHash}`);
+  // const [setChannel] = useState(`match:${roomHash}`);
   //console.log("Initial channel state:", `match:${roomHash}`);
   const {casts: footyChat } = useFetchCastsParentUrl("https://d33m.com/gantry", "https://snapchain.pinnable.xyz");
   const [enrichedChat, setEnrichedChat] = useState<CastType[]>([]);
@@ -324,20 +324,20 @@ const ContentLiveChat = ({ teamId }: { teamId: string }) => {
     if (footyChat.length > 0) enrichWithUserData();
   }, [footyChat]);
   
-  useEffect(() => {
-    setChannel(`match:${roomHash}`);
-  }, [roomHash]);
-  const [setParentCastUrl] = useState<string | null>(null);
+  // useEffect(() => {
+  //  setChannel(`match:${roomHash}`);
+  // }, [roomHash]);
+  // const [setParentCastUrl] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
+/*   useEffect(() => {
     if (channel.startsWith("hash:")) {
       const hash = channel.split("hash:")[1];
       setParentCastUrl(`https://warpcast.com/~/cast/${hash}`);
     } else {
       setParentCastUrl(null);
     }
-  }, [channel]);
+  }, [channel]); */
 
  
   useEffect(() => {
