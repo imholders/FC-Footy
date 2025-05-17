@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import axios from "axios";
 import { Database } from '../../../supabase';
 
-const openAiApiKey = process.env.NEXT_PUBLIC_API_AIRSTACK || '';
 const supabaseApiKey = process.env.NEXT_PUBLIC_API_SUP || '';
 
 const supabase = createClient<Database>(
