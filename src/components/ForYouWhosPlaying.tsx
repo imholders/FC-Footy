@@ -102,7 +102,7 @@ const ForYouWhosPlaying: React.FC = () => {
           const away = shortName.slice(0, 3).toLowerCase();
           return favoriteTeams.some(fav => fav.includes(home) || fav.includes(away));
         })
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .map(event => (
           // @ts-expect-error: Ignoring type issues for the event prop for now
           <MatchEventCard key={event.id} event={event} sportId={event.competitions?.[0]?.id || ''} />
