@@ -26,9 +26,8 @@ To try Footy App:
 
 1. Login With Your Gmail or Warpcast Account!
 2. Find the Footy mini app in the app drawer or via direct link
- https://fc-footy.vercel.app/
-3. Login With Your Farcaster Account! 
-4. Select your favorite teams to goal notifications and start chatting!
+ https://fc-footy.vercel.app/ 
+3. Select your favorite teams to goal notifications and start chatting!
 
 ## 🛠️ Installation Guide
 
